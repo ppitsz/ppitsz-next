@@ -37,6 +37,9 @@ export const metadata: Metadata = {
   },
   description:
     "Jaringan is the design system for PPIT Shenzhen websites: the metro network as a visual language, built on shadcn/ui.",
+  // Public, but kept out of search results: the examples carry PPIT branding
+  // and sample events that could pass for the real site.
+  robots: { index: false, follow: false },
 }
 
 export default function RootLayout({
