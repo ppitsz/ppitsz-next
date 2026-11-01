@@ -1,0 +1,743 @@
+/* ==========================================================================
+   PPIT Shenzhen — @ppitsz/ui globals.css (Tailwind CSS v4)
+   Direction: "Jaringan" — the metro network. Documented in apps/docs.
+   Spacing, radius and shadow use Tailwind defaults (decided during build).
+   ========================================================================== */
+
+@import "tailwindcss";
+/* shadcn's data-* variants (data-open, data-checked …) and accordion keyframes */
+@import "shadcn/tailwind.css";
+
+@source "../../../apps/**/*.{ts,tsx}";
+@source "../**/*.{ts,tsx}";
+
+/* --------------------------------------------------------------------------
+   1. TOKENS
+   -------------------------------------------------------------------------- */
+@theme static {
+  /* Remove defaults that would let the old / generic look back in */
+  --color-*: initial;   /* no default palette (no purple, no gray-500) */
+  --font-*: initial;    /* only the PPITSZ families */
+  --text-*: initial;    /* only the PPITSZ type scale (use type-*) */
+  --blur-*: initial;    /* no backdrop-blur / glassmorphism */
+  --animate-*: initial; /* no pulse / bounce / ping */
+  --ease-*: initial;
+
+  /* ---- Ramps ------------------------------------------------------------ */
+  --color-white: oklch(1 0 0);
+
+  /* Merah — refreshed signal red (warmer and brighter than the logo red) */
+  --color-merah-50: oklch(0.97 0.012 29);
+  --color-merah-100: oklch(0.935 0.03 29);
+  --color-merah-200: oklch(0.885 0.055 29);
+  --color-merah-300: oklch(0.81 0.1 29);
+  --color-merah-400: oklch(0.72 0.17 29);
+  --color-merah-500: oklch(0.635 0.225 29);
+  --color-merah-600: oklch(0.56 0.215 29);
+  --color-merah-700: oklch(0.48 0.18 29);
+  --color-merah-800: oklch(0.4 0.145 29);
+  --color-merah-900: oklch(0.32 0.11 29);
+  --color-merah-950: oklch(0.24 0.075 29);
+
+  /* Beton — cool concrete neutral (station architecture, signage ink) */
+  --color-beton-50: oklch(0.982 0.003 255);
+  --color-beton-100: oklch(0.962 0.005 255);
+  --color-beton-200: oklch(0.925 0.007 255);
+  --color-beton-300: oklch(0.87 0.009 255);
+  --color-beton-400: oklch(0.74 0.012 255);
+  --color-beton-500: oklch(0.61 0.013 255);
+  --color-beton-600: oklch(0.51 0.014 255);
+  --color-beton-700: oklch(0.42 0.014 255);
+  --color-beton-800: oklch(0.32 0.013 255);
+  --color-beton-900: oklch(0.235 0.011 255);
+  --color-beton-950: oklch(0.17 0.009 255);
+
+  /* Status-only ramps */
+  --color-hijau-50: oklch(0.97 0.022 150);
+  --color-hijau-300: oklch(0.8 0.12 150);
+  --color-hijau-600: oklch(0.52 0.12 150);
+  --color-hijau-700: oklch(0.45 0.105 150);
+  --color-hijau-950: oklch(0.24 0.05 150);
+  --color-amber-50: oklch(0.975 0.025 85);
+  --color-amber-300: oklch(0.85 0.14 82);
+  --color-amber-600: oklch(0.64 0.14 65);
+  --color-amber-800: oklch(0.46 0.1 58);
+  --color-amber-950: oklch(0.26 0.055 58);
+
+  /* ---- Semantic tokens (light). Components use ONLY these. -------------- */
+  --color-bg: var(--color-white);
+  --color-surface: var(--color-beton-50);
+  --color-surface-strong: var(--color-beton-100);
+  --color-surface-raised: var(--color-white);
+  --color-text: var(--color-beton-950);
+  --color-muted: var(--color-beton-600);
+  --color-subtle: var(--color-beton-500);
+  --color-border: var(--color-beton-200);
+  --color-border-strong: var(--color-beton-500);
+  --color-accent: var(--color-merah-600);
+  --color-accent-hover: var(--color-merah-700);
+  --color-accent-active: var(--color-merah-800);
+  --color-accent-fg: var(--color-white);
+  --color-accent-text: var(--color-merah-700);
+  --color-accent-subtle: var(--color-merah-50);
+  --color-accent-line: var(--color-merah-500);
+  --color-focus: var(--color-beton-950);
+  --color-highlight: var(--color-amber-300);
+  --color-highlight-fg: var(--color-beton-950);
+  --color-success: var(--color-hijau-600);
+  --color-success-text: var(--color-hijau-700);
+  --color-success-subtle: var(--color-hijau-50);
+  --color-warning: var(--color-amber-600);
+  --color-warning-text: var(--color-amber-800);
+  --color-warning-subtle: var(--color-amber-50);
+  --color-danger: var(--color-merah-600);
+  --color-danger-text: var(--color-merah-700);
+  --color-danger-subtle: var(--color-merah-50);
+  --color-backdrop: oklch(0.17 0.009 255 / 0.5);
+
+  /* ---- Division lines (light). Graphics and line badges only. ----------- */
+  --color-line-fg: var(--color-white);
+  --color-line-bph: oklch(0.56 0.215 29);
+  --color-line-danus: oklch(0.56 0.13 55);
+  --color-line-depol: oklch(0.53 0.13 148);
+  --color-line-humas: oklch(0.52 0.14 250);
+  --color-line-it: oklch(0.53 0.09 205);
+  --color-line-medkref: oklch(0.54 0.19 355);
+  --color-line-pka: oklch(0.52 0.16 290);
+  --color-line-sosbud: oklch(0.5 0.19 322);
+
+  /* ---- Type scale (fluid 360px → 1440px). Use the type-* utilities. ----- */
+  --text-display-2xl: clamp(2.75rem, 1.1667rem + 7.037vw, 7.5rem);
+  --text-display-2xl--line-height: 0.98;
+  --text-display-2xl--letter-spacing: -0.02em;
+  --text-display-2xl--font-weight: 800;
+
+  --text-display-xl: clamp(2.375rem, 1.5rem + 3.8889vw, 5rem);
+  --text-display-xl--line-height: 1;
+  --text-display-xl--letter-spacing: -0.02em;
+  --text-display-xl--font-weight: 800;
+
+  --text-display-lg: clamp(2rem, 1.5rem + 2.2222vw, 3.5rem);
+  --text-display-lg--line-height: 1.04;
+  --text-display-lg--letter-spacing: -0.015em;
+  --text-display-lg--font-weight: 750;
+
+  --text-heading-lg: clamp(1.5rem, 1.3333rem + 0.7407vw, 2rem);
+  --text-heading-lg--line-height: 1.12;
+  --text-heading-lg--letter-spacing: -0.01em;
+  --text-heading-lg--font-weight: 700;
+
+  --text-heading-md: clamp(1.25rem, 1.1667rem + 0.3704vw, 1.5rem);
+  --text-heading-md--line-height: 1.2;
+  --text-heading-md--letter-spacing: -0.005em;
+  --text-heading-md--font-weight: 650;
+
+  --text-heading-sm: 1.0625rem;
+  --text-heading-sm--line-height: 1.3;
+  --text-heading-sm--letter-spacing: 0em;
+  --text-heading-sm--font-weight: 700;
+
+  --text-numeral: clamp(2.5rem, 1.8333rem + 2.963vw, 4.5rem);
+  --text-numeral--line-height: 1;
+  --text-numeral--letter-spacing: -0.03em;
+  --text-numeral--font-weight: 700;
+
+  --text-sign: 0.9375rem;
+  --text-sign--line-height: 1.15;
+  --text-sign--letter-spacing: 0em;
+  --text-sign--font-weight: 600;
+
+  --text-kicker: 0.8125rem;
+  --text-kicker--line-height: 1.2;
+  --text-kicker--letter-spacing: 0.08em;
+  --text-kicker--font-weight: 600;
+
+  --text-ui: 1rem;
+  --text-ui--line-height: 1.2;
+  --text-ui--letter-spacing: 0em;
+  --text-ui--font-weight: 600;
+
+  --text-lede: clamp(1.25rem, 1.1667rem + 0.3704vw, 1.5rem);
+  --text-lede--line-height: 1.45;
+  --text-lede--letter-spacing: 0em;
+  --text-lede--font-weight: 400;
+
+  --text-body-lg: clamp(1.125rem, 1.0833rem + 0.1852vw, 1.25rem);
+  --text-body-lg--line-height: 1.6;
+  --text-body-lg--letter-spacing: 0em;
+  --text-body-lg--font-weight: 400;
+
+  --text-body: clamp(1.0625rem, 1.0417rem + 0.0926vw, 1.125rem);
+  --text-body--line-height: 1.6;
+  --text-body--letter-spacing: 0em;
+  --text-body--font-weight: 400;
+
+  --text-body-sm: 0.9375rem;
+  --text-body-sm--line-height: 1.5;
+  --text-body-sm--letter-spacing: 0em;
+  --text-body-sm--font-weight: 400;
+
+  --text-caption: 0.875rem;
+  --text-caption--line-height: 1.45;
+  --text-caption--letter-spacing: 0em;
+  --text-caption--font-weight: 400;
+
+  /* ---- Motion ----------------------------------------------------------- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+
+  --animate-spin: spin 800ms linear infinite;
+  --animate-enter: enter var(--duration-base) var(--ease-out) both;
+  --animate-enter-slow: enter var(--duration-slow) var(--ease-out) both;
+  --animate-fade: fade var(--duration-base) var(--ease-out) both;
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes enter {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes route-draw {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+}
+
+/* Font stacks resolve per element so :lang(zh) can switch them */
+@theme inline {
+  --font-display: var(--font-stack-display);
+  --font-sans: var(--font-stack-sans);
+}
+
+/* --------------------------------------------------------------------------
+   2. MODES AND SCOPES (re-assign semantic tokens; never edit components)
+   The light and dark assignments are written once, as scope-light and
+   scope-dark, and applied by: the system preference, the forced theme on
+   <html>, any nested [data-theme] element (used by preview frames), and the
+   tone-ink "station screen" scope.
+   -------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+  --font-stack-display: var(--font-archivo, "Archivo"), var(--font-noto-sans-sc, "Noto Sans SC"),
+    "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-stack-sans: var(--font-atkinson, "Atkinson Hyperlegible Next"), var(--font-noto-sans-sc, "Noto Sans SC"),
+    "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+
+  /* The active line. Brand red unless an element sets data-line. */
+  --line: var(--color-accent-line);
+
+  /* Which PPI mark shows (red on light, white on dark and tone-ink) */
+  --mark-red: inline-block;
+  --mark-white: none;
+
+  /* Dark-mode line values (shared by dark mode and .tone-ink) */
+  --line-dark-bph: oklch(0.7 0.17 29);
+  --line-dark-danus: oklch(0.74 0.13 60);
+  --line-dark-depol: oklch(0.73 0.14 148);
+  --line-dark-humas: oklch(0.72 0.12 250);
+  --line-dark-it: oklch(0.74 0.1 205);
+  --line-dark-medkref: oklch(0.72 0.15 355);
+  --line-dark-pka: oklch(0.72 0.12 290);
+  --line-dark-sosbud: oklch(0.72 0.15 322);
+}
+
+:lang(zh) {
+  --font-stack-display: var(--font-noto-sans-sc, "Noto Sans SC"), "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-stack-sans: var(--font-noto-sans-sc, "Noto Sans SC"), "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+[data-line="bph"] { --line: var(--color-line-bph); }
+[data-line="danus"] { --line: var(--color-line-danus); }
+[data-line="depol"] { --line: var(--color-line-depol); }
+[data-line="humas"] { --line: var(--color-line-humas); }
+[data-line="it"] { --line: var(--color-line-it); }
+[data-line="medkref"] { --line: var(--color-line-medkref); }
+[data-line="pka"] { --line: var(--color-line-pka); }
+[data-line="sosbud"] { --line: var(--color-line-sosbud); }
+
+/* Light token values, for a light scope nested inside a dark page */
+@utility scope-light {
+  color-scheme: light;
+  --color-bg: var(--color-white);
+  --color-surface: var(--color-beton-50);
+  --color-surface-strong: var(--color-beton-100);
+  --color-surface-raised: var(--color-white);
+  --color-text: var(--color-beton-950);
+  --color-muted: var(--color-beton-600);
+  --color-subtle: var(--color-beton-500);
+  --color-border: var(--color-beton-200);
+  --color-border-strong: var(--color-beton-500);
+  --color-accent-text: var(--color-merah-700);
+  --color-accent-subtle: var(--color-merah-50);
+  --color-focus: var(--color-beton-950);
+  --color-success: var(--color-hijau-600);
+  --color-success-text: var(--color-hijau-700);
+  --color-success-subtle: var(--color-hijau-50);
+  --color-warning: var(--color-amber-600);
+  --color-warning-text: var(--color-amber-800);
+  --color-warning-subtle: var(--color-amber-50);
+  --color-danger: var(--color-merah-600);
+  --color-danger-text: var(--color-merah-700);
+  --color-danger-subtle: var(--color-merah-50);
+  --color-backdrop: oklch(0.17 0.009 255 / 0.5);
+  --color-line-fg: var(--color-white);
+  --color-line-bph: oklch(0.56 0.215 29);
+  --color-line-danus: oklch(0.56 0.13 55);
+  --color-line-depol: oklch(0.53 0.13 148);
+  --color-line-humas: oklch(0.52 0.14 250);
+  --color-line-it: oklch(0.53 0.09 205);
+  --color-line-medkref: oklch(0.54 0.19 355);
+  --color-line-pka: oklch(0.52 0.16 290);
+  --color-line-sosbud: oklch(0.5 0.19 322);
+  --mark-red: inline-block;
+  --mark-white: none;
+}
+
+/* Dark token values */
+@utility scope-dark {
+  color-scheme: dark;
+  --color-bg: var(--color-beton-950);
+  --color-surface: var(--color-beton-900);
+  --color-surface-strong: var(--color-beton-800);
+  --color-surface-raised: var(--color-beton-800);
+  --color-text: var(--color-beton-50);
+  --color-muted: var(--color-beton-400);
+  --color-subtle: var(--color-beton-500);
+  --color-border: var(--color-beton-800);
+  --color-border-strong: var(--color-beton-500);
+  --color-accent-text: var(--color-merah-300);
+  --color-accent-subtle: var(--color-merah-950);
+  --color-focus: var(--color-beton-50);
+  --color-success: var(--color-hijau-300);
+  --color-success-text: var(--color-hijau-300);
+  --color-success-subtle: var(--color-hijau-950);
+  --color-warning: var(--color-amber-300);
+  --color-warning-text: var(--color-amber-300);
+  --color-warning-subtle: var(--color-amber-950);
+  --color-danger: var(--color-merah-400);
+  --color-danger-text: var(--color-merah-300);
+  --color-danger-subtle: var(--color-merah-950);
+  --color-backdrop: oklch(0.17 0.009 255 / 0.72);
+  --color-line-fg: var(--color-beton-950);
+  --color-line-bph: var(--line-dark-bph);
+  --color-line-danus: var(--line-dark-danus);
+  --color-line-depol: var(--line-dark-depol);
+  --color-line-humas: var(--line-dark-humas);
+  --color-line-it: var(--line-dark-it);
+  --color-line-medkref: var(--line-dark-medkref);
+  --color-line-pka: var(--line-dark-pka);
+  --color-line-sosbud: var(--line-dark-sosbud);
+  --mark-red: none;
+  --mark-white: inline-block;
+}
+
+/* Dark: follow the system unless the user forced light */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    @apply scope-dark;
+  }
+}
+
+/* Dark or light forced by the theme control on <html>, or by a preview frame */
+[data-theme="dark"] {
+  @apply scope-dark;
+}
+[data-theme="light"] {
+  @apply scope-light;
+}
+
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+}
+
+/* "Station screen" scope: a dark band inside a light page (departure board,
+   network map). It takes every dark value, status colors included, so status
+   badges keep their contrast. In dark mode it lifts one step so it still reads
+   as a panel. Set data-line inside the band, not on an ancestor, so the line
+   picks up its dark value. */
+@utility tone-ink {
+  @apply scope-dark;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tone-ink {
+    --color-bg: var(--color-beton-900);
+    --color-surface: var(--color-beton-800);
+  }
+}
+[data-theme="dark"] .tone-ink {
+  --color-bg: var(--color-beton-900);
+  --color-surface: var(--color-beton-800);
+}
+
+/* --------------------------------------------------------------------------
+   3. BASE
+   -------------------------------------------------------------------------- */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+  html {
+    font-family: var(--font-stack-sans);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    min-height: 100dvh;
+    overflow-x: clip;
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background-color: var(--color-highlight);
+    color: var(--color-highlight-fg);
+  }
+  :is(h1, h2, h3, h4, h5, h6) {
+    overflow-wrap: break-word;
+    text-wrap: balance;
+  }
+  p, li, figcaption, blockquote {
+    text-wrap: pretty;
+  }
+  mark {
+    background-color: var(--color-highlight);
+    color: var(--color-highlight-fg);
+  }
+  ::placeholder {
+    color: var(--color-muted);
+    opacity: 1;
+  }
+  abbr[title] {
+    text-decoration: none;
+  }
+
+  /* Chinese */
+  :lang(zh) {
+    letter-spacing: 0;
+    line-break: strict;
+    text-spacing-trim: normal;
+    text-autospace: normal;
+  }
+  :lang(zh) :is(em, i, cite, dfn, var) {
+    font-style: normal;
+  }
+  :lang(zh) em {
+    text-emphasis: filled dot;
+    text-emphasis-position: under right;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. TYPE STYLES — always set text style with one type-* class
+   Display faces use Archivo's width axis: wider on large screens.
+   -------------------------------------------------------------------------- */
+@utility type-display-2xl {
+  font-family: var(--font-stack-display);
+  font-size: var(--text-display-2xl);
+  line-height: var(--text-display-2xl--line-height);
+  letter-spacing: var(--text-display-2xl--letter-spacing);
+  font-weight: var(--text-display-2xl--font-weight);
+  font-variation-settings: "wdth" 112;
+  @media (width >= 64rem) {
+    font-variation-settings: "wdth" 125;
+  }
+  &:lang(zh) {
+    font-size: calc(var(--text-display-2xl) * 0.8);
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+}
+@utility type-display-xl {
+  font-family: var(--font-stack-display);
+  font-size: var(--text-display-xl);
+  line-height: var(--text-display-xl--line-height);
+  letter-spacing: var(--text-display-xl--letter-spacing);
+  font-weight: var(--text-display-xl--font-weight);
+  font-variation-settings: "wdth" 112;
+  @media (width >= 64rem) {
+    font-variation-settings: "wdth" 125;
+  }
+  &:lang(zh) {
+    font-size: calc(var(--text-display-xl) * 0.85);
+    line-height: 1.25;
+    letter-spacing: 0;
+  }
+}
+@utility type-display-lg {
+  font-family: var(--font-stack-display);
+  font-size: var(--text-display-lg);
+  line-height: var(--text-display-lg--line-height);
+  letter-spacing: var(--text-display-lg--letter-spacing);
+  font-weight: var(--text-display-lg--font-weight);
+  font-variation-settings: "wdth" 112;
+  &:lang(zh) {
+    font-size: calc(var(--text-display-lg) * 0.85);
+    line-height: 1.3;
+    letter-spacing: 0;
+  }
+}
+@utility type-heading-lg {
+  font-family: var(--font-stack-display);
+  font-size: var(--text-heading-lg);
+  line-height: var(--text-heading-lg--line-height);
+  letter-spacing: var(--text-heading-lg--letter-spacing);
+  font-weight: var(--text-heading-lg--font-weight);
+  font-variation-settings: "wdth" 100;
+  &:lang(zh) {
+    line-height: 1.35;
+    letter-spacing: 0;
+  }
+}
+@utility type-heading-md {
+  font-family: var(--font-stack-display);
+  font-size: var(--text-heading-md);
+  line-height: var(--text-heading-md--line-height);
+  letter-spacing: var(--text-heading-md--letter-spacing);
+  font-weight: var(--text-heading-md--font-weight);
+  font-variation-settings: "wdth" 100;
+  &:lang(zh) {
+    line-height: 1.4;
+    letter-spacing: 0;
+  }
+}
+@utility type-heading-sm {
+  font-family: var(--font-stack-display);
+  font-size: var(--text-heading-sm);
+  line-height: var(--text-heading-sm--line-height);
+  letter-spacing: var(--text-heading-sm--letter-spacing);
+  font-weight: var(--text-heading-sm--font-weight);
+  font-variation-settings: "wdth" 100;
+  &:lang(zh) {
+    line-height: 1.45;
+  }
+}
+@utility type-numeral {
+  font-family: var(--font-stack-display);
+  font-size: var(--text-numeral);
+  line-height: var(--text-numeral--line-height);
+  letter-spacing: var(--text-numeral--letter-spacing);
+  font-weight: var(--text-numeral--font-weight);
+  font-variation-settings: "wdth" 100;
+  font-variant-numeric: tabular-nums;
+}
+/* Wayfinding labels: station names, line names, timetable columns */
+@utility type-sign {
+  font-family: var(--font-stack-display);
+  font-size: var(--text-sign);
+  line-height: var(--text-sign--line-height);
+  letter-spacing: var(--text-sign--letter-spacing);
+  font-weight: var(--text-sign--font-weight);
+  font-variation-settings: "wdth" 87.5;
+  font-variant-numeric: tabular-nums;
+  &:lang(zh) {
+    line-height: 1.4;
+  }
+}
+@utility type-kicker {
+  font-family: var(--font-stack-display);
+  font-size: var(--text-kicker);
+  line-height: var(--text-kicker--line-height);
+  letter-spacing: var(--text-kicker--letter-spacing);
+  font-weight: var(--text-kicker--font-weight);
+  font-variation-settings: "wdth" 100;
+  text-transform: uppercase;
+  &:lang(zh) {
+    font-size: 0.875rem;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+}
+@utility type-ui {
+  font-family: var(--font-stack-display);
+  font-size: var(--text-ui);
+  line-height: var(--text-ui--line-height);
+  letter-spacing: var(--text-ui--letter-spacing);
+  font-weight: var(--text-ui--font-weight);
+  font-variation-settings: "wdth" 100;
+}
+@utility type-lede {
+  font-family: var(--font-stack-sans);
+  font-size: var(--text-lede);
+  line-height: var(--text-lede--line-height);
+  letter-spacing: var(--text-lede--letter-spacing);
+  font-weight: var(--text-lede--font-weight);
+  &:lang(zh) {
+    line-height: 1.7;
+  }
+}
+@utility type-body-lg {
+  font-family: var(--font-stack-sans);
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg--line-height);
+  letter-spacing: var(--text-body-lg--letter-spacing);
+  font-weight: var(--text-body-lg--font-weight);
+  &:lang(zh) {
+    line-height: 1.8;
+  }
+}
+@utility type-body {
+  font-family: var(--font-stack-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  letter-spacing: var(--text-body--letter-spacing);
+  font-weight: var(--text-body--font-weight);
+  &:lang(zh) {
+    line-height: 1.8;
+  }
+}
+@utility type-body-sm {
+  font-family: var(--font-stack-sans);
+  font-size: var(--text-body-sm);
+  line-height: var(--text-body-sm--line-height);
+  letter-spacing: var(--text-body-sm--letter-spacing);
+  font-weight: var(--text-body-sm--font-weight);
+  &:lang(zh) {
+    line-height: 1.7;
+  }
+}
+@utility type-caption {
+  font-family: var(--font-stack-sans);
+  font-size: var(--text-caption);
+  line-height: var(--text-caption--line-height);
+  letter-spacing: var(--text-caption--letter-spacing);
+  font-weight: var(--text-caption--font-weight);
+  &:lang(zh) {
+    line-height: 1.6;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5. NETWORK MOTIFS — the signature of the system
+   Color comes from --line: brand red by default, or a division via
+   data-line="humas" (etc.) on the element or any ancestor.
+   -------------------------------------------------------------------------- */
+
+/* Route line, horizontal (default) or vertical (route-v) */
+@utility route {
+  display: block;
+  height: 6px;
+  border-radius: 9999px;
+  background-color: var(--line);
+}
+@utility route-v {
+  display: block;
+  width: 6px;
+  border-radius: 9999px;
+  background-color: var(--line);
+}
+
+/* Station: a stop on a line (upcoming / not yet reached) */
+@utility station {
+  display: inline-block;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background-color: var(--color-bg);
+  border: 4px solid var(--line);
+}
+/* Passed station: filled */
+@utility station-passed {
+  background-color: var(--line);
+}
+/* "You are here": filled with a halo ring */
+@utility station-here {
+  background-color: var(--line);
+  box-shadow: 0 0 0 3px var(--color-bg), 0 0 0 6px var(--line);
+}
+/* Interchange: where lines meet (a campus with several divisions, a joint event) */
+@utility station-interchange {
+  display: inline-block;
+  flex: none;
+  width: 32px;
+  height: 18px;
+  border-radius: 9999px;
+  background-color: var(--color-bg);
+  border: 4px solid var(--color-text);
+}
+
+/* Line badge: the division code, like a metro line bullet */
+@utility line-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 1.5rem;
+  padding-inline: 0.375rem;
+  border-radius: 0.375rem;
+  background-color: var(--line);
+  color: var(--color-line-fg);
+  font-family: var(--font-stack-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variation-settings: "wdth" 75;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Route draws in as the reader scrolls (CSS only; static when unsupported) */
+@utility route-draw {
+  transform-origin: left center;
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: route-draw linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 35%;
+    }
+  }
+}
+
+/* The PPI mark: red on light, white on dark and tone-ink (see PpiMark) */
+@utility mark-red {
+  display: var(--mark-red);
+}
+@utility mark-white {
+  display: var(--mark-white);
+}
+
+/* --------------------------------------------------------------------------
+   6. REDUCED MOTION
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

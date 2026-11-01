@@ -1,0 +1,38 @@
+/* Docs-site chrome only: code blocks. The design system itself lives in
+   @ppitsz/ui/globals.css. */
+
+code,
+kbd,
+pre {
+  font-family: ui-monospace, "SFMono-Regular", "Cascadia Code", Menlo, Consolas,
+    "Liberation Mono", monospace;
+}
+
+.docs-code pre {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  background: transparent !important;
+}
+
+/* Shiki emits both themes as CSS variables; pick by the active scope. */
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .shiki,
+  :root:not([data-theme="light"]) .shiki span {
+    color: var(--shiki-dark);
+  }
+}
+[data-theme="dark"] .shiki,
+[data-theme="dark"] .shiki span,
+.tone-ink .shiki,
+.tone-ink .shiki span {
+  color: var(--shiki-dark);
+}
+[data-theme="light"] .shiki,
+[data-theme="light"] .shiki span {
+  color: var(--shiki-light);
+}

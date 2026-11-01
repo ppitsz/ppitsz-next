@@ -1,0 +1,10 @@
+{
+  "extends": "@ppitsz/typescript-config/react-library.json",
+  "compilerOptions": {
+    "paths": {
+      "@ppitsz/ui/*": ["./src/*"]
+    }
+  },
+  "include": ["."],
+  "exclude": ["node_modules", "dist"]
+}

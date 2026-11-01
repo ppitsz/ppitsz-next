@@ -1,0 +1,1 @@
+export { default } from "@ppitsz/ui/postcss.config";
