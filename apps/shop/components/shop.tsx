@@ -134,7 +134,7 @@ function WindowNotice({ catalog }: { catalog: Catalog }) {
       <AlertDescription>
         {catalog.offers.booth
           ? `What's left can be bought in person at ${catalog.pickupInfo}.`
-          : "Thank you. Watch the PPITSZ WeChat group for the next campaign."}
+          : "Thank you. Watch the PPITSZ socials for the next campaign."}
       </AlertDescription>
     </Alert>
   )

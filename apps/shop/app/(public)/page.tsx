@@ -65,7 +65,7 @@ export default async function HomePage() {
             <p className="type-kicker text-muted">Danus PPIT Shenzhen</p>
             <h1 className="type-display-2xl text-text">PPITSZ Shop</h1>
             <p className="max-w-[56ch] type-lede text-muted">
-              No campaigns are open. Watch the PPITSZ WeChat group for the next one.
+              No campaigns are open. Watch the PPITSZ socials for the next one.
             </p>
           </Container>
         </section>
