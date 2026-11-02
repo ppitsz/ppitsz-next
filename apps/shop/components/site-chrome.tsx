@@ -90,7 +90,7 @@ export function SiteChrome({
         about={
           <>
             PPITSZ Shop is run by Danus of PPI Tiongkok Cabang Shenzhen. A problem with an order? Contact Danus
-            {CONTACT.wechatId ? ` on WeChat at ${CONTACT.wechatId}` : " in the PPITSZ WeChat group"} and give your order
+            {CONTACT.wechatId ? ` on WeChat at ${CONTACT.wechatId}` : " on the PPITSZ socials"} and give your order
             code.
           </>
         }
