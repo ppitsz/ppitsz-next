@@ -1,0 +1,158 @@
+import { connection } from "next/server"
+import NextLink from "next/link"
+
+import { Container } from "@ppitsz/ui/components/container"
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@ppitsz/ui/components/empty"
+import { StatusBadge } from "@ppitsz/ui/components/status-badge"
+import { fulfillmentNote, orderingNote } from "@/lib/campaign-copy"
+import { mediaUrl, toCatalog } from "@/lib/catalog"
+import { splitOrders } from "@/lib/domain/account"
+import { campaignPhase } from "@/lib/domain/campaign"
+import { bySlotTime } from "@/lib/domain/delivery"
+import type { Campaign } from "@/lib/domain/types"
+import { featuredOf, showcaseFilters, showcaseOf } from "@/lib/home"
+import { getBuyer } from "@/lib/server/auth"
+import { listBundles, listBuyerOrders, listCampaigns, listProducts, slotPlaces } from "@/lib/store"
+import { Hero } from "@/components/home/hero"
+import { HowTo } from "@/components/home/how-to"
+import { Showcase } from "@/components/home/showcase"
+import { YourOrders } from "@/components/home/your-orders"
+
+/** How many upcoming delivery slots the how-to band lists. */
+const SLOTS_SHOWN = 3
+
+/**
+ * The shop's front: the first open campaign as a hero, the buyer's orders,
+ * what every open campaign sells, and how ordering works. Buying itself
+ * happens on each campaign's page.
+ */
+export default async function HomePage() {
+  await connection()
+  const now = new Date()
+  const [campaigns, buyer] = await Promise.all([listCampaigns(), getBuyer()])
+  const open = campaigns.filter((c) => c.status === "open")
+
+  const [orders, sales] = await Promise.all([
+    buyer ? listBuyerOrders(buyer.uid, now) : Promise.resolve([]),
+    Promise.all(
+      open.map(async (campaign) => {
+        const [products, bundles, places] = await Promise.all([
+          listProducts(campaign.id, { includeInactive: true, now }),
+          listBundles(campaign.id),
+          slotPlaces(campaign, now),
+        ])
+        const catalog = toCatalog(campaign, products, bundles, { now, slotPlaces: places })
+        const items = showcaseOf(catalog, products)
+        return { campaign, catalog, bundles, items }
+      })
+    ),
+  ])
+  const { active, done } = splitOrders(orders)
+  const items = sales.flatMap((s) => s.items)
+  const [lead, ...others] = sales
+  const collecting = open.filter((c) => c.offers.pickup && c.pickupInfo)
+  const slots = bySlotTime(open.filter((c) => c.offers.delivery).flatMap((c) => c.deliverySlots))
+    .filter((s) => s.startsAt > now)
+    .slice(0, SLOTS_SHOWN)
+
+  return (
+    <>
+      {lead ? (
+        <Hero campaign={lead.campaign} featured={featuredOf(lead.campaign, lead.catalog, lead.items, lead.bundles)} now={now} />
+      ) : (
+        <section className="tone-ink">
+          <Container className="flex flex-col gap-4 py-16 lg:py-24">
+            <p className="type-kicker text-muted">Danus PPIT Shenzhen</p>
+            <h1 className="type-display-2xl text-text">PPITSZ Shop</h1>
+            <p className="max-w-[56ch] type-lede text-muted">
+              No campaigns are open. Watch the PPITSZ WeChat group for the next one.
+            </p>
+          </Container>
+        </section>
+      )}
+
+      <YourOrders
+        buyer={buyer}
+        active={active}
+        doneCount={done.length}
+        campaigns={new Map(campaigns.map((c) => [c.id, c]))}
+      />
+
+      {others.length > 0 && (
+        <Container className="@container flex flex-col gap-4 pt-12 lg:pt-16">
+          <h2 className="type-heading-lg text-text">Other campaigns</h2>
+          <ul className="flex flex-col">
+            {others.map(({ campaign }) => (
+              <li key={campaign.id} className="border-t last:border-b">
+                <CampaignRow campaign={campaign} now={now} />
+              </li>
+            ))}
+          </ul>
+        </Container>
+      )}
+
+      {open.length > 0 && (
+        <Container className="flex flex-col gap-8 py-12 lg:py-16">
+          <div className="flex flex-col gap-3">
+            <p className="type-kicker text-accent-text">In the shop now</p>
+            <h2 className="type-display-lg text-text">On sale now.</h2>
+          </div>
+          {items.length === 0 ? (
+            <Empty>
+              <EmptyHeader>
+                <EmptyTitle>Products are coming soon.</EmptyTitle>
+                <EmptyDescription>Check again later, or open the campaign's page.</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            <Showcase items={items} filters={showcaseFilters(items)} showCampaign={open.length > 1} />
+          )}
+        </Container>
+      )}
+
+      <HowTo
+        offers={{
+          delivery: open.some((c) => c.offers.delivery),
+          pickup: open.length === 0 || open.some((c) => c.offers.pickup),
+        }}
+        pickupPlaces={[...new Set(collecting.map((c) => c.pickupInfo))]}
+        slots={slots}
+      />
+    </>
+  )
+}
+
+function CampaignRow({ campaign, now }: { campaign: Campaign; now: Date }) {
+  const phase = campaignPhase(campaign, now)
+  const how = phase === "upcoming" || phase === "online" ? fulfillmentNote(campaign) : ""
+
+  return (
+    <div className="group/row relative grid gap-4 py-6 hover:bg-surface-strong has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-focus @xl:grid-cols-[10rem_minmax(0,1fr)] @xl:items-center @xl:px-2">
+      {campaign.coverImagePath ? (
+        // eslint-disable-next-line @next/next/no-img-element -- served by /media, already sized
+        <img
+          src={mediaUrl(campaign.coverImagePath)}
+          alt=""
+          className="aspect-[3/2] w-full rounded-xl bg-surface object-cover"
+        />
+      ) : (
+        <div aria-hidden className="hidden aspect-[3/2] w-full rounded-xl bg-surface @xl:block" />
+      )}
+      <div className="flex flex-col gap-2">
+        <StatusBadge domain="campaign" value={phase} />
+        <h3 className="type-heading-lg text-text">
+          <NextLink
+            href={`/${campaign.slug}`}
+            className="outline-none after:absolute after:inset-0 underline-offset-4 group-hover/row:underline"
+          >
+            {campaign.name}
+          </NextLink>
+        </h3>
+        {campaign.tagline && <p className="max-w-[66ch] type-body text-text">{campaign.tagline}</p>}
+        <p className="type-body-sm text-muted">
+          {orderingNote(campaign, now)}.{how && ` ${how}`}
+        </p>
+      </div>
+    </div>
+  )
+}

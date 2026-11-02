@@ -1,0 +1,26 @@
+{
+  "extends": "@ppitsz/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "types": ["bun"],
+    "paths": {
+      "@/*": ["./*"],
+      "@ppitsz/ui/*": ["../../packages/ui/src/*"],
+      "@ppitsz/accounts/*": ["../../packages/accounts/src/*"]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    "next-env.d.ts",
+    "next.config.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.mts",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}
