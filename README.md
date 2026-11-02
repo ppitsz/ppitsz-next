@@ -16,7 +16,7 @@ The design system documents itself: each page in [`apps/docs/app/(docs)/`](apps/
 
 ## Getting started
 
-Requires [Bun](https://bun.sh) 1.3+ and Node 20.9+.
+Requires [Bun](https://bun.sh) 1.3+ and Node 20.19+ or 22.12+.
 
 ```bash
 bun install
