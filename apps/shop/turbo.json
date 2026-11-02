@@ -1,0 +1,22 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "env": [
+        "FIREBASE_PROJECT_ID",
+        "FIREBASE_STORAGE_BUCKET",
+        "FIREBASE_API_KEY",
+        "FIREBASE_CLIENT_EMAIL",
+        "FIREBASE_PRIVATE_KEY",
+        "SITE_URL",
+        "SESSION_COOKIE_DOMAIN",
+        "ACCOUNT_URL",
+        "SHOP_URL",
+        "FORMS_URL",
+        "CRON_SECRET",
+        "ALERT_WEBHOOK_URL"
+      ]
+    }
+  }
+}
