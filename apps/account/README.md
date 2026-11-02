@@ -29,7 +29,7 @@ Environment (see `.env.example`): the `FIREBASE_*` variables of `ppitsz-next`, `
 
 Without `FORMS_URL`, the home page leaves out the Forms cards, so a deploy without Forms has no dead links.
 
-Without `RESEND_API_KEY`, Firebase sends the reset email itself (from `noreply@<project>.firebaseapp.com`, worded by its template). Its link must open our page, not Google's: in the Firebase console › Authentication › Templates › Password reset, set **Customize action URL** to `<ACCOUNT_URL>/reset-password`. That setting is for the whole project, so local development's resets link there too.
+Without `RESEND_API_KEY`, Firebase sends the reset email itself (from `noreply@<project>.firebaseapp.com`, worded by its template). Its link must open our page, not Google's: in the Firebase console › Authentication › Templates › Password reset, set **Customize action URL** to `<ACCOUNT_URL>/reset-password`. Local development still writes its own link to `.outbox/`.
 
 Once, at cutover:
 
