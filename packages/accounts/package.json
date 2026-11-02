@@ -1,0 +1,33 @@
+{
+  "name": "@ppitsz/accounts",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint",
+    "format": "prettier --write \"**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test src"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0"
+  },
+  "peerDependencies": {
+    "next": "16.4.3",
+    "react": "19.3.0"
+  },
+  "devDependencies": {
+    "@ppitsz/eslint-config": "workspace:*",
+    "@ppitsz/typescript-config": "workspace:*",
+    "@types/bun": "^1.4.3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "eslint": "^10",
+    "next": "16.4.3",
+    "react": "19.3.0",
+    "typescript": "^7.0.2"
+  },
+  "exports": {
+    "./*": "./src/*.ts"
+  }
+}

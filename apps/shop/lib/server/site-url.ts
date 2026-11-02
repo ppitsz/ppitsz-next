@@ -1,0 +1,10 @@
+import { headers } from "next/headers"
+
+/** The public origin, for links that leave the page (the order QR). */
+export async function siteOrigin() {
+  if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, "")
+  const h = await headers()
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3001"
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https")
+  return `${proto}://${host}`
+}

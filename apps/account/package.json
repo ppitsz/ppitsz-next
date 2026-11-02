@@ -1,0 +1,36 @@
+{
+  "name": "account",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3003",
+    "build": "next build",
+    "start": "next start --port 3003",
+    "lint": "eslint",
+    "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
+    "@ppitsz/accounts": "workspace:*",
+    "@ppitsz/ui": "workspace:*",
+    "firebase-admin": "^14.5.0",
+    "next": "16.4.3",
+    "next-themes": "^0.4.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "sonner": "^2.0.8"
+  },
+  "devDependencies": {
+    "@ppitsz/eslint-config": "workspace:^",
+    "@ppitsz/typescript-config": "workspace:*",
+    "@tailwindcss/postcss": "^4",
+    "@types/bun": "^1.4.3",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^10",
+    "typescript": "^7.0.2"
+  }
+}
