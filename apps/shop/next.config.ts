@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@ppitsz/ui", "@ppitsz/accounts"],
   // The Admin SDK talks to Google over gRPC; keep it out of the bundle.
   serverExternalPackages: ["firebase-admin"],
+  // The share images read their fonts from disk (lib/og.ts); ship them with those routes.
+  outputFileTracingIncludes: {
+    "/opengraph-image*": ["./assets/fonts/*.woff"],
+    "/**/opengraph-image*": ["./assets/fonts/*.woff"],
+  },
   experimental: {
     serverActions: {
       // Payment proof screenshots (lib/store/media.ts PROOF_MAX_BYTES) plus form fields.

@@ -54,6 +54,8 @@ export const getBuyer = cache(async (): Promise<BuyerProfile | null> => {
       name: session.name === session.email ? "" : session.name,
       wechatId: "",
       phone: "",
+      avatarPath: "",
+      providerAvatarPath: "",
       createdAt: now,
       updatedAt: now,
     }

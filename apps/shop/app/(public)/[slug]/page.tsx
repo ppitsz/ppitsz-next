@@ -5,10 +5,11 @@ import { connection } from "next/server"
 
 import { Alert, AlertDescription, AlertTitle } from "@ppitsz/ui/components/alert"
 import { Container } from "@ppitsz/ui/components/container"
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@ppitsz/ui/components/empty"
-import { Link } from "@ppitsz/ui/components/link"
-import { RouteList, RouteStop } from "@ppitsz/ui/components/network/route"
-import { DELIVERY_ROUTE, ORDER_ROUTE } from "@/lib/domain/order"
+import { ServiceNotice } from "@ppitsz/ui/components/blocks/service-notice"
+import { Timetable } from "@ppitsz/ui/components/blocks/timetable"
+import { StationNameplate } from "@ppitsz/ui/components/network/station-nameplate"
+import { Route, RouteList, RouteStop } from "@ppitsz/ui/components/network/route"
+import { campaignRoute } from "@/lib/domain/order"
 import { fulfillmentNote, orderingNote } from "@/lib/campaign-copy"
 import { toCatalog } from "@/lib/catalog"
 import { getBuyer } from "@/lib/server/auth"
@@ -34,30 +35,33 @@ export default async function CatalogPage({ params }: PageProps<"/[slug]">) {
   const campaign = await visibleCampaign((await params).slug)
   if (!campaign) notFound()
 
-  const header = (
-    <div className="flex max-w-[56rem] flex-col gap-4">
-      <Link as={NextLink} href="/" variant="standalone" className="self-start">
-        All campaigns
-      </Link>
-      <p className="type-kicker text-accent-text">Danus PPIT Shenzhen</p>
-      <h1 className="type-display-xl text-text">{campaign.name}</h1>
-      {campaign.tagline && <p className="max-w-[66ch] type-lede text-muted">{campaign.tagline}</p>}
-    </div>
+  // The nameplate spans the content column, the same edges as the catalog
+  // below. The description is part of the sign: what this campaign is, kept
+  // apart from how ordering works.
+  const nameplate = (
+    <StationNameplate
+      kicker="Danus PPIT Shenzhen"
+      name={campaign.name}
+      line="danus"
+      lines={["danus"]}
+      linkAs={NextLink}
+      previous={{ label: "All campaigns", href: "/" }}
+      next={campaign.status === "closed" ? undefined : { label: "Checkout" }}
+    >
+      {campaign.tagline && <p className="max-w-[60ch] type-lede text-text">{campaign.tagline}</p>}
+    </StationNameplate>
   )
 
   if (campaign.status === "closed") {
     return (
-      <Container className="flex flex-col gap-10 pt-10 pb-16 lg:pt-16">
-        {header}
-        <Empty>
-          <EmptyHeader>
-            <EmptyTitle>This campaign has ended.</EmptyTitle>
-            <EmptyDescription>
-              Thank you for supporting Danus. You can still open your orders from{" "}
-              <NextLink href="/orders">Your orders</NextLink> in your account.
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+      <Container className="flex flex-col gap-8 pt-10 pb-16 lg:pt-16">
+        {nameplate}
+        <ServiceNotice kind="ended" lines={["danus"]} title="This campaign has ended">
+          <p>
+            Thank you for supporting Danus. You can still open your orders from{" "}
+            <NextLink href="/orders">Your orders</NextLink> in your account.
+          </p>
+        </ServiceNotice>
       </Container>
     )
   }
@@ -72,7 +76,7 @@ export default async function CatalogPage({ params }: PageProps<"/[slug]">) {
   const catalog = toCatalog(campaign, products, bundles, { now, slotPlaces: places })
   const { delivery, pickup } = campaign.offers
   // The last stop: Delivery, Pick up, or Receive when the buyer picks at checkout.
-  const route = delivery && pickup ? [...ORDER_ROUTE.slice(0, 3), "Receive"] : delivery ? DELIVERY_ROUTE : ORDER_ROUTE
+  const route = campaignRoute(campaign.offers)
   const routeNotes = [...ROUTE_NOTES, LAST_NOTE[delivery && pickup ? "both" : delivery ? "delivery" : "pickup"]]
 
   return (
@@ -86,33 +90,54 @@ export default async function CatalogPage({ params }: PageProps<"/[slug]">) {
             </AlertDescription>
           </Alert>
         )}
-        {header}
-        <p className="-mt-4 max-w-[66ch] type-body text-muted">
-          {orderingNote(campaign, now)}
-          {campaign.onlineClosesAt || campaign.onlineOpensAt ? " Shenzhen time" : ""}. {fulfillmentNote(campaign)}
-        </p>
+        {nameplate}
 
-        {(delivery || pickup) && (
-        <div data-line="danus" className="max-w-[56rem]">
-          <h2 className="sr-only">Cara memesan</h2>
-          <RouteList orientation="vertical" className="sm:hidden">
-            {route.map((label, i) => (
-              <RouteStop key={label} state="upcoming">
-                <span className="type-sign text-text">{label}</span>
-                <span className="type-caption text-muted">{routeNotes[i]}</span>
-              </RouteStop>
-            ))}
-          </RouteList>
-          <RouteList orientation="horizontal" className="hidden sm:flex">
-            {route.map((label, i) => (
-              <RouteStop key={label} state="upcoming">
-                <span className="type-sign text-text">{label}</span>
-                <span className="type-caption text-muted">{routeNotes[i]}</span>
-              </RouteStop>
-            ))}
-          </RouteList>
-        </div>
-        )}
+        {/* Two columns from @4xl: how ordering works, with its times beside it. */}
+        <section aria-labelledby="how-to-order" className="@container">
+          <div className="grid items-start gap-8 @4xl:grid-cols-[minmax(0,1fr)_20rem] @4xl:gap-12">
+            <div className="flex min-w-0 flex-col gap-4">
+              <Route data-line="danus" className="w-10" />
+              <h2 id="how-to-order" className="type-heading-md text-text">
+                How to order
+              </h2>
+              <p className="max-w-[66ch] type-body text-muted">
+                {orderingNote(campaign, now)}
+                {campaign.onlineClosesAt || campaign.onlineOpensAt ? " Shenzhen time" : ""}. {fulfillmentNote(campaign)}
+              </p>
+              {(delivery || pickup) && (
+                <div data-line="danus" className="@container/route pt-2">
+                  <RouteList orientation="vertical" className="@xl/route:hidden">
+                    {route.map((label, i) => (
+                      <RouteStop key={label} state="upcoming">
+                        <span className="type-sign text-text">{label}</span>
+                        <span className="type-caption text-muted">{routeNotes[i]}</span>
+                      </RouteStop>
+                    ))}
+                  </RouteList>
+                  <RouteList orientation="horizontal" className="hidden @xl/route:flex">
+                    {route.map((label, i) => (
+                      <RouteStop key={label} state="upcoming">
+                        <span className="type-sign text-text">{label}</span>
+                        <span className="type-caption text-muted">{routeNotes[i]}</span>
+                      </RouteStop>
+                    ))}
+                  </RouteList>
+                </div>
+              )}
+            </div>
+            {(delivery || pickup) && (campaign.onlineOpensAt || campaign.onlineClosesAt) && (
+              <Timetable
+                title="Ordering online"
+                line="danus"
+                headingLevel="h3"
+                rows={[
+                  { label: "First order", at: campaign.onlineOpensAt, none: "Open now" },
+                  { label: "Last order", at: campaign.onlineClosesAt, none: "No cutoff" },
+                ]}
+              />
+            )}
+          </div>
+        </section>
       </Container>
 
       <Shop catalog={catalog} signedIn={!!buyer} />

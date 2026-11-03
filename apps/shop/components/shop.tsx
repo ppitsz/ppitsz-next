@@ -9,11 +9,14 @@ import { Badge } from "@ppitsz/ui/components/badge"
 import { Button, buttonVariants } from "@ppitsz/ui/components/button"
 import { Container } from "@ppitsz/ui/components/container"
 import { NativeSelect, NativeSelectOption } from "@ppitsz/ui/components/native-select"
+import { Route } from "@ppitsz/ui/components/network/route"
+import { RouteStrip } from "@ppitsz/ui/components/network/route-strip"
 import { formatDate, formatTime, formatYuan } from "@ppitsz/ui/lib/format"
 import { cn } from "@ppitsz/ui/lib/utils"
 import { CATEGORY_LABELS, type Catalog, type CatalogBundle, type CatalogProduct } from "@/lib/catalog"
 import { bundlesLeft, contentsLabel } from "@/lib/domain/bundle"
 import { MAX_QTY_PER_LINE, type CartChoice } from "@/lib/domain/cart"
+import { campaignRoute } from "@/lib/domain/order"
 import { CATEGORIES } from "@/lib/domain/types"
 import { useCart } from "@/lib/client/local-store"
 import { cartSummary } from "@/lib/client/cart-summary"
@@ -31,59 +34,104 @@ export function Shop({ catalog, signedIn }: { catalog: Catalog; signedIn: boolea
   const cart = useCart(catalog.campaignId)
   const summary = cartSummary(cart.lines, catalog)
   const canOrder = catalog.window === "open"
+  const categories = CATEGORIES.filter((category) => catalog.products.some((p) => p.category === category))
+  // The catalog's stations: its sections, for the rail beside it.
+  const sections = [
+    ...(catalog.bundles.length > 0 ? [{ id: "category-bundles", label: "Bundles" }] : []),
+    ...categories.map((category) => ({ id: `category-${category}`, label: CATEGORY_LABELS[category] })),
+  ]
+  const withRail = sections.length >= 2
+  const lastStop = campaignRoute(catalog.offers).at(-1)
 
   return (
     <>
-      <Container className={cn("flex flex-col gap-12 pb-16", summary.count > 0 && "pb-32")}>
-        <WindowNotice catalog={catalog} />
+      <Container data-line="danus" className={cn("@container pb-16", summary.count > 0 && "pb-32")}>
+        <div className={cn("flex flex-col gap-12", withRail && "@5xl:grid @5xl:grid-cols-[10rem_minmax(0,1fr)] @5xl:gap-12")}>
+          {withRail && (
+            <>
+              {/* Phones and narrow columns: the sections as a strip under the header. */}
+              <div className="sticky top-17.5 z-20 -mx-4 border-b bg-bg px-4 py-3 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 @5xl:hidden">
+                <RouteStrip variant="strip" sections={sections} aria-label="Catalog" />
+              </div>
+              <aside className="hidden @5xl:block">
+                <div className="sticky top-28 flex flex-col gap-5">
+                  <p className="type-kicker text-muted">Catalog</p>
+                  <RouteStrip sections={sections} aria-label="Catalog" />
+                </div>
+              </aside>
+            </>
+          )}
+          <div className="flex min-w-0 flex-col gap-12">
+            <WindowNotice catalog={catalog} />
 
-        {catalog.bundles.length > 0 && (
-          <section aria-labelledby="category-bundles" className="flex flex-col gap-2">
-            <h2 id="category-bundles" className="type-display-lg text-text">
-              Bundles
-            </h2>
-            <ul className="@container flex flex-col">
-              {catalog.bundles.map((bundle) => (
-                <BundleRow key={bundle.id} bundle={bundle} cart={cart} canOrder={canOrder} />
-              ))}
-            </ul>
-          </section>
-        )}
+            {catalog.bundles.length > 0 && (
+              <section aria-labelledby="category-bundles" className="flex flex-col gap-2">
+                <Route className="mb-2 w-10" />
+                <h2 id="category-bundles" className="scroll-mt-32 type-display-lg text-text">
+                  Bundles
+                </h2>
+                <ul className="@container flex flex-col">
+                  {catalog.bundles.map((bundle) => (
+                    <BundleRow key={bundle.id} bundle={bundle} cart={cart} canOrder={canOrder} />
+                  ))}
+                </ul>
+              </section>
+            )}
 
-        {CATEGORIES.map((category) => {
-          const products = catalog.products.filter((p) => p.category === category)
-          if (products.length === 0) return null
-          return (
-            <section key={category} aria-labelledby={`category-${category}`} className="flex flex-col gap-2">
-              <h2 id={`category-${category}`} className="type-display-lg text-text">
-                {CATEGORY_LABELS[category]}
-              </h2>
-              {products.some((p) => p.allergens.length > 0) && (
-                <Alert variant="warning" className="my-2">
-                  <AlertTitle>Check the allergens</AlertTitle>
-                  <AlertDescription>
-                    Allergens are listed on every product, and the kitchen handles other ingredients too. Have a serious allergy? Ask
-                    Danus on WeChat before ordering.
-                  </AlertDescription>
-                </Alert>
-              )}
-              <ul className="@container flex flex-col">
-                {products.map((product) => (
-                  <ProductRow key={product.id} product={product} cart={cart} canOrder={canOrder} />
-                ))}
-              </ul>
-            </section>
-          )
-        })}
+            {categories.map((category) => {
+              const products = catalog.products.filter((p) => p.category === category)
+              return (
+                <section key={category} aria-labelledby={`category-${category}`} className="flex flex-col gap-2">
+                  <Route className="mb-2 w-10" />
+                  <h2 id={`category-${category}`} className="scroll-mt-32 type-display-lg text-text">
+                    {CATEGORY_LABELS[category]}
+                  </h2>
+                  {products.some((p) => p.allergens.length > 0) && (
+                    <Alert variant="warning" className="my-2">
+                      <AlertTitle>Check the allergens</AlertTitle>
+                      <AlertDescription>
+                        Allergens are listed on every product, and the kitchen handles other ingredients too. Have a serious allergy? Ask
+                        Danus on WeChat before ordering.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  <ul className="@container flex flex-col">
+                    {products.map((product) => (
+                      <ProductRow key={product.id} product={product} cart={cart} canOrder={canOrder} />
+                    ))}
+                  </ul>
+                </section>
+              )
+            })}
+          </div>
+        </div>
       </Container>
 
+      {/* The cart as the screen in a train: what you carry, where it goes next, and the way there. */}
       {summary.count > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-bg">
-          <Container className="flex h-20 items-center justify-between gap-4">
+        <div className="tone-ink fixed inset-x-0 bottom-0 z-30 pb-[env(safe-area-inset-bottom)]" data-slot="cart-bar">
+          <div data-line="danus" aria-hidden className="line-stripe" />
+          <Container className="@container flex h-20 items-center justify-between gap-4">
             <p className="flex flex-col">
-              <span className="type-caption text-muted">{summary.count} item</span>
+              <span className="type-kicker text-muted">
+                {summary.count} {summary.count === 1 ? "item" : "items"}
+              </span>
               <span className="type-heading-md text-text">{formatYuan(summary.totalFen)}</span>
             </p>
+            {canOrder && (
+              <p className="hidden items-baseline gap-x-5 @2xl:flex">
+                <span className="flex items-baseline gap-2">
+                  <span className="type-kicker text-muted">Next</span>
+                  <span className="type-sign text-text">{signedIn ? "Checkout" : "Sign in"}</span>
+                </span>
+                {lastStop && (
+                  <span className="flex items-baseline gap-2">
+                    <span className="type-kicker text-muted">Towards</span>
+                    <span className="type-sign text-text">{lastStop}</span>
+                  </span>
+                )}
+              </p>
+            )}
             {canOrder && (
               <Link
                 href={

@@ -18,6 +18,14 @@ _Avoid_: Danus dashboard, Forms staff, admin panel
 One person's email and password, with a profile holding their name and, optionally, WeChat ID and phone. The same account buys in the shop, may sign in to Forms, and carries any staff roles. Signing in goes through our server, so it works without a VPN. An account with no role is an ordinary account; nothing is stored for that.
 _Avoid_: user, member, login (that is the act)
 
+**Avatar**:
+The photo every app shows beside an account's name, in the profile menu. The person's own photo if they chose one in PPITSZ Account, else a linked sign-in's (Google, later), else their initials. Stored and served by us (ADR 0009).
+_Avoid_: profile picture, pfp, photo (on its own)
+
+**Profile menu**:
+The header's account control in every app: "Sign in" when signed out; otherwise the avatar and first name, opening the name, email, role, the app's own links, "Your account" and "Sign out".
+_Avoid_: user menu, account dropdown
+
 **Role**:
 What an account may do in one app: Admin or Booth staff in the shop, Form admin in Forms, Portal admin in PPITSZ Account. Each app keeps its own (ADR 0004). Panitia isn't a role: it is per form.
 _Avoid_: permission, claim

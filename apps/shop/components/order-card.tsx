@@ -2,7 +2,8 @@ import NextLink from "next/link"
 import { MapPinIcon } from "@phosphor-icons/react/ssr"
 
 import { buttonVariants } from "@ppitsz/ui/components/button"
-import { RouteList, RouteStop, type StopState } from "@ppitsz/ui/components/network/route"
+import { StationCode } from "@ppitsz/ui/components/network/station-code"
+import { StripMap } from "@ppitsz/ui/components/network/strip-map"
 import { StatusBadge } from "@ppitsz/ui/components/status-badge"
 import { formatDate, formatYuan } from "@ppitsz/ui/lib/format"
 import { slotLabel } from "@/lib/campaign-copy"
@@ -27,8 +28,8 @@ export function OrderCard({ order, campaign }: { order: Order; campaign: Pick<Ca
     <article className="flex flex-col gap-5 rounded-xl border bg-bg p-5" aria-labelledby={`order-${order.id}`}>
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h3 id={`order-${order.id}`} className="type-heading-md text-text">
-            Order {order.code}
+          <h3 id={`order-${order.id}`} className="flex flex-wrap items-center gap-3 type-heading-md text-text">
+            Order <StationCode code={order.code} line="danus" />
           </h3>
           <p className="type-caption text-muted">
             {campaign?.name ?? "Danus campaign"} · {formatDate(order.createdAt)} · {formatYuan(order.totalFen)}
@@ -73,25 +74,18 @@ function nextStep(order: Order) {
   return "See order"
 }
 
-/** Order › Pay › Verify › Pick up (or Delivery), with the order's place on it. */
+/** Order › Pay › Verify › Pick up (or Delivery) as a strip map, with the order's place on it. */
 function OrderRoute({ order }: { order: Order }) {
   const stage = routeStage(order.status)
   if (stage === null) return null
-  const finished = order.status === "picked_up"
   const labels = order.delivery ? DELIVERY_ROUTE : ORDER_ROUTE
-  const stateOf = (i: number): StopState => (finished || i < stage ? "passed" : i === stage ? "here" : "upcoming")
-
   return (
-    <div data-line="danus">
-      <RouteList orientation="horizontal" aria-label="Order progress">
-        {labels.map((label, i) => (
-          <RouteStop key={label} state={stateOf(i)} current={!finished && i === stage ? "step" : undefined}>
-            <span className={i === stage && !finished ? "type-caption text-text" : "type-caption text-muted"}>
-              {label}
-            </span>
-          </RouteStop>
-        ))}
-      </RouteList>
-    </div>
+    <StripMap
+      line="danus"
+      stops={labels.map((label) => ({ label }))}
+      current={stage}
+      state={order.status === "picked_up" ? "arrived" : "running"}
+      aria-label="Order progress"
+    />
   )
 }

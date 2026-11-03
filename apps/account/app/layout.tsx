@@ -4,8 +4,10 @@ import { Archivo, Atkinson_Hyperlegible_Next } from "next/font/google"
 import "@ppitsz/ui/globals.css"
 import { Toaster } from "@ppitsz/ui/components/sonner"
 import { SkipLink } from "@ppitsz/ui/components/blocks/brand"
+import { menuAccount } from "@ppitsz/accounts/avatar"
 import { isPortalAdmin } from "@ppitsz/accounts/roles"
 import { getSession } from "@ppitsz/accounts/session"
+import { transferApps } from "@ppitsz/accounts/urls"
 import { Chrome } from "@/components/chrome"
 import { ThemeProvider } from "@/components/theme-provider"
 
@@ -38,13 +40,16 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const session = await getSession()
-  const account = session ? { name: session.name, portalAdmin: await isPortalAdmin(session.uid) } : null
+  const me = session ? await menuAccount() : null
+  const account = session && me ? { ...me, portalAdmin: await isPortalAdmin(session.uid) } : null
   return (
     <html lang="en" suppressHydrationWarning className={`${archivo.variable} ${atkinson.variable}`}>
       <body>
         <ThemeProvider>
           <SkipLink />
-          <Chrome account={account}>{children}</Chrome>
+          <Chrome account={account} transfers={transferApps("account")}>
+            {children}
+          </Chrome>
           <Toaster />
         </ThemeProvider>
       </body>

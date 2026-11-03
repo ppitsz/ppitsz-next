@@ -48,8 +48,9 @@ export default async function MyOrdersPage({ searchParams }: PageProps<"/orders"
       {shown.length === 0 ? (
         <Empty>
           <EmptyHeader>
-            <EmptyTitle>{showDone ? "No finished orders yet." : "No orders in progress."}</EmptyTitle>
+            <EmptyTitle>{showDone ? "No arrivals yet." : "No departures yet."}</EmptyTitle>
             <EmptyDescription>
+              {showDone ? "Orders you have picked up or received show here. " : "Orders you place show here. "}
               <NextLink href="/">See Danus campaigns</NextLink>
             </EmptyDescription>
           </EmptyHeader>

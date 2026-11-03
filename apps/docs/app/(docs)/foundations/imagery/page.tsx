@@ -22,6 +22,7 @@ const APPROVED = [
   "Copy", "Trash", "MagnifyingGlass", "SignOut", "Images", "QrCode", "EnvelopeSimple",
   "Check", "CheckCircle", "Warning", "WarningCircle", "Info", "CircleNotch", "SunDim",
   "Moon", "InstagramLogo", "TiktokLogo", "LinkedinLogo", "YoutubeLogo", "WechatLogo",
+  "ArrowUp", "ExclamationMark", "Storefront", "Ticket",
 ] as const
 
 const RATIOS: [string, string, string][] = [
@@ -150,7 +151,9 @@ export default function ImageryPage() {
           rows={[
             ["16px", "bold", "Inside small buttons, chips, error messages"],
             ["20px", "regular", "Buttons, menu items, notices"],
-            ["24px", "regular", "Icon-only buttons, accordion carets"],
+            ["24px", "regular", "Icon-only buttons, accordion carets, sign pictograms"],
+            ["28px", "bold", "Sign arrows"],
+            ["48–56px", "bold", "The gate symbol"],
           ]}
         />
         <Prose>

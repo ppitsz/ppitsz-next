@@ -32,7 +32,7 @@ export default function ShapePage() {
       href="/foundations/shape"
       kicker="Foundations"
       title="Shape and elevation"
-      lede="Six shapes, each with one job. Radii come from Tailwind's scale. The site is flat: layers come from tone, not shadow."
+      lede="Seven shapes, each with one job. Radii come from Tailwind's scale. The site is flat: layers come from tone, not shadow."
       sections={SECTIONS}
     >
       <DocSection id="language" title="Shape language">
@@ -45,6 +45,7 @@ export default function ShapePage() {
             [<strong key="s">Line</strong>, "Routes, dividers inside network graphics", "The network itself: round caps, constant weight"],
             [<strong key="s">Badge</strong>, "Line badges, tags and status badges (rounded-md)", "Line bullets. Never fully round, so codes don't look like buttons"],
             [<strong key="s">Control</strong>, "Text inputs, selects, textareas and menu items (rounded-lg); checkboxes (a 5px corner)", "Fields you type or pick in: softer than a panel, never a capsule"],
+            [<strong key="s">Ticket notch</strong>, "Tickets only: a 12px half-circle at each end of the perforation (ticket-notch-t, ticket-notch-b)", "The tear-off stub. The only cut corner in the system"],
           ]}
         />
         <Example layout="block" code={`<Button>Register</Button>          // capsule

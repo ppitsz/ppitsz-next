@@ -6,11 +6,13 @@ The PPIT Shenzhen design system, documented in `apps/docs` with one page per fou
 
 | Import | Contents |
 |---|---|
-| `@ppitsz/ui/globals.css` | Tailwind v4 theme: color ramps and semantic tokens, light/dark/tone-ink scopes, the type scale and `type-*` utilities, network utilities (`route`, `station*`, `line-badge`, `route-draw`), motion |
-| `@ppitsz/ui/components/<name>` | shadcn/ui components on Base UI, restyled: `button`, `field`, `input`, `textarea`, `checkbox`, `radio-group`, `native-select`, `badge`, `status-badge`, `toggle` (with `FilterChip`), `card`, `alert` (the notice), `dialog`, `alert-dialog`, `popover`, `dropdown-menu`, `sonner` (with `notify`), `accordion`, `skeleton`, `spinner`, `empty`, `separator`, `label`, plus `link` and `container` |
-| `@ppitsz/ui/components/network/<name>` | `route` (Route, Station, Interchange, RouteList, RouteStop), `line-badge`, `station-label`, `route-tracker`, `route-strip`, `network-map`, `campus-line` |
-| `@ppitsz/ui/components/blocks/<name>` | `departure-board`, `member-card`, `article-card`, `site-header`, `site-footer`, `theme-control`, `wechat-dialog`, `brand` (PpiMark, SkipLink, LanguageSwitcher) |
-| `@ppitsz/ui/lib/<name>` | `utils` (`cn`), `network` (divisions, campuses, oprec stages, status labels), `format` (dates, times with WIB, numbers, bylines), `nav` |
+| `@ppitsz/ui/globals.css` | Tailwind v4 theme: color ramps and semantic tokens, light/dark/tone-ink scopes, the type scale and `type-*` utilities, network utilities (`route`, `station*`, `line-badge`, `exit-badge`, `station-code`, `line-stripe`, `stripe-train`, `ticket-notch-*`, `route-draw`), motion |
+| `@ppitsz/ui/components/<name>` | shadcn/ui components on Base UI, restyled: `button`, `field`, `input`, `textarea`, `checkbox`, `radio-group`, `native-select`, `badge`, `status-badge`, `toggle` (with `FilterChip`), `card`, `alert` (the notice), `dialog`, `alert-dialog`, `popover`, `dropdown-menu`, `navigation-menu`, `avatar`, `sonner` (with `notify`), `accordion`, `skeleton`, `spinner`, `empty`, `separator`, `label`, plus `link` and `container` |
+| `@ppitsz/ui/components/network/<name>` | `route` (Route, Station, Interchange, RouteList, RouteStop), `line-badge`, `station-label`, `route-tracker`, `strip-map`, `route-strip`, `sign` (SignBoard, Sign, SignPictogram, ExitBadge), `station-code`, `station-nameplate`, `network-map`, `campus-line` |
+| `@ppitsz/ui/components/og/<name>` | `station-sign` (OgStationSign): the share image, for next/og |
+| `@ppitsz/ui/components/blocks/<name>` | `departure-board`, `timetable`, `ticket`, `gate`, `service-notice`, `profile-menu`, `member-card`, `article-card`, `site-header`, `site-footer`, `theme-control`, `wechat-dialog`, `brand` (PpiMark, SkipLink, LanguageSwitcher) |
+| `@ppitsz/ui/lib/<name>` | `utils` (`cn`), `network` (divisions, campuses, oprec stages, status labels), `format` (dates, times with WIB, numbers, bylines), `nav` (`NavLink`, `TransferLink`), `raw-colors` (the palette as hex, for emails and share images only), `shrink-image` (browser-side image shrinking before upload) |
+| `@ppitsz/ui/hooks/<name>` | `use-navigation-pending` (the header's loading train) |
 
 Blocks take images through a `media` slot and links through `linkAs`, so apps pass `next/image` and `next/link` without the package depending on them.
 

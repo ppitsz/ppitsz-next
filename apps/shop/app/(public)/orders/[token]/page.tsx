@@ -6,7 +6,20 @@ import { notFound } from "next/navigation"
 import { Alert, AlertDescription, AlertTitle } from "@ppitsz/ui/components/alert"
 import { Container } from "@ppitsz/ui/components/container"
 import { Link } from "@ppitsz/ui/components/link"
-import { RouteTracker } from "@ppitsz/ui/components/network/route-tracker"
+import {
+  Ticket,
+  TicketBody,
+  TicketCode,
+  TicketField,
+  TicketFields,
+  TicketHeader,
+  TicketStub,
+  TicketTitle,
+} from "@ppitsz/ui/components/blocks/ticket"
+import { LineBadge } from "@ppitsz/ui/components/network/line-badge"
+import { StationCode } from "@ppitsz/ui/components/network/station-code"
+import { StationNameplate } from "@ppitsz/ui/components/network/station-nameplate"
+import { StripMap } from "@ppitsz/ui/components/network/strip-map"
 import { formatDate, formatTime, formatYuan } from "@ppitsz/ui/lib/format"
 import { mediaUrl, PAYMENT_METHOD_LABELS } from "@/lib/catalog"
 import { slotLabel } from "@/lib/campaign-copy"
@@ -48,6 +61,9 @@ const HEADINGS: Record<ReturnType<typeof displayStatus>, string> = {
 
 const when = (date: Date) => `${formatDate(date)}, ${formatTime(date)}`
 
+/** A pickup ticket this new comes out of the machine when it appears. */
+const FRESH_TICKET_MS = 15 * 60 * 1000
+
 export default async function OrderPage({ params, searchParams }: PageProps<"/orders/[token]">) {
   await connection()
   const { token } = await params
@@ -66,25 +82,31 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
       {isNew === "1" && <AfterCheckout campaignId={order.campaignId} />}
       <OrderWatcher token={order.token} version={orderVersion(order)} active={isOpenStatus(order.status)} />
 
-      <div className="flex flex-col gap-3">
-        <p className="type-kicker text-accent-text">
-          Order {order.code} · {campaign.name}
+      <StationNameplate
+        kicker={campaign.name}
+        name={heading}
+        line="danus"
+        lines={["danus"]}
+        linkAs={NextLink}
+        previous={{ label: campaign.name, href: `/${campaign.slug}` }}
+      >
+        <p className="flex items-center gap-3">
+          <span className="type-kicker text-muted">Order</span>
+          <StationCode code={order.code} line="danus" />
         </p>
-        <h1 className="type-display-xl text-text">{heading}</h1>
-      </div>
-
-      {stage !== null && (
-        <div data-line="danus">
-          <RouteTracker
+        {stage !== null && (
+          <StripMap
+            line="danus"
             aria-label="Order progress"
-            currentStage={stage}
-            stages={(order.delivery ? DELIVERY_ROUTE : ORDER_ROUTE).map((label, i) => ({
+            current={stage}
+            state={order.status === "picked_up" ? "arrived" : "running"}
+            stops={(order.delivery ? DELIVERY_ROUTE : ORDER_ROUTE).map((label, i) => ({
               label,
               note: stageNote(order, i, stage),
             }))}
           />
-        </div>
-      )}
+        )}
+      </StationNameplate>
 
       <StatusPanel order={order} campaign={campaign} />
 
@@ -177,23 +199,44 @@ async function StatusPanel({ order, campaign }: { order: Order; campaign: Campai
       if (order.delivery) return <DeliveryPanel delivery={order.delivery} />
       const url = `${await siteOrigin()}${orderPath(order.token)}`
       const partial = order.items.some((i) => i.pickedUp)
+      const units = order.items.reduce((sum, i) => sum + i.qty, 0)
+      // Payment checked minutes ago: the ticket comes out of the machine (the watcher refreshes the page then).
+      const verifiedAt = order.payment.verifiedAt
+      const fresh = !partial && !!verifiedAt && new Date().getTime() - verifiedAt.getTime() < FRESH_TICKET_MS
       return (
-        <section aria-labelledby="pickup" className="flex flex-col items-center gap-6 rounded-xl bg-surface p-6">
-          <h2 id="pickup" className="sr-only">
-            Pickup
-          </h2>
-          <OrderQr url={url} code={order.code} />
-          <p className="max-w-[44ch] text-center type-body text-text">
-            Show this QR code at {campaign.pickupInfo}. Take a screenshot of this page so you can
-            open it without internet.
-          </p>
+        <div className="flex flex-col gap-4">
+          <Ticket aria-labelledby="pickup" dispense={fresh}>
+            <TicketBody line="danus">
+              <TicketHeader>
+                <LineBadge code="danus" />
+                <span className="type-sign text-muted">Pickup</span>
+              </TicketHeader>
+              <TicketTitle id="pickup">{campaign.name}</TicketTitle>
+              <TicketFields>
+                <TicketField label="Order">
+                  <StationCode code={order.code} line="danus" />
+                </TicketField>
+                <TicketField label="Items">{units}</TicketField>
+                <TicketField label="Pick up at" className="col-span-2">
+                  {campaign.pickupInfo}
+                </TicketField>
+              </TicketFields>
+            </TicketBody>
+            <TicketStub>
+              <OrderQr url={url} code={order.code} />
+              <TicketCode>{order.code}</TicketCode>
+              <p className="max-w-[44ch] text-center type-caption text-muted">
+                Show this QR code at the booth. Take a screenshot of this page so you can open it without internet.
+              </p>
+            </TicketStub>
+          </Ticket>
           {partial && (
             <Alert variant="warning">
               <AlertTitle>Partly picked up</AlertTitle>
               <AlertDescription>Pick up the rest with the same QR code.</AlertDescription>
             </Alert>
           )}
-        </section>
+        </div>
       )
     }
 

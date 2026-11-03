@@ -5,7 +5,7 @@ import { ImageIcon, TrashIcon } from "@phosphor-icons/react"
 
 import { Button } from "@ppitsz/ui/components/button"
 import { cn } from "@ppitsz/ui/lib/utils"
-import { shrinkImage } from "@/lib/client/shrink-image"
+import { shrinkImage } from "@ppitsz/ui/lib/shrink-image"
 
 /** What happens to an image on save. */
 export type ImageChoice = { kind: "keep" } | { kind: "new"; file: File; url: string } | { kind: "remove" }

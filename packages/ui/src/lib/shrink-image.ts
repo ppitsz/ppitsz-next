@@ -2,6 +2,7 @@
  * Browser-side image shrinking before upload. Phone photos and screenshots
  * can be several MB; the server accepts up to 4 MB and slow campus Wi-Fi
  * hates big uploads. Re-encodes as JPEG at most `maxSide` px on the long side.
+ * Shared by every app: payment proofs, product photos, form files, avatars.
  */
 
 export async function shrinkImage(

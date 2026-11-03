@@ -1,16 +1,18 @@
 "use client"
 
 import NextLink from "next/link"
-import { useEffect, useRef, useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react"
 import { CameraIcon, CheckIcon, ImageIcon, ScanIcon } from "@phosphor-icons/react"
 
 import { Alert, AlertDescription, AlertTitle } from "@ppitsz/ui/components/alert"
+import { Gate, GateDescription, GateHolder, GateTitle, type GateVerdict } from "@ppitsz/ui/components/blocks/gate"
 import { Button } from "@ppitsz/ui/components/button"
 import { Card, CardContent } from "@ppitsz/ui/components/card"
 import { Checkbox } from "@ppitsz/ui/components/checkbox"
 import { Field, FieldError, FieldLabel } from "@ppitsz/ui/components/field"
 import { Input } from "@ppitsz/ui/components/input"
 import { Link } from "@ppitsz/ui/components/link"
+import { StationCode } from "@ppitsz/ui/components/network/station-code"
 import { notify } from "@ppitsz/ui/components/sonner"
 import { formatTime } from "@ppitsz/ui/lib/format"
 import { handOverAction, lookupScanAction, type ScanResult, type ScannedOrder } from "@/lib/actions/staff"
@@ -255,33 +257,25 @@ function ScanResultCard({
   const { canHandOver } = order
   const selectedQty = [...selected].reduce((sum, i) => sum + (order.items[i]?.qty ?? 0), 0)
   const remaining = order.items.filter((item) => !item.pickedUp).length
-  const headingRef = useRef<HTMLHeadingElement>(null)
-  // Each new result takes focus, so screen readers announce it.
-  useEffect(() => headingRef.current?.focus(), [result])
+  const gate = gateFor(result, order, remaining)
+  const actionRef = useRef<HTMLButtonElement>(null)
+  // Each new result moves focus to the next action; the gate announces itself.
+  useEffect(() => actionRef.current?.focus(), [result])
 
   return (
-    <section aria-labelledby="hasil" className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <p className="type-kicker text-accent-text">{order.campaignName}</p>
-        <div className="flex flex-wrap items-center gap-4">
-          <h2
-            id="hasil"
-            tabIndex={-1}
-            ref={headingRef}
-            className="type-display-lg text-text outline-none"
-          >
-            {order.code}
-          </h2>
-          <OrderStatusBadge status={order.shownStatus} />
-        </div>
-        {order.buyerName && (
-          <p className="type-body text-text">
-            {order.buyerName} <span className="text-muted">· WeChat {order.wechatId}</span>
-          </p>
-        )}
-      </div>
-
-      <StatusAlert result={result} order={order} remaining={remaining} />
+    <section aria-label={`Order ${order.code}`} className="flex flex-col gap-6">
+      <Gate verdict={gate.verdict}>
+        <GateTitle>{gate.title}</GateTitle>
+        <GateHolder name={order.buyerName ?? `Order ${order.code}`}>
+          <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+            <StationCode code={order.code} line="danus" />
+            {order.campaignName}
+            {order.buyerName && ` · WeChat ${order.wechatId}`}
+            <OrderStatusBadge status={order.shownStatus} />
+          </span>
+        </GateHolder>
+        {gate.description && <GateDescription>{gate.description}</GateDescription>}
+      </Gate>
 
       {order.delivery && order.status === "paid" && (
         <Alert variant="warning">
@@ -334,12 +328,13 @@ function ScanResultCard({
             loading={handing}
             disabled={selectedQty === 0}
             onClick={onHandOver}
+            ref={actionRef}
           >
             <CheckIcon aria-hidden weight="bold" />
             {handing ? "Saving…" : `Hand over ${selectedQty} ${selectedQty === 1 ? "item" : "items"}`}
           </Button>
         )}
-        <Button variant={canHandOver ? "secondary" : "primary"} size="lg" onClick={onNext}>
+        <Button variant={canHandOver ? "secondary" : "primary"} size="lg" onClick={onNext} ref={canHandOver ? undefined : actionRef}>
           <ScanIcon aria-hidden />
           Scan next
         </Button>
@@ -351,88 +346,70 @@ function ScanResultCard({
   )
 }
 
-function StatusAlert({
-  result,
-  order,
-  remaining,
-}: {
-  result: ScanResult
-  order: ScannedOrder
-  remaining: number
-}) {
-  if (result.ok && result.handedOver) {
-    return (
-      <Alert variant="success" live>
-        <AlertTitle>{result.handedOver} {result.handedOver === 1 ? "item" : "items"} handed over</AlertTitle>
-        <AlertDescription>
-          {remaining === 0
-            ? "Order complete."
-            : `${remaining} more ${remaining === 1 ? "line is" : "lines are"} still to collect. Scan again when the buyer comes back.`}
-        </AlertDescription>
-      </Alert>
-    )
-  }
-
-  const alert = (() => {
-    switch (order.status) {
-      case "paid":
-        return result.ok ? null : <Problem title="Can't hand over yet" text={result.error} />
-      case "picked_up":
-        return (
-          <Alert variant="danger" live>
-            <AlertTitle>Already picked up. Don't hand it over again.</AlertTitle>
-            <AlertDescription>
-              {order.pickedUpAt && `Handed over ${when(order.pickedUpAt)} by ${order.handledByName ?? "staff"}. `}
-              If the buyer says they didn't get it, call a Danus admin.
-            </AlertDescription>
-          </Alert>
-        )
-      case "awaiting_verification":
-        return (
-          <Alert variant="warning" live>
-            <AlertTitle>Payment not checked yet</AlertTitle>
-            <AlertDescription>
-              {order.canVerify ? (
-                <>
-                  The transfer proof has been sent.{" "}
-                  <NextLink href={`/staff/orders/${order.id}`} className="underline">
-                    Check the payment
-                  </NextLink>
-                  , then scan again.
-                </>
-              ) : (
-                "The transfer proof has been sent but not checked. Ask a Danus admin to check it, then scan again."
-              )}
-            </AlertDescription>
-          </Alert>
-        )
-      case "pending_payment":
-        return (
-          <Problem
-            title="Not paid"
-            text="The buyer hasn't sent a transfer proof. Ask them to pay and send the proof from their order page, or buy at the kasir."
-          />
-        )
-      case "expired":
-        return (
-          <Problem
-            title="Expired"
-            text="The order was canceled automatically because it wasn't paid in time. The buyer can buy at the kasir."
-          />
-        )
-      case "cancelled":
-        return <Problem title="Canceled" text="Danus has canceled this order." />
-    }
-  })()
-
-  return alert
+interface GateCopy {
+  verdict: GateVerdict
+  title: string
+  description?: ReactNode
 }
 
-function Problem({ title, text }: { title: string; text: string }) {
-  return (
-    <Alert variant="danger" live>
-      <AlertTitle>{title}</AlertTitle>
-      <AlertDescription>{text}</AlertDescription>
-    </Alert>
-  )
+/** The gate for a scan: go when it can be handed over, hold when it needs a look first, stop otherwise. */
+function gateFor(result: ScanResult, order: ScannedOrder, remaining: number): GateCopy {
+  if (result.ok && result.handedOver) {
+    return {
+      verdict: "go",
+      title: `${result.handedOver} ${result.handedOver === 1 ? "item" : "items"} handed over`,
+      description:
+        remaining === 0
+          ? "Order complete."
+          : `${remaining} more ${remaining === 1 ? "line is" : "lines are"} still to collect. Scan again when the buyer comes back.`,
+    }
+  }
+  switch (order.status) {
+    case "paid":
+      return result.ok
+        ? { verdict: "go", title: "Ready to hand over" }
+        : { verdict: "stop", title: "Can't hand over yet", description: result.error }
+    case "picked_up":
+      return {
+        verdict: "stop",
+        title: "Already picked up",
+        description: (
+          <>
+            {order.pickedUpAt && `Handed over ${when(order.pickedUpAt)} by ${order.handledByName ?? "staff"}. `}
+            Don&apos;t hand it over again. If the buyer says they didn&apos;t get it, call a Danus admin.
+          </>
+        ),
+      }
+    case "awaiting_verification":
+      return {
+        verdict: "hold",
+        title: "Payment not checked yet",
+        description: order.canVerify ? (
+          <>
+            The transfer proof has been sent.{" "}
+            <NextLink href={`/staff/orders/${order.id}`} className="underline underline-offset-4">
+              Check the payment
+            </NextLink>
+            , then scan again.
+          </>
+        ) : (
+          "The transfer proof has been sent but not checked. Ask a Danus admin to check it, then scan again."
+        ),
+      }
+    case "pending_payment":
+      return {
+        verdict: "stop",
+        title: "Not paid",
+        description:
+          "The buyer hasn't sent a transfer proof. Ask them to pay and send the proof from their order page, or buy at the kasir.",
+      }
+    case "expired":
+      return {
+        verdict: "stop",
+        title: "Expired",
+        description: "The order was canceled automatically because it wasn't paid in time. The buyer can buy at the kasir.",
+      }
+    case "cancelled":
+      return { verdict: "stop", title: "Canceled", description: "Danus has canceled this order." }
+  }
 }

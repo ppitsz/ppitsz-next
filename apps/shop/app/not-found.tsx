@@ -1,5 +1,5 @@
-import { accountOrigin } from "@ppitsz/accounts/urls"
-import { getBuyer } from "@/lib/server/auth"
+import { menuAccount } from "@ppitsz/accounts/avatar"
+import { accountOrigin, transferApps } from "@ppitsz/accounts/urls"
 import { SiteChrome } from "@/components/site-chrome"
 import { NotFoundMessage } from "@/components/not-found-message"
 
@@ -9,9 +9,8 @@ import { NotFoundMessage } from "@/components/not-found-message"
  * section's own not-found, under its own header.
  */
 export default async function NotFound() {
-  const buyer = await getBuyer()
   return (
-    <SiteChrome buyerName={buyer ? buyer.name : null} accountHref={accountOrigin()}>
+    <SiteChrome me={await menuAccount()} accountHref={accountOrigin()} transfers={transferApps("shop")}>
       <NotFoundMessage />
     </SiteChrome>
   )

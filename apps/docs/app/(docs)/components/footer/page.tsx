@@ -32,10 +32,20 @@ export default function FooterPage() {
   contact={<Link href="mailto:ppitshenzhen@gmail.com">ppitshenzhen@gmail.com</Link>}
   socials={socials}
   wechat={<WeChatDialog qrSrc="/wechat-qr.png" />}
+  transfers={transferApps("shop")}
+  help={<p>A problem with an order? Contact Danus on the PPITSZ socials and give your order code.</p>}
   bottom={<>© 2026 PPIT Shenzhen <ThemeControl /></>}
 />`}
         >
-          <SiteFooter {...ORG_FOOTER_PROPS} currentHref="/news" />
+          <SiteFooter
+            {...ORG_FOOTER_PROPS}
+            currentHref="/news"
+            transfers={[
+              { href: "#", label: "PPITSZ Shop", description: "Food and merchandise from Danus" },
+              { href: "#", label: "PPITSZ Forms", description: "Event sign-ups and tickets" },
+            ]}
+            help={<p>A question about an event? Contact its panitia on the PPITSZ socials.</p>}
+          />
         </Example>
       </DocSection>
 
@@ -43,8 +53,10 @@ export default function FooterPage() {
         <Prose>
           <ul>
             <li>The route links are a <code>&lt;nav aria-label=&quot;Peta situs&quot;&gt;</code> list; the drawing is <code>aria-hidden</code>.</li>
-            <li>Social links keep visible labels; external links follow the Link rules.</li>
-            <li>The theme control is a native select: “Ikuti sistem”, “Terang”, “Gelap”.</li>
+            <li>Social links keep visible labels and an exit letter (A, B, C); external links follow the Link rules.</li>
+            <li>The last row is the station board&apos;s: Transfer (the other apps, the header&apos;s list again) and Help (where to go when something&apos;s wrong, in one or two sentences).</li>
+            <li>Set <code>line</code> to the app&apos;s line, as in the header.</li>
+            <li>The theme control is one button that steps System → Light → Dark, showing the current choice. In tight slots, such as the header&apos;s account slot, pass <code>iconOnly</code>.</li>
           </ul>
         </Prose>
       </DocSection>

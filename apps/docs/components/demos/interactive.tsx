@@ -23,6 +23,15 @@ import { Alert, AlertDescription, AlertTitle } from "@ppitsz/ui/components/alert
 import { RouteTracker } from "@ppitsz/ui/components/network/route-tracker"
 import { Route, Station } from "@ppitsz/ui/components/network/route"
 import { LineBadge } from "@ppitsz/ui/components/network/line-badge"
+import { ProfileMenu } from "@ppitsz/ui/components/blocks/profile-menu"
+import {
+  Ticket,
+  TicketBody,
+  TicketCode,
+  TicketHeader,
+  TicketStub,
+  TicketTitle,
+} from "@ppitsz/ui/components/blocks/ticket"
 import { DIVISIONS, type LineCode } from "@ppitsz/ui/lib/network"
 import { NativeSelect, NativeSelectOption } from "@ppitsz/ui/components/native-select"
 
@@ -291,6 +300,56 @@ export function EnterDemo() {
       >
         Floating panel: opens in 200ms, closes instantly.
       </div>
+    </div>
+  )
+}
+
+/** The profile menu signed in (with a photo, and with initials) and signed out. Sign out only says so. */
+export function ProfileMenuDemo() {
+  const signOut = () => {
+    notify.info("Signed out of every app (in the apps, this is a server action).")
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-4">
+      <ProfileMenu
+        account={{ name: "Nadia Putri", email: "nadia@example.com", avatarUrl: "/samples/event-3.webp", role: "Admin" }}
+        signInHref="#"
+        accountHref="#"
+        links={[{ href: "#", label: "Your orders" }]}
+        signOut={signOut}
+      />
+      <ProfileMenu
+        account={{ name: "Rizky Pratama", email: "rizky@example.com", avatarUrl: null }}
+        signInHref="#"
+        accountHref="#"
+        signOut={signOut}
+      />
+      <ProfileMenu account={null} signInHref="#" accountHref="#" signOut={signOut} />
+    </div>
+  )
+}
+
+/** A new ticket coming out of the machine; Replay mounts it again. */
+export function DispenseDemo() {
+  const [key, setKey] = React.useState(0)
+  return (
+    <div className="flex flex-col items-start gap-6">
+      <Button onClick={() => setKey((k) => k + 1)}>
+        Replay
+        <ArrowRightIcon aria-hidden />
+      </Button>
+      <Ticket key={key} dispense aria-label="Sample ticket" className="max-w-md">
+        <TicketBody line="sosbud">
+          <TicketHeader>
+            <LineBadge code="sosbud" />
+            <span className="type-sign text-muted">Regular</span>
+          </TicketHeader>
+          <TicketTitle as="h3">Nadia Putri</TicketTitle>
+        </TicketBody>
+        <TicketStub>
+          <TicketCode>K7P3QX</TicketCode>
+        </TicketStub>
+      </Ticket>
     </div>
   )
 }

@@ -98,13 +98,13 @@
   /* ---- Division lines (light). Graphics and line badges only. ----------- */
   --color-line-fg: var(--color-white);
   --color-line-bph: oklch(0.56 0.215 29);
-  --color-line-danus: oklch(0.56 0.13 55);
-  --color-line-depol: oklch(0.53 0.13 148);
-  --color-line-humas: oklch(0.52 0.14 250);
+  --color-line-danus: oklch(0.58 0.17 42);
+  --color-line-depol: oklch(0.53 0.14 148);
+  --color-line-humas: oklch(0.52 0.15 252);
   --color-line-it: oklch(0.53 0.09 205);
   --color-line-medkref: oklch(0.54 0.19 355);
-  --color-line-pka: oklch(0.52 0.16 290);
-  --color-line-sosbud: oklch(0.5 0.19 322);
+  --color-line-pka: oklch(0.52 0.21 290);
+  --color-line-sosbud: oklch(0.5 0.21 322);
 
   /* ---- Type scale (fluid 360px → 1440px). Use the type-* utilities. ----- */
   --text-display-2xl: clamp(2.75rem, 1.1667rem + 7.037vw, 7.5rem);
@@ -194,6 +194,10 @@
   --animate-enter: enter var(--duration-base) var(--ease-out) both;
   --animate-enter-slow: enter var(--duration-slow) var(--ease-out) both;
   --animate-fade: fade var(--duration-base) var(--ease-out) both;
+  /* The one celebratory motion: a ticket coming out of the machine, once,
+     when it is new. Never on revisits. */
+  /* Fill backwards only, so no clip-path stays on the ticket afterwards. */
+  --animate-dispense: dispense 640ms var(--ease-out) backwards;
 
   @keyframes spin {
     to { transform: rotate(360deg); }
@@ -205,6 +209,14 @@
   @keyframes fade {
     from { opacity: 0; }
     to { opacity: 1; }
+  }
+  @keyframes dispense {
+    from { clip-path: inset(0 0 100% 0); transform: translateY(-1.5rem); }
+    to { clip-path: inset(0); transform: none; }
+  }
+  @keyframes stripe-train {
+    from { left: 0; }
+    to { left: calc(100% - 14px); }
   }
   @keyframes route-draw {
     from { transform: scaleX(0); }
@@ -235,19 +247,25 @@
   /* The active line. Brand red unless an element sets data-line. */
   --line: var(--color-accent-line);
 
+  /* Exit yellow: the way out of the network. Not a color token, so no
+     bg-* / text-* class exists for it: only exit-badge reads it. The same
+     in every mode, like the signs. */
+  --exit: var(--color-amber-300);
+  --exit-fg: var(--color-beton-950);
+
   /* Which PPI mark shows (red on light, white on dark and tone-ink) */
   --mark-red: inline-block;
   --mark-white: none;
 
   /* Dark-mode line values (shared by dark mode and .tone-ink) */
   --line-dark-bph: oklch(0.7 0.17 29);
-  --line-dark-danus: oklch(0.74 0.13 60);
-  --line-dark-depol: oklch(0.73 0.14 148);
-  --line-dark-humas: oklch(0.72 0.12 250);
-  --line-dark-it: oklch(0.74 0.1 205);
-  --line-dark-medkref: oklch(0.72 0.15 355);
-  --line-dark-pka: oklch(0.72 0.12 290);
-  --line-dark-sosbud: oklch(0.72 0.15 322);
+  --line-dark-danus: oklch(0.76 0.15 52);
+  --line-dark-depol: oklch(0.74 0.17 148);
+  --line-dark-humas: oklch(0.72 0.13 250);
+  --line-dark-it: oklch(0.75 0.11 205);
+  --line-dark-medkref: oklch(0.72 0.17 355);
+  --line-dark-pka: oklch(0.72 0.15 290);
+  --line-dark-sosbud: oklch(0.72 0.18 322);
 }
 
 :lang(zh) {
@@ -291,13 +309,13 @@
   --color-backdrop: oklch(0.17 0.009 255 / 0.5);
   --color-line-fg: var(--color-white);
   --color-line-bph: oklch(0.56 0.215 29);
-  --color-line-danus: oklch(0.56 0.13 55);
-  --color-line-depol: oklch(0.53 0.13 148);
-  --color-line-humas: oklch(0.52 0.14 250);
+  --color-line-danus: oklch(0.58 0.17 42);
+  --color-line-depol: oklch(0.53 0.14 148);
+  --color-line-humas: oklch(0.52 0.15 252);
   --color-line-it: oklch(0.53 0.09 205);
   --color-line-medkref: oklch(0.54 0.19 355);
-  --color-line-pka: oklch(0.52 0.16 290);
-  --color-line-sosbud: oklch(0.5 0.19 322);
+  --color-line-pka: oklch(0.52 0.21 290);
+  --color-line-sosbud: oklch(0.5 0.21 322);
   --mark-red: inline-block;
   --mark-white: none;
 }
@@ -706,6 +724,125 @@
   line-height: 1;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+/* Line stripe: the app's line along the top of every page, like the stripe
+   on a train car. Set data-line on it (or an ancestor) for a division's app. */
+@utility line-stripe {
+  display: block;
+  position: relative;
+  height: 6px;
+  background-color: var(--line);
+}
+/* The train: a station travelling the stripe while the next page loads, the
+   header's loading indicator. Functional, like a spinner, so it may loop;
+   it only runs while a page is on its way. */
+@utility stripe-train {
+  /* Hangs from the stripe, which sits at the very top of the page: centred
+     on it, half of it would be off-screen. */
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background-color: var(--color-bg);
+  border: 4px solid var(--line);
+  animation: stripe-train 1.1s var(--ease-in-out) infinite alternate;
+}
+
+/* Exit badge: the yellow exit letter (A, B, C1) of a way out: a link that
+   leaves the app for another site, another app or the socials */
+@utility exit-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  padding-inline: 0.375rem;
+  border-radius: 0.375rem;
+  background-color: var(--exit);
+  color: var(--exit-fg);
+  font-family: var(--font-stack-display);
+  font-size: 0.9375rem;
+  font-weight: 800;
+  font-variation-settings: "wdth" 87.5;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Station code: an order or ticket code as a station number. The prefix
+   (the campaign's GC, a division's code) sits in the line color, the rest in
+   ink, inside a line-colored frame. Mark the parts with data-part. */
+@utility station-code {
+  display: inline-flex;
+  align-items: stretch;
+  flex: none;
+  height: 1.75rem;
+  border: 2px solid var(--line);
+  border-radius: 0.375rem;
+  overflow: hidden;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-stack-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-variation-settings: "wdth" 87.5;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  white-space: nowrap;
+  & > [data-part] {
+    display: inline-flex;
+    align-items: center;
+    padding-inline: 0.5rem;
+  }
+  & > [data-part="prefix"] {
+    padding-inline: 0.375rem;
+    background-color: var(--line);
+    color: var(--color-line-fg);
+  }
+}
+
+/* Ticket notches: half-circles cut where the stub tears off. The body is
+   cut at its bottom corners, the stub at its top ones. The masks are hard
+   stops (a cut-out shape), not visible gradients. */
+@utility ticket-notch-b {
+  --notch: 0.75rem;
+  mask:
+    radial-gradient(circle at 0 100%, transparent var(--notch), black calc(var(--notch) + 0.5px)) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 100%, transparent var(--notch), black calc(var(--notch) + 0.5px)) right / 51% 100% no-repeat;
+}
+@utility ticket-notch-t {
+  --notch: 0.75rem;
+  position: relative;
+  mask:
+    radial-gradient(circle at 0 0, transparent var(--notch), black calc(var(--notch) + 0.5px)) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 0, transparent var(--notch), black calc(var(--notch) + 0.5px)) right / 51% 100% no-repeat;
+  /* The stub is light, so on a light page its cut would vanish: a ring just
+     outside the cut draws the notch's edge, continuing the stub's border.
+     The ring is centered on the outer corner, where the mask's circle is, so
+     its offset adds the stub's own border (--stub-border). */
+  --stub-border: 2px;
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: calc(-1 * (var(--notch) + 2px + var(--stub-border)));
+    width: calc(2 * (var(--notch) + 2px));
+    height: calc(2 * (var(--notch) + 2px));
+    border: 2px solid var(--color-border);
+    border-radius: 9999px;
+    pointer-events: none;
+  }
+  &::before {
+    left: calc(-1 * (var(--notch) + 2px + var(--stub-border)));
+  }
+  &::after {
+    right: calc(-1 * (var(--notch) + 2px + var(--stub-border)));
+  }
 }
 
 /* Route draws in as the reader scrolls (CSS only; static when unsupported) */

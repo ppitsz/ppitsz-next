@@ -2,6 +2,7 @@ import NextLink from "next/link"
 
 import { buttonVariants } from "@ppitsz/ui/components/button"
 import { Container } from "@ppitsz/ui/components/container"
+import { Route } from "@ppitsz/ui/components/network/route"
 import { Link } from "@ppitsz/ui/components/link"
 import { ordersSummary } from "@/lib/domain/account"
 import type { BuyerProfile, Campaign, Order } from "@/lib/domain/types"
@@ -30,6 +31,7 @@ export function YourOrders({
       <section aria-labelledby="your-orders" className="bg-surface">
         <Container className="flex flex-col gap-6 py-12">
           <div className="flex flex-col gap-3">
+            <Route data-line="danus" className="w-10" />
             <p className="type-kicker text-accent-text">Your orders</p>
             <h2 id="your-orders" className="type-display-lg text-text">
               Track your orders from any phone.
@@ -56,6 +58,7 @@ export function YourOrders({
       <Container className="@container flex flex-col gap-8 py-12 lg:py-16">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-col gap-3">
+            <Route data-line="danus" className="w-10" />
             <p className="type-kicker text-accent-text">Your orders</p>
             <h2 id="your-orders" className="type-display-lg text-text">
               Hi, {buyer.name.split(" ")[0] || "there"}.

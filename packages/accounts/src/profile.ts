@@ -7,6 +7,11 @@ import type { ProfileFields } from "./fields"
  * The account's profile, shared by every app: accounts/{uid}. The shop reads
  * it at checkout, Forms prefills from it, and the account app edits it.
  * The email is the account's sign-in, copied here for lists.
+ *
+ * Two avatar slots (ADR 0009). `avatarPath` is the photo the person chose;
+ * `providerAvatarPath` is a copy of a linked sign-in's photo (Google, once
+ * it exists), stored by us because Google's own image URLs don't load in
+ * China. The person's own photo always wins; see shownAvatarPath.
  */
 
 export interface Profile {
@@ -17,6 +22,10 @@ export interface Profile {
   wechatId: string
   /** "" until filled in. */
   phone: string
+  /** Storage path of the photo the person chose; "" when none. */
+  avatarPath: string
+  /** Storage path of our copy of a linked sign-in's photo; "" when none. */
+  providerAvatarPath: string
   createdAt: Date
   updatedAt: Date
 }
@@ -36,9 +45,16 @@ export function profileFromDoc(snap: DocumentSnapshot): Profile {
     name: d.name ?? "",
     wechatId: d.wechatId ?? "",
     phone: d.phone ?? "",
+    avatarPath: d.avatarPath ?? "",
+    providerAvatarPath: d.providerAvatarPath ?? "",
     createdAt,
     updatedAt: toDate(d.updatedAt, createdAt),
   }
+}
+
+/** The avatar to show: the person's own photo, else a linked sign-in's, else none (initials). */
+export function shownAvatarPath(profile: Pick<Profile, "avatarPath" | "providerAvatarPath">): string | null {
+  return profile.avatarPath || profile.providerAvatarPath || null
 }
 
 function profileToDoc({ uid: _uid, ...p }: Profile) {
@@ -60,13 +76,17 @@ export async function saveProfile(
   const ref = profiles().doc(account.uid)
   const { profile, renamed } = await db().runTransaction(async (tx) => {
     const snap = await tx.get(ref)
+    const current = snap.exists ? profileFromDoc(snap) : null
     const profile: Profile = {
       uid: account.uid,
       email: account.email,
       name: fields.name,
       wechatId: fields.wechatId,
       phone: fields.phone,
-      createdAt: snap.exists ? profileFromDoc(snap).createdAt : now,
+      // Saving the details never touches the photos.
+      avatarPath: current?.avatarPath ?? "",
+      providerAvatarPath: current?.providerAvatarPath ?? "",
+      createdAt: current?.createdAt ?? now,
       updatedAt: now,
     }
     tx.set(ref, profileToDoc(profile))
@@ -89,7 +109,10 @@ export async function ensureProfile(account: { uid: string; email: string }, nam
   await db().runTransaction(async (tx) => {
     const snap = await tx.get(ref)
     if (!snap.exists) {
-      tx.set(ref, profileToDoc({ ...account, name, wechatId: "", phone: "", createdAt: now, updatedAt: now }))
+      tx.set(
+        ref,
+        profileToDoc({ ...account, name, wechatId: "", phone: "", avatarPath: "", providerAvatarPath: "", createdAt: now, updatedAt: now })
+      )
     } else if (snap.get("email") !== account.email) {
       tx.update(ref, { email: account.email })
     }
@@ -105,10 +128,27 @@ export async function profileOrBlank(session: { uid: string; email: string; name
       name: session.name,
       wechatId: "",
       phone: "",
+      avatarPath: "",
+      providerAvatarPath: "",
       createdAt: new Date(),
       updatedAt: new Date(),
     }
   )
+}
+
+/**
+ * Sets the person's own photo (a stored path, or "" to remove it) and
+ * returns the path it replaced, for the caller to delete.
+ */
+export async function setAvatarPath(uid: string, path: string, now = new Date()): Promise<string> {
+  const ref = profiles().doc(uid)
+  return db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref)
+    if (!snap.exists) throw new Error("NO_PROFILE")
+    const previous = (snap.get("avatarPath") as string | undefined) ?? ""
+    tx.update(ref, { avatarPath: path, updatedAt: Timestamp.fromDate(now) })
+    return previous
+  })
 }
 
 /**
@@ -135,6 +175,8 @@ export async function migrateBuyerProfiles() {
           name: doc.get("name") ?? "",
           wechatId: doc.get("wechatId") ?? "",
           phone: doc.get("phone") ?? "",
+          avatarPath: "",
+          providerAvatarPath: "",
           createdAt,
           updatedAt: toDate(doc.get("updatedAt"), createdAt),
         })

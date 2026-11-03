@@ -3,11 +3,11 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
-import { SignOutIcon } from "@phosphor-icons/react"
+import { StorefrontIcon } from "@phosphor-icons/react"
 
-import { Button } from "@ppitsz/ui/components/button"
 import { Container } from "@ppitsz/ui/components/container"
 import { PpiMark } from "@ppitsz/ui/components/blocks/brand"
+import { ProfileMenu, type ProfileMenuAccount } from "@ppitsz/ui/components/blocks/profile-menu"
 import { SiteHeader } from "@ppitsz/ui/components/blocks/site-header"
 import { ThemeControl } from "@ppitsz/ui/components/blocks/theme-control"
 import { LineBadge } from "@ppitsz/ui/components/network/line-badge"
@@ -67,13 +67,19 @@ function useAwaitingCount(serverCount: number, enabled: boolean) {
   return count
 }
 
-/** Header for the Shop dashboard. Signed out (the login page): brand only. */
+/**
+ * Header for the Shop dashboard. Signed out (the login page): brand only.
+ * `staff` is the signed-in person for the profile menu, with their role;
+ * `accountHref` is PPITSZ Account, where their photo and details live.
+ */
 export function StaffChrome({
   staff,
+  accountHref,
   awaitingCount = 0,
   children,
 }: {
-  staff: { name: string; role: StaffRole } | null
+  staff: (Omit<ProfileMenuAccount, "role"> & { role: StaffRole }) | null
+  accountHref: string
   awaitingCount?: number
   children: React.ReactNode
 }) {
@@ -101,18 +107,14 @@ export function StaffChrome({
       ]
 
   const account = staff && (
-    <div className="flex items-center gap-3">
-      <span className="flex flex-col text-right">
-        <span className="type-ui text-text">{staff.name}</span>
-        <span className="type-caption text-muted">{STAFF_ROLE_LABELS[staff.role]}</span>
-      </span>
-      <form action={signOutAction}>
-        <Button type="submit" variant="quiet" size="sm">
-          <SignOutIcon aria-hidden />
-          Sign out
-        </Button>
-      </form>
-    </div>
+    <ProfileMenu
+      account={{ ...staff, role: STAFF_ROLE_LABELS[staff.role] }}
+      signInHref="/staff"
+      accountHref={accountHref}
+      links={[{ href: "/", label: "The shop", icon: <StorefrontIcon aria-hidden /> }]}
+      signOut={signOutAction}
+      linkAs={Link}
+    />
   )
 
   return (
@@ -121,6 +123,7 @@ export function StaffChrome({
         brand={<Brand />}
         links={links}
         currentHref={pathname}
+        line="danus"
         linkAs={Link}
         account={account}
         menuExtras={<ThemeControl />}

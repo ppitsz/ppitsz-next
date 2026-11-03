@@ -3,8 +3,9 @@ import NextLink from "next/link"
 import { Badge } from "@ppitsz/ui/components/badge"
 import { buttonVariants } from "@ppitsz/ui/components/button"
 import { Container } from "@ppitsz/ui/components/container"
+import { LineBadge } from "@ppitsz/ui/components/network/line-badge"
 import { StatusBadge } from "@ppitsz/ui/components/status-badge"
-import { formatDate, formatYuan } from "@ppitsz/ui/lib/format"
+import { formatDate, formatTime, formatYuan, toShenzhenIso } from "@ppitsz/ui/lib/format"
 import { mediaUrl } from "@/lib/catalog"
 import { campaignPhase } from "@/lib/domain/campaign"
 import type { Campaign } from "@/lib/domain/types"
@@ -13,9 +14,15 @@ import { Allergens } from "@/components/product-labels"
 import { StockBar } from "./stock-bar"
 
 /*
- * The homepage hero: a dark band for the first open campaign, with its
- * dates and how orders arrive, and its featured product (or cover photo).
+ * The homepage hero: a dark band for the first open campaign, like the
+ * departures board at a station entrance. The Danus line across the top,
+ * the line badge and status (with "Final call" in the last day of online
+ * ordering), the name, then its facts as board cells: the time that matters
+ * now big, how orders arrive, the fee or the place. Beside it, the featured
+ * product (or the cover photo).
  */
+
+const FINAL_CALL_MS = 24 * 60 * 60 * 1000
 
 export function Hero({ campaign, featured, now }: { campaign: Campaign; featured: Featured | null; now: Date }) {
   const phase = campaignPhase(campaign, now)
@@ -24,13 +31,22 @@ export function Hero({ campaign, featured, now }: { campaign: Campaign; featured
   // The largest size fits about eight letters a word beside the card; a longer word would break mid-word.
   const longestWord = Math.max(...campaign.name.split(/\s+/).map((word) => word.length))
   const titleClass = longestWord > 8 ? "type-display-xl text-text" : "type-display-2xl text-text"
+  const finalCall =
+    phase === "online" &&
+    !!campaign.onlineClosesAt &&
+    campaign.onlineClosesAt.getTime() - now.getTime() < FINAL_CALL_MS
 
   return (
     <section aria-labelledby="lead-campaign" className="tone-ink">
-      <Container className="@container grid gap-10 py-12 lg:py-20">
+      <Container data-line="danus" className="@container grid gap-10 py-12 lg:py-20">
+        <span aria-hidden className="route" />
         <div className="grid items-center gap-10 @4xl:grid-cols-[minmax(0,1fr)_26rem]">
           <div className="flex flex-col gap-6">
-            <StatusBadge domain="campaign" value={phase} />
+            <div className="flex flex-wrap items-center gap-3">
+              <LineBadge code="danus" />
+              <StatusBadge domain="campaign" value={phase} />
+              {finalCall && <span className="type-kicker text-accent-text">Final call</span>}
+            </div>
             <h1 id="lead-campaign" className={titleClass}>
               {campaign.name}
             </h1>
@@ -61,21 +77,22 @@ export function Hero({ campaign, featured, now }: { campaign: Campaign; featured
   )
 }
 
-/** Three facts under the name: ordering, how orders arrive, and the fee or the place. */
+/**
+ * Three board cells under the name: the time that matters now (when online
+ * ordering opens, or the last order) big with its date, how orders arrive,
+ * and the fee or the place.
+ */
 function Facts({ campaign, phase }: { campaign: Campaign; phase: ReturnType<typeof campaignPhase> }) {
   const { delivery, pickup, booth } = campaign.offers
+  const [timeLabel, at, instead] =
+    phase === "upcoming"
+      ? ["Opens", campaign.onlineOpensAt, "Soon"]
+      : phase === "online"
+        ? ["Last order", campaign.onlineClosesAt, "Any time"]
+        : phase === "booth"
+          ? ["At the booth", null, "Now"]
+          : ["Online ordering", null, "Closed"]
   const facts = [
-    {
-      label: "Order online",
-      value:
-        phase === "upcoming" && campaign.onlineOpensAt
-          ? `From ${formatDate(campaign.onlineOpensAt)}`
-          : phase === "online"
-            ? campaign.onlineClosesAt
-              ? `Until ${formatDate(campaign.onlineClosesAt)}`
-              : "Any time"
-            : "Closed",
-    },
     {
       label: "How you get it",
       value: [delivery && "Delivery", pickup && "Pickup", booth && "Booth"].filter(Boolean).join(" · "),
@@ -86,9 +103,24 @@ function Facts({ campaign, phase }: { campaign: Campaign; phase: ReturnType<type
   ]
 
   return (
-    <dl className="grid max-w-2xl grid-cols-1 gap-4 border-t pt-6 @xl:grid-cols-3">
+    <dl className="grid max-w-2xl grid-cols-1 gap-4 border-t pt-6 @xl:grid-cols-3 @xl:gap-0 @xl:divide-x">
+      <div className="flex flex-col gap-1 @xl:pe-6">
+        <dt className="type-kicker text-muted">{timeLabel}</dt>
+        <dd className="flex flex-col">
+          {at ? (
+            <>
+              <time dateTime={toShenzhenIso(at)} className="type-heading-lg text-text tabular-nums">
+                {formatTime(at)}
+              </time>
+              <span className="type-caption text-muted">{formatDate(at)}</span>
+            </>
+          ) : (
+            <span className="type-heading-lg text-text">{instead}</span>
+          )}
+        </dd>
+      </div>
       {facts.map((fact) => (
-        <div key={fact.label} className="flex flex-col gap-1">
+        <div key={fact.label} className="flex flex-col gap-1 @xl:px-6 @xl:last:pe-0">
           <dt className="type-kicker text-muted">{fact.label}</dt>
           <dd className="type-heading-sm text-text">{fact.value}</dd>
         </div>

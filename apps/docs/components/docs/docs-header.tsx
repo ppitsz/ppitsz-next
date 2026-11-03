@@ -14,7 +14,7 @@ export function DocsHeader({ brand }: { brand: React.ReactNode }) {
       brand={brand}
       links={DOCS_GROUPS.map((group) => ({ href: group.href, label: group.title }))}
       currentHref={pathname}
-      account={<ThemeControl />}
+      account={<ThemeControl iconOnly />}
       menuExtras={<ThemeControl />}
       linkAs={Link}
       navLabel="Main"

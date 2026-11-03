@@ -26,7 +26,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Use only the semantic color tokens: `bg-bg`, `bg-surface`, `text-text`, `text-muted`, `bg-accent`, `text-accent-text`, `border-border-strong`, … Never ramps (`bg-merah-600`), never Tailwind's palette (it is removed), never hex.
 - Set text with exactly one `type-*` class (`type-ui`, `type-body`, `type-heading-lg`, …). No `text-sm`, `font-medium`, `tracking-*`, `leading-*` — those defaults are removed or banned.
 - No `dark:` classes: dark mode, nested `data-theme` previews and `tone-ink` work by re-assigning tokens.
-- Division line colors appear only on `line-badge`, `route` and `station` (set with `data-line`), never on text, backgrounds or buttons.
+- Division line colors appear only on `line-badge`, `route`, `station`, `station-code` and the header's `line-stripe` (set with `data-line`), never on text, backgrounds or buttons.
+- Each app has one line, passed as `line` to `SiteHeader` and `SiteFooter`: `danus` in the shop, brand red elsewhere.
+- Hex appears only in emails and share images, from `@ppitsz/ui/lib/raw-colors`.
+- Exit yellow appears only through `ExitBadge`, and only on links that leave the app. It has no color token on purpose.
+- Ticket notches (`ticket-notch-*`) belong to `Ticket` only: the one cut corner in the system.
 - One `variant="primary"` button per screen. `Button` defaults to `secondary` on purpose.
 - Capsules (`rounded-full`) for anything pressable; one soft radius (`rounded-xl`) for panels and photos; `rounded-lg` for text fields and menu items; `rounded-md` for badges.
 - Flat: shadows only on dialogs, popovers and toasts. No gradients, blur, glow, pulse, bounce or hover scaling.
@@ -37,6 +41,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Add shadcn components from `apps/docs`: `bunx shadcn@latest add <name>`. They land in `packages/ui/src/components`.
 - Every added component gets the restyle pass in `packages/ui/README.md` (mapping table). Also change `import { cn } from "cn"` to `import { cn } from "@ppitsz/ui/lib/utils"`.
 - Files without `"use client"` must import icons from `@phosphor-icons/react/ssr` and must not call Base UI hooks such as `useRender`.
+- The header's account slot is always `ProfileMenu`, fed by `menuAccount()` from `@ppitsz/accounts/avatar`. Avatars are only shown from our own `/avatars/…` routes, never from Google or another host (ADR 0009).
 - Org data (divisions, campuses, oprec stages, status labels) lives in `packages/ui/src/lib/network.ts`; date, time and number formatting in `lib/format.ts`. Don't hard-code them elsewhere.
 - Tailwind only sees class names written out in full. Never build them from template strings (`` `type-${x}` ``).
 

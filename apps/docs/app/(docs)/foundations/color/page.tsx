@@ -85,13 +85,13 @@ const TOKENS: [string, string, string, string][] = [
 
 const LINE_VALUES: Record<string, [string, string]> = {
   bph: ["#D61E17", "#F66E5E"],
-  danus: ["#AD5C15", "#E6964F"],
-  depol: ["#287F3D", "#63BF74"],
-  humas: ["#116BB5", "#67AAED"],
-  it: ["#037A84", "#50BDC9"],
-  medkref: ["#BC2B74", "#EC79A9"],
-  pka: ["#6A53BD", "#A497EA"],
-  sosbud: ["#922FA1", "#D082DC"],
+  danus: ["#C94E0C", "#FA934E"],
+  depol: ["#1D8139", "#50C76A"],
+  humas: ["#0D6ABB", "#60AAF3"],
+  it: ["#037A84", "#43C2CF"],
+  medkref: ["#BC2B74", "#F471AA"],
+  pka: ["#6D44D6", "#A492FB"],
+  sosbud: ["#9623A8", "#D879E6"],
 }
 
 function Ramp({ name, steps }: { name: string; steps: string[][] }) {
@@ -160,6 +160,7 @@ export default function ColourPage() {
               <li><strong>One signal red</strong> (<code>merah</code>) is the PPITSZ line and the call to action.</li>
               <li><strong>Eight line colors</strong> identify divisions, and appear only in network graphics.</li>
               <li><strong>Status colors</strong> are green and amber, used for states only.</li>
+              <li><strong>Exit yellow</strong> (<code>--exit</code>, amber-300) marks the way out, as on metro exit signs. It is not a color token: only the exit badge reads it.</li>
             </ul>
             <p>
               Real transit systems keep their architecture neutral so line colors read at a glance.
@@ -311,19 +312,20 @@ export default function ColourPage() {
             ["warning-text on bg / subtle", "7.36 / 6.85", "11.97 / 9.84"],
             ["danger-text on bg / subtle", "7.17 / 6.55", "10.20 / 8.98"],
             ["highlight-fg on highlight", "11.97", "11.97"],
+            ["exit-fg on exit (exit badge)", "11.97", "11.97"],
           ]}
         />
         <SpecTable
           head={["Line", "Light: badge text / on bg / on surface", "Dark: badge text / on bg / on surface / on surface-strong"]}
           rows={[
             ["bph", "5.19 / 5.19 / 4.92", "6.65 / 6.65 / 5.80 / 4.41"],
-            ["danus", "4.86 / 4.86 / 4.62", "8.03 / 8.03 / 7.00 / 5.32"],
-            ["depol", "4.98 / 4.98 / 4.73", "8.44 / 8.44 / 7.36 / 5.60"],
-            ["humas", "5.51 / 5.51 / 5.23", "7.75 / 7.75 / 6.76 / 5.14"],
-            ["it", "5.07 / 5.07 / 4.82", "8.61 / 8.61 / 7.50 / 5.71"],
-            ["medkref", "5.63 / 5.63 / 5.35", "7.17 / 7.17 / 6.25 / 4.75"],
-            ["pka", "5.87 / 5.87 / 5.57", "7.46 / 7.46 / 6.50 / 4.94"],
-            ["sosbud", "6.67 / 6.67 / 6.33", "7.21 / 7.21 / 6.29 / 4.78"],
+            ["danus", "4.61 / 4.61 / 4.37", "8.50 / 8.50 / 7.44 / 5.67"],
+            ["depol", "4.96 / 4.96 / 4.71", "8.83 / 8.83 / 7.73 / 5.88"],
+            ["humas", "5.54 / 5.54 / 5.26", "7.73 / 7.73 / 6.77 / 5.15"],
+            ["it", "5.07 / 5.07 / 4.82", "8.94 / 8.94 / 7.83 / 5.96"],
+            ["medkref", "5.63 / 5.63 / 5.35", "7.08 / 7.08 / 6.20 / 4.72"],
+            ["pka", "6.06 / 6.06 / 5.76", "7.36 / 7.36 / 6.45 / 4.91"],
+            ["sosbud", "6.76 / 6.76 / 6.42", "7.09 / 7.09 / 6.21 / 4.73"],
           ]}
         />
       </DocSection>
@@ -336,6 +338,10 @@ export default function ColourPage() {
         <DoDont
           dont={<p><code>text-line-humas</code> headings, a HUMAS-blue section, division-colored buttons.</p>}
           doThis={<p>Line colors only on <code>line-badge</code>, <code>route</code> and <code>station</code>. Everything else stays neutral.</p>}
+        />
+        <DoDont
+          dont={<p>A yellow “Buy now” button, or a yellow badge on a link inside the app.</p>}
+          doThis={<p>Exit yellow only on <code>exit-badge</code>, and the badge only on links that leave the app.</p>}
         />
         <DoDont
           dont={<p><code>bg-red-600</code>, <code>text-gray-500</code>, <code>bg-merah-600</code>, <code>text-[#D61E17]</code>.</p>}

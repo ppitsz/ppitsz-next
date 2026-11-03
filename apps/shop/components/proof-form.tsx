@@ -19,7 +19,7 @@ import type { ActionState } from "@/lib/actions/state"
 import { submitProofAction } from "@/lib/actions/buyer"
 import { PAYMENT_METHOD_LABELS } from "@/lib/catalog"
 import type { PaymentAccount } from "@/lib/domain/types"
-import { shrinkImage } from "@/lib/client/shrink-image"
+import { shrinkImage } from "@ppitsz/ui/lib/shrink-image"
 
 const INITIAL: ActionState = {}
 

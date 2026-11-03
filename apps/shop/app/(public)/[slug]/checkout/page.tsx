@@ -1,9 +1,13 @@
 import type { Metadata } from "next"
+import NextLink from "next/link"
 import { connection } from "next/server"
 import { notFound, redirect } from "next/navigation"
 
 import { Container } from "@ppitsz/ui/components/container"
+import { StationNameplate } from "@ppitsz/ui/components/network/station-nameplate"
+import { StripMap } from "@ppitsz/ui/components/network/strip-map"
 import { toCatalog } from "@/lib/catalog"
+import { campaignRoute } from "@/lib/domain/order"
 import { requireBuyer } from "@/lib/server/auth"
 import { visibleCampaign } from "@/lib/server/buyer-campaign"
 import { listBundles, listProducts, slotPlaces } from "@/lib/store"
@@ -28,10 +32,22 @@ export default async function CheckoutPage({ params }: PageProps<"/[slug]/checko
 
   return (
     <Container narrow className="flex flex-col gap-8 py-10 lg:py-16">
-      <div className="flex flex-col gap-3">
-        <p className="type-kicker text-accent-text">{campaign.name}</p>
-        <h1 className="type-display-xl text-text">Checkout</h1>
-      </div>
+      <StationNameplate
+        kicker={campaign.name}
+        name="Checkout"
+        line="danus"
+        lines={["danus"]}
+        linkAs={NextLink}
+        previous={{ label: campaign.name, href: `/${campaign.slug}` }}
+        next={{ label: "Pay" }}
+      >
+        <StripMap
+          line="danus"
+          stops={campaignRoute(campaign.offers).map((label) => ({ label }))}
+          current={0}
+          aria-label="Order progress"
+        />
+      </StationNameplate>
       <CheckoutForm
         catalog={catalog}
         profile={{ name: buyer.name, wechatId: buyer.wechatId, phone: buyer.phone }}

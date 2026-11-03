@@ -33,6 +33,6 @@ export const SIGN_IN_ERRORS: Record<string, string> = {
   EMAIL_NOT_FOUND: WRONG,
   INVALID_PASSWORD: WRONG,
   INVALID_EMAIL: WRONG,
-  USER_DISABLED: "This account is disabled. Contact PPITSZ on its socials.",
+  USER_DISABLED: "This card can't pass the gate: the account is disabled. Contact PPITSZ on its socials.",
   TOO_MANY_ATTEMPTS_TRY_LATER: "Too many attempts. Try again in a few minutes.",
 }

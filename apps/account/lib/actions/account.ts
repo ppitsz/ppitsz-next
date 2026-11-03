@@ -1,7 +1,9 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
+import { AvatarError, removeAvatar, saveAvatar } from "@ppitsz/accounts/avatar"
 import { cleanProfile, isEmail, normalizeEmail, passwordIssue } from "@ppitsz/accounts/fields"
 import { findAccount, resetLink, resetPassword, sendFirebaseResetEmail } from "@ppitsz/accounts/passwords"
 import { saveProfile } from "@ppitsz/accounts/profile"
@@ -15,8 +17,8 @@ import { clientIp } from "../server/request-meta"
 import { failure, str, type ActionState } from "./state"
 
 /*
- * Signing in, up and out, resetting a password, editing the profile. The one
- * place in every app where this happens (ADR 0008).
+ * Signing in, up and out, resetting a password, editing the profile and its
+ * photo. The one place in every app where this happens (ADR 0008, 0009).
  */
 
 const UNREACHABLE = "The server can't reach the sign-in service. Try again in a moment."
@@ -129,6 +131,34 @@ export async function resetPasswordAction(code: string, _prev: ActionState, form
   // A reset signs out every device, this one included.
   await endSession()
   redirect(`/sign-in?reset=1&email=${encodeURIComponent(result.email)}`)
+}
+
+/** Sets the photo every app shows for the account (ADR 0009). The browser has shrunk it already. */
+export async function updateAvatarAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const session = await requireSession()
+  const file = formData.get("photo")
+  if (!(file instanceof File) || file.size === 0) return { error: "Choose a photo." }
+  try {
+    await saveAvatar(session, { bytes: new Uint8Array(await file.arrayBuffer()), contentType: file.type })
+  } catch (error) {
+    if (error instanceof AvatarError) return { error: error.message }
+    return failure(error)
+  }
+  // The header's profile menu shows it on every page.
+  revalidatePath("/", "layout")
+  return { done: Date.now(), message: "Photo saved. Every app shows it from now on." }
+}
+
+/** Removes the account's own photo: a linked sign-in's photo, or the initials, show again. */
+export async function removeAvatarAction(_prev: ActionState): Promise<ActionState> {
+  const session = await requireSession()
+  try {
+    await removeAvatar(session)
+  } catch (error) {
+    return failure(error)
+  }
+  revalidatePath("/", "layout")
+  return { done: Date.now(), message: "Photo removed." }
 }
 
 export async function updateProfileAction(_prev: ActionState, formData: FormData): Promise<ActionState> {

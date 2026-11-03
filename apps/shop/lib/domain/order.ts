@@ -319,6 +319,12 @@ export function awaitsRefund(order: Order) {
 export const ORDER_ROUTE = ["Order", "Pay", "Verify", "Pick up"] as const
 export const DELIVERY_ROUTE = ["Order", "Pay", "Verify", "Delivery"] as const
 
+/** A campaign's route before the buyer picks: the last stop is Receive when it offers both. */
+export function campaignRoute(offers: { delivery: boolean; pickup: boolean }): readonly string[] {
+  if (offers.delivery && offers.pickup) return [...ORDER_ROUTE.slice(0, 3), "Receive"]
+  return offers.delivery ? DELIVERY_ROUTE : ORDER_ROUTE
+}
+
 /** The station the order is at, or null when it left the route. */
 export function routeStage(status: OrderStatus): number | null {
   switch (status) {

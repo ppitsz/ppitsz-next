@@ -1,16 +1,21 @@
 import type { Metadata } from "next"
 import NextLink from "next/link"
 import { connection } from "next/server"
+import type { ReactNode } from "react"
+import { StorefrontIcon, TicketIcon, UserIcon } from "@phosphor-icons/react/ssr"
 
 import { Alert, AlertDescription, AlertTitle } from "@ppitsz/ui/components/alert"
-import { Card, CardDescription, CardHeader, CardKicker, CardLink, CardTitle } from "@ppitsz/ui/components/card"
+import { Route } from "@ppitsz/ui/components/network/route"
+import { Sign, SignBoard, SignPictogram } from "@ppitsz/ui/components/network/sign"
 import { Container } from "@ppitsz/ui/components/container"
-import { profileOrBlank } from "@ppitsz/accounts/profile"
+import { avatarUrl } from "@ppitsz/accounts/avatar"
+import { profileOrBlank, shownAvatarPath } from "@ppitsz/accounts/profile"
 import { SHOP_ROLE_LABELS } from "@ppitsz/accounts/role-labels"
 import { latestRoleChanges, rolesOf } from "@ppitsz/accounts/roles"
 import { formsLive, formsOrigin, shopOrigin } from "@ppitsz/accounts/urls"
 import { requireSession } from "@/lib/server/auth"
 import { ProfileForm } from "@/components/auth-forms"
+import { AvatarForm } from "@/components/avatar-form"
 import { RoleChanges } from "@/components/role-changes"
 
 export const metadata: Metadata = { title: "Your account" }
@@ -21,39 +26,37 @@ interface AppLink {
   kicker?: string
   title: string
   description: string
+  /** The sign's pictogram. */
+  icon: ReactNode
   /** On this app: a client-side link. */
   internal?: boolean
 }
 
-function AppCard({ app }: { app: AppLink }) {
+/** The apps as a station sign: every destination one row, with its pictogram and arrow. */
+function AppSigns({ apps, label }: { apps: AppLink[]; label: string }) {
   return (
-    <Card variant="link" className="h-full">
-      <CardHeader>
-        {app.kicker && <CardKicker>{app.kicker}</CardKicker>}
-        <CardTitle>
-          {app.internal ? (
-            <CardLink as={NextLink} href={app.href}>
-              {app.title}
-            </CardLink>
-          ) : (
-            <CardLink href={app.href}>{app.title}</CardLink>
-          )}
-        </CardTitle>
-        <CardDescription>{app.description}</CardDescription>
-      </CardHeader>
-    </Card>
-  )
-}
-
-function AppGrid({ apps }: { apps: AppLink[] }) {
-  return (
-    <ul className="@container grid gap-4 @xl:grid-cols-2">
+    <SignBoard aria-label={label} className="max-w-3xl">
       {apps.map((app) => (
-        <li key={app.href}>
-          <AppCard app={app} />
-        </li>
+        <Sign
+          key={app.href}
+          href={app.href}
+          linkAs={app.internal ? NextLink : undefined}
+          direction="right"
+          headingLevel="h3"
+          lead={<SignPictogram>{app.icon}</SignPictogram>}
+          title={app.title}
+          description={
+            app.kicker ? (
+              <>
+                <span className="text-text">{app.kicker}</span> · {app.description}
+              </>
+            ) : (
+              app.description
+            )
+          }
+        />
       ))}
-    </ul>
+    </SignBoard>
   )
 }
 
@@ -68,6 +71,7 @@ export default async function HomePage() {
     {
       href: shopOrigin(),
       title: "PPITSZ Shop",
+      icon: <StorefrontIcon />,
       description: "Order food and merchandise from Danus, and follow your orders.",
     },
     ...(formsLive()
@@ -75,6 +79,7 @@ export default async function HomePage() {
           {
             href: formsOrigin(),
             title: "PPITSZ Forms",
+            icon: <TicketIcon />,
             description: "Event registrations, sign-ups and surveys.",
           },
         ]
@@ -87,6 +92,7 @@ export default async function HomePage() {
             href: `${shopOrigin()}/staff`,
             kicker: SHOP_ROLE_LABELS[roles.shop],
             title: "Shop dashboard",
+            icon: <StorefrontIcon />,
             description:
               roles.shop === "admin"
                 ? "Verify payments, and manage products and campaigns."
@@ -100,6 +106,7 @@ export default async function HomePage() {
             href: `${formsOrigin()}/staff`,
             kicker: roles.formsAdmin ? "Form admin" : "Panitia",
             title: "Forms dashboard",
+            icon: <TicketIcon />,
             description: roles.formsAdmin
               ? "Create forms, and pick each form's panitia."
               : `Responses, check-in and announcements for ${roles.panitia.map((f) => f.title).join(", ")}.`,
@@ -112,6 +119,7 @@ export default async function HomePage() {
             href: "/accounts",
             kicker: "Portal admin",
             title: "Accounts",
+            icon: <UserIcon />,
             description: "Give and remove roles in every app, and reset passwords.",
             internal: true,
           },
@@ -131,18 +139,20 @@ export default async function HomePage() {
 
       {staff.length > 0 && (
         <section aria-labelledby="staff" className="flex flex-col gap-4">
+          <Route className="w-10" />
           <h2 id="staff" className="type-heading-lg text-text">
             Your staff apps
           </h2>
-          <AppGrid apps={staff} />
+          <AppSigns apps={staff} label="Your staff apps" />
         </section>
       )}
 
       <section aria-labelledby="apps" className="flex flex-col gap-4">
+        <Route className="w-10" />
         <h2 id="apps" className="type-heading-lg text-text">
           Apps
         </h2>
-        <AppGrid apps={apps} />
+        <AppSigns apps={apps} label="Apps" />
       </section>
 
       <div className="@container grid gap-12 @3xl:grid-cols-2">
@@ -156,6 +166,11 @@ export default async function HomePage() {
               <AlertDescription>Danus needs it to reach you about an order. The shop asks for it at checkout.</AlertDescription>
             </Alert>
           )}
+          <AvatarForm
+            name={profile.name || session.email}
+            avatarUrl={avatarUrl(shownAvatarPath(profile))}
+            hasOwnPhoto={!!profile.avatarPath}
+          />
           <ProfileForm profile={{ name: profile.name, wechatId: profile.wechatId, phone: profile.phone }} />
         </section>
 

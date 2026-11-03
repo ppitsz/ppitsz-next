@@ -28,7 +28,7 @@ export default function LayoutPage() {
       href="/foundations/layout"
       kicker="Foundations"
       title="Layout"
-      lede="Text is left-aligned. Content sits in a centered column, station screens and photos run full-bleed, and seven layouts recur across the site."
+      lede="Text is left-aligned. Content sits in a centered column, station screens and photos run full-bleed, and eight layouts recur across the site."
       sections={SECTIONS}
     >
       <DocSection
@@ -97,6 +97,7 @@ export default function LayoutPage() {
             ["L5", "Route tracker", "The oprec journey: Online form → Written test → Interview → Results.", <NavLink key="l" href="/network/route-tracker">Route tracker</NavLink>],
             ["L6", "Station page", "Event detail: a header like a station sign, then photo, body, registration panel and gallery.", "—"],
             ["L7", "Gallery", "A masonry of event photos in natural ratios, CSS columns 2 / 3 / 4; click opens a dialog.", <NavLink key="l" href="/components/dialog">Dialog</NavLink>],
+            ["L8", "Catalog rail", "Long catalogs: the sections as stations on a sticky rail beside them (RouteStrip), and a strip under the header in narrow columns. Each section heading leads with a short stub of the line.", "—"],
           ]}
         />
       </DocSection>

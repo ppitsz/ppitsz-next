@@ -11,7 +11,7 @@ import type { Campaign, CampaignOffers, CampaignStatus, DeliverySlot } from "./t
  */
 
 /** Top-level paths the site uses itself, so no campaign can take them. */
-export const RESERVED_SLUGS = ["orders", "staff", "media", "api", "sign-in", "sign-up", "account", "forgot-password", "reset-password"]
+export const RESERVED_SLUGS = ["orders", "staff", "media", "avatars", "api", "sign-in", "sign-up", "account", "forgot-password", "reset-password"]
 
 const SLUG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/
 const PREFIX_PATTERN = /^[A-Z]{2,3}$/

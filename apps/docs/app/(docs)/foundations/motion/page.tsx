@@ -5,7 +5,7 @@ import { RouteList, RouteStop } from "@ppitsz/ui/components/network/route"
 import { DocPage, DocSection, Prose, SpecTable } from "@/components/docs/doc-page"
 import { DoDont } from "@/components/docs/do-dont"
 import { Example } from "@/components/docs/example"
-import { EnterDemo, StationStateDemo } from "@/components/demos/interactive"
+import { DispenseDemo, EnterDemo, StationStateDemo } from "@/components/demos/interactive"
 
 export const metadata: Metadata = { title: "Motion" }
 
@@ -37,6 +37,7 @@ export default function MotionPage() {
             [<code key="t">ease-in-out</code>, "cubic-bezier(0.65, 0, 0.35, 1)", "Moving on screen"],
             [<code key="t">animate-enter</code>, "fade + 8px rise, 200ms", "Floating layers opening"],
             [<code key="t">animate-spin</code>, "800ms rotation", "Spinners while loading"],
+            [<code key="t">animate-dispense</code>, "640ms reveal + 24px drop, ease-out", "A ticket new this moment, once (Ticket dispense)"],
           ]}
         />
       </DocSection>
@@ -52,6 +53,15 @@ export default function MotionPage() {
         </Example>
         <Example title="Station state changes" description="A station fills over 200ms when its section is reached." code={`<Station state="here" />`}>
           <StationStateDemo />
+        </Example>
+        <Example
+          lang="en"
+          layout="block"
+          title="A new ticket comes out of the machine"
+          description="The one celebratory motion: when a ticket is new this moment (just signed up, payment just checked), it is revealed downward as if dispensed. Never on a revisit, never on anything else."
+          code={`<Ticket dispense={justSignedUp}>…</Ticket>`}
+        >
+          <DispenseDemo />
         </Example>
         <Example
           title="Routes below the fold draw as you scroll"

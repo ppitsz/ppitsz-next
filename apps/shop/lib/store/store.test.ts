@@ -1003,6 +1003,8 @@ describe("buyer profiles", () => {
       name: "Sari W",
       wechatId: "sari_w",
       phone: "123",
+      avatarPath: "",
+      providerAvatarPath: "",
       createdAt: NOW,
       updatedAt: new Date(NOW.getTime() + 60_000),
     })

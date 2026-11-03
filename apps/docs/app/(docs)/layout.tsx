@@ -10,7 +10,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
       <DocsHeader brand={<BrandLink />} />
       <Container className="lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-12">
         <aside className="hidden lg:block">
-          <div className="sticky top-16 max-h-[calc(100dvh-4rem)] overflow-y-auto pe-2">
+          <div className="sticky top-17.5 max-h-[calc(100dvh-4.375rem)] overflow-y-auto pe-2">
             <DocsSidebar />
           </div>
         </aside>

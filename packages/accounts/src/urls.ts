@@ -22,6 +22,29 @@ export function formsLive() {
   return !!process.env.FORMS_URL || process.env.NODE_ENV !== "production"
 }
 
+export type AppId = "shop" | "forms" | "account"
+
+/** Another app, as the header's Transfer menu and the footer list it. */
+export interface TransferApp {
+  href: string
+  label: string
+  description: string
+}
+
+/** The other PPITSZ apps, from `from`: where a buyer or responder can transfer to. */
+export function transferApps(from: AppId): TransferApp[] {
+  const apps: (TransferApp & { id: AppId })[] = [
+    { id: "shop", href: shopOrigin(), label: "PPITSZ Shop", description: "Food and merchandise from Danus" },
+    ...(formsLive()
+      ? [{ id: "forms" as const, href: formsOrigin(), label: "PPITSZ Forms", description: "Event sign-ups and tickets" }]
+      : []),
+    { id: "account", href: accountOrigin(), label: "PPITSZ Account", description: "Your details and staff apps" },
+  ]
+  return apps
+    .filter((app) => app.id !== from)
+    .map((app) => ({ href: app.href, label: app.label, description: app.description }))
+}
+
 /** The account app's sign-in, coming back to `next` (a full URL) afterwards. */
 export function signInUrl(next: string) {
   return `${accountOrigin()}/sign-in?next=${encodeURIComponent(next)}`
