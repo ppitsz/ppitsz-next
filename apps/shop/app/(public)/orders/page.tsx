@@ -11,12 +11,16 @@ import { buyerSignOutAction } from "@/lib/actions/buyer"
 import { splitOrders } from "@/lib/domain/account"
 import { requireBuyer } from "@/lib/server/auth"
 import { listBuyerOrders, listCampaigns } from "@/lib/store"
+import { JourneyLog } from "@/components/journey-log"
 import { OrderCard } from "@/components/order-card"
 import { TabLink } from "@/components/tab-link"
 
 export const metadata: Metadata = { title: "Your orders", robots: { index: false } }
 
-/** The account's orders: Active (still moving) or Done, as links so the tab survives a reload. */
+/**
+ * The account's orders: Active (still moving) as cards, or Done as a journey
+ * log, with the tabs as links so the tab survives a reload.
+ */
 export default async function MyOrdersPage({ searchParams }: PageProps<"/orders">) {
   await connection()
   const buyer = await requireBuyer("/orders")
@@ -55,6 +59,8 @@ export default async function MyOrdersPage({ searchParams }: PageProps<"/orders"
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
+      ) : showDone ? (
+        <JourneyLog orders={done} campaigns={byId} />
       ) : (
         <ul className="grid gap-4 @4xl:grid-cols-2">
           {shown.map((order) => (

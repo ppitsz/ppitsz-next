@@ -9,6 +9,8 @@ import * as React from "react"
 import { ArrowRightIcon } from "@phosphor-icons/react"
 
 import { Button } from "@ppitsz/ui/components/button"
+import { GateSoundToggle } from "@ppitsz/ui/components/blocks/gate-sound"
+import { useGateSignal } from "@ppitsz/ui/hooks/use-gate-signal"
 import { FilterChip, FilterChipGroup } from "@ppitsz/ui/components/toggle"
 import { notify } from "@ppitsz/ui/components/sonner"
 import { Input } from "@ppitsz/ui/components/input"
@@ -312,7 +314,7 @@ export function ProfileMenuDemo() {
   return (
     <div className="flex flex-wrap items-center gap-4">
       <ProfileMenu
-        account={{ name: "Nadia Putri", email: "nadia@example.com", avatarUrl: "/samples/event-3.webp", role: "Admin" }}
+        account={{ name: "Titan Aldebaran", email: "nadia@example.com", avatarUrl: "/samples/event-3.webp", role: "Admin" }}
         signInHref="#"
         accountHref="#"
         links={[{ href: "#", label: "Your orders" }]}
@@ -344,7 +346,7 @@ export function DispenseDemo() {
             <LineBadge code="sosbud" />
             <span className="type-sign text-muted">Regular</span>
           </TicketHeader>
-          <TicketTitle as="h3">Nadia Putri</TicketTitle>
+          <TicketTitle as="h3">Titan Aldebaran</TicketTitle>
         </TicketBody>
         <TicketStub>
           <TicketCode>K7P3QX</TicketCode>
@@ -368,6 +370,19 @@ export function StationStateDemo() {
         <Station state={states[step]} />
       </span>
       <span className="type-sign text-muted">{states[step]}</span>
+    </div>
+  )
+}
+
+/** The gate's beep and buzz for each verdict. */
+export function GateSignalDemo() {
+  const gate = useGateSignal()
+  return (
+    <div className="flex flex-wrap items-center gap-3" onPointerDown={gate.prime}>
+      <Button onClick={() => gate.signal("go")}>Go</Button>
+      <Button onClick={() => gate.signal("hold")}>Hold</Button>
+      <Button onClick={() => gate.signal("stop")}>Stop</Button>
+      <GateSoundToggle />
     </div>
   )
 }

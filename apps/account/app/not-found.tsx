@@ -1,16 +1,19 @@
+import type { Metadata } from "next"
 import NextLink from "next/link"
 
-import { Container } from "@ppitsz/ui/components/container"
+import { Link } from "@ppitsz/ui/components/link"
+import { PageNotFound } from "@ppitsz/ui/components/blocks/page-not-found"
+
+export const metadata: Metadata = { title: "Page not found" }
 
 export default function NotFound() {
   return (
-    <Container narrow className="flex flex-col gap-4 py-16">
-      <p className="type-kicker text-accent-text">Page not found</p>
-      <h1 className="type-display-xl text-text">This station isn&apos;t on the network</h1>
-      <p className="max-w-[66ch] type-lede text-muted">The link may be old, or the page is only for Portal admins.</p>
-      <NextLink href="/" className="type-ui text-accent-text underline-offset-4 hover:underline">
-        Go to your account
-      </NextLink>
-    </Container>
+    <PageNotFound>
+      The link may be old, or the page is only for Portal admins. Go to{" "}
+      <Link as={NextLink} href="/">
+        your account
+      </Link>
+      .
+    </PageNotFound>
   )
 }

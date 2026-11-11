@@ -8,9 +8,9 @@ import type { Campaign, DeliverySlot } from "./domain/types"
  * catalog: when they can order, and how the order reaches them.
  */
 
-const at = (date: Date) => `${formatDate(date)} at ${formatTime(date)}`
+const at = (date: Date) => `${formatDate(date)} at ${formatTime(date)} Shenzhen time`
 
-/** "Order online until Mon, Mar 15 at 23:59", or what buyers can do instead. */
+/** "Order online until Mon, Mar 15 at 23:59 Shenzhen time", or what buyers can do instead. */
 export function orderingNote(campaign: Campaign, now: Date) {
   const phase = campaignPhase(campaign, now)
   const opens = campaign.onlineOpensAt

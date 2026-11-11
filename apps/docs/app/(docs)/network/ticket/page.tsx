@@ -65,7 +65,7 @@ export default function TicketPage() {
     </TicketHeader>
     <TicketTitle id="ticket-name" lang="id">Malam Budaya 2026</TicketTitle>
     <TicketFields>
-      <TicketField label="Name">Nadia Putri</TicketField>
+      <TicketField label="Name">Titan Aldebaran</TicketField>
       <TicketField label="Date">Sat, Nov 14</TicketField>
       <TicketField label="Doors">18:30</TicketField>
       <TicketField label="Station">SZU · Main hall</TicketField>
@@ -85,7 +85,7 @@ export default function TicketPage() {
               </TicketHeader>
               <TicketTitle id="ticket-name" lang="id">Malam Budaya 2026</TicketTitle>
               <TicketFields>
-                <TicketField label="Name">Nadia Putri</TicketField>
+                <TicketField label="Name">Titan Aldebaran</TicketField>
                 <TicketField label="Date">Sat, Nov 14</TicketField>
                 <TicketField label="Doors">18:30</TicketField>
                 <TicketField label="Station">SZU · Main hall</TicketField>

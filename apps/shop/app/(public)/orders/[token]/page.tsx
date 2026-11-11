@@ -76,6 +76,12 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
   const stage = routeStage(order.status)
   const status = displayStatus(order)
   const heading = order.delivery && status === "paid" ? "Waiting for delivery" : HEADINGS[status]
+  const orderCode = (
+    <span className="flex items-center gap-3">
+      <span className="type-kicker text-muted">Order</span>
+      <StationCode code={order.code} line="danus" />
+    </span>
+  )
 
   return (
     <Container narrow className="flex flex-col gap-10 py-10 lg:py-16">
@@ -90,11 +96,7 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
         linkAs={NextLink}
         previous={{ label: campaign.name, href: `/${campaign.slug}` }}
       >
-        <p className="flex items-center gap-3">
-          <span className="type-kicker text-muted">Order</span>
-          <StationCode code={order.code} line="danus" />
-        </p>
-        {stage !== null && (
+        {stage !== null ? (
           <StripMap
             line="danus"
             aria-label="Order progress"
@@ -104,7 +106,10 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
               label,
               note: stageNote(order, i, stage),
             }))}
+            status={orderCode}
           />
+        ) : (
+          <p>{orderCode}</p>
         )}
       </StationNameplate>
 

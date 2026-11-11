@@ -22,7 +22,7 @@ const APPROVED = [
   "Copy", "Trash", "MagnifyingGlass", "SignOut", "Images", "QrCode", "EnvelopeSimple",
   "Check", "CheckCircle", "Warning", "WarningCircle", "Info", "CircleNotch", "SunDim",
   "Moon", "InstagramLogo", "TiktokLogo", "LinkedinLogo", "YoutubeLogo", "WechatLogo",
-  "ArrowUp", "ExclamationMark", "Storefront", "Ticket",
+  "ArrowUp", "ExclamationMark", "Storefront", "Ticket", "SpeakerHigh", "SpeakerSlash",
 ] as const
 
 const RATIOS: [string, string, string][] = [

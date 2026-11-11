@@ -118,7 +118,9 @@ function StationNameplate({
             </span>
           )}
         </div>
-        {children}
+        {/* The name is the band's loudest line; what sits under it needs more
+            air than the gap-4 rhythm of the small rows above. */}
+        {children && <div className="mt-2 flex flex-col gap-4 @md:mt-4">{children}</div>}
       </div>
       {(previous || next) && (
         <nav aria-label={labels?.nav ?? "Stations either side"} className="grid grid-cols-2 border-t">

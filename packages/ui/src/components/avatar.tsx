@@ -74,7 +74,7 @@ function AvatarGroup({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-/** "Nadia Putri" → "NP"; an email or one word → its first letter. */
+/** "Malik Ihsan" → "MI"; an email or one word → its first letter. */
 function initials(name: string) {
   const words = name.replace(/@.*$/, "").split(/[\s._-]+/).filter(Boolean)
   return words

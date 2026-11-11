@@ -738,10 +738,9 @@
    header's loading indicator. Functional, like a spinner, so it may loop;
    it only runs while a page is on its way. */
 @utility stripe-train {
-  /* Hangs from the stripe, which sits at the very top of the page: centred
-     on it, half of it would be off-screen. */
+  /* Centred on the stripe, like a station on its line. */
   position: absolute;
-  top: 0;
+  top: calc(50% - 7px);
   left: 0;
   z-index: 1;
   width: 14px;

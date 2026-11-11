@@ -47,7 +47,8 @@ function ServiceNotice({
   label?: React.ReactNode
   /** One button or link: what to do now. */
   action?: React.ReactNode
-  headingLevel?: "h2" | "h3"
+  /** h1 when the notice is the whole page, as on an error page. */
+  headingLevel?: "h1" | "h2" | "h3"
 }) {
   const id = React.useId()
   const { label: kindLabel, Icon, icon } = KINDS[kind]

@@ -101,8 +101,7 @@ export default async function CatalogPage({ params }: PageProps<"/[slug]">) {
                 How to order
               </h2>
               <p className="max-w-[66ch] type-body text-muted">
-                {orderingNote(campaign, now)}
-                {campaign.onlineClosesAt || campaign.onlineOpensAt ? " Shenzhen time" : ""}. {fulfillmentNote(campaign)}
+                {orderingNote(campaign, now)}. {fulfillmentNote(campaign)}
               </p>
               {(delivery || pickup) && (
                 <div data-line="danus" className="@container/route pt-2">

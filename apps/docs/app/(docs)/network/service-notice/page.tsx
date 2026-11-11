@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 
 import { Button } from "@ppitsz/ui/components/button"
+import { Link } from "@ppitsz/ui/components/link"
+import { PageNotFound } from "@ppitsz/ui/components/blocks/page-not-found"
 import { ServiceNotice } from "@ppitsz/ui/components/blocks/service-notice"
 import { DocPage, DocSection, Prose, SpecTable } from "@/components/docs/doc-page"
 import { DoDont } from "@/components/docs/do-dont"
@@ -12,6 +14,7 @@ const SECTIONS = [
   { id: "notice", label: "Service notice" },
   { id: "kinds", label: "Kinds" },
   { id: "voice", label: "Voice" },
+  { id: "not-found", label: "Page not found" },
   { id: "rules", label: "Rules" },
 ]
 
@@ -95,8 +98,45 @@ export default function ServiceNoticePage() {
             ["No orders yet", "No departures yet", "Orders you place show here."],
             ["Campaign ended", "Service has ended", "Your orders still work."],
             ["Disabled account", "This card can't pass the gate", "Message PPITSZ on Instagram to have it checked."],
+            ["Nothing open", "No departures scheduled", "The next ones are announced on the PPITSZ socials."],
+            ["Error (500)", "Service disruption: Something went wrong", "Try again in a moment. The error code is for IT."],
+            ["Scanner offline", "No service: This phone is offline", "Use the printed list until it reconnects."],
+            ["Lost the email", "Lost property", "Find it by email."],
+            ["Closes within a day", "Final call", "Beside the real status badge, never instead of it."],
           ]}
         />
+        <Prose>
+          <p>
+            Short labels read like signs: a noun or a verb first, no “please”, no exclamation marks. “Have your QR code ready”,
+            “Pickup this way”, “Last order 20:00”. Sentences after them stay in the casual “you”.
+          </p>
+        </Prose>
+      </DocSection>
+
+      <DocSection
+        id="not-found"
+        title="Page not found"
+        intro={
+          <p>
+            A 404 isn&apos;t a notice: nothing changed, the address is wrong. Every app shows the same{" "}
+            <code>PageNotFound</code> under its own header; only the sentence differs. Say why the link may be wrong here, then
+            link to where to go instead.
+          </p>
+        }
+      >
+        <Example
+          lang="en"
+          layout="block"
+          code={`<PageNotFound>
+  An order link may have been cut off when copied. Open it again from the original message, or check{" "}
+  <Link as={NextLink} href="/orders">Your orders</Link>.
+</PageNotFound>`}
+        >
+          <PageNotFound className="py-0">
+            An order link may have been cut off when copied. Open it again from the original message, or check{" "}
+            <Link href="#not-found">Your orders</Link>.
+          </PageNotFound>
+        </Example>
       </DocSection>
 
       <DocSection id="rules" title="Rules">
@@ -105,6 +145,11 @@ export default function ServiceNoticePage() {
             <li>Alert is feedback on the screen&apos;s own task (“Payment proof uploaded”). A service notice is the service itself changing.</li>
             <li>One notice per page, the newest. Remove it once it stops being true.</li>
             <li>Static: no live role, no dismiss button. It is the page&apos;s state.</li>
+            <li>
+              <code>label</code> replaces the header words in two places only: “Service disruption” on error pages (kind{" "}
+              <code>change</code>, heading <code>h1</code>), and “No service” while a scanner is offline (<code>NoService</code>,
+              kind <code>suspended</code>, shown only while the phone has no network).
+            </li>
           </ul>
         </Prose>
         <DoDont

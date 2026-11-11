@@ -6,6 +6,8 @@ import { CameraIcon, CheckIcon, ImageIcon, ScanIcon } from "@phosphor-icons/reac
 
 import { Alert, AlertDescription, AlertTitle } from "@ppitsz/ui/components/alert"
 import { Gate, GateDescription, GateHolder, GateTitle, type GateVerdict } from "@ppitsz/ui/components/blocks/gate"
+import { GateSoundToggle } from "@ppitsz/ui/components/blocks/gate-sound"
+import { NoService } from "@ppitsz/ui/components/blocks/no-service"
 import { Button } from "@ppitsz/ui/components/button"
 import { Card, CardContent } from "@ppitsz/ui/components/card"
 import { Checkbox } from "@ppitsz/ui/components/checkbox"
@@ -14,6 +16,7 @@ import { Input } from "@ppitsz/ui/components/input"
 import { Link } from "@ppitsz/ui/components/link"
 import { StationCode } from "@ppitsz/ui/components/network/station-code"
 import { notify } from "@ppitsz/ui/components/sonner"
+import { useGateSignal } from "@ppitsz/ui/hooks/use-gate-signal"
 import { formatTime } from "@ppitsz/ui/lib/format"
 import { handOverAction, lookupScanAction, type ScanResult, type ScannedOrder } from "@/lib/actions/staff"
 import { OrderStatusBadge, when } from "./order-bits"
@@ -41,6 +44,7 @@ export function Scanner() {
   const [recent, setRecent] = useState<Handover[]>([])
   const [looking, startLookup] = useTransition()
   const [handing, startHandOver] = useTransition()
+  const gate = useGateSignal()
 
   const camera = useQrCamera(videoRef, {
     paused: result !== null || looking,
@@ -65,11 +69,12 @@ export function Scanner() {
     startLookup(async () => {
       const found = await lookupScanAction(text)
       if (!found.ok && !found.order) {
+        gate.signal("stop")
         if (source === "typed") setManualError(found.error)
         else notify.danger(found.error)
         return
       }
-      navigator.vibrate?.(60)
+      if (found.order) gate.signal(gateFor(found, found.order, remainingOf(found.order)).verdict)
       setManualError(undefined)
       setManualCode("")
       show(found)
@@ -89,8 +94,9 @@ export function Scanner() {
     startHandOver(async () => {
       const done = await handOverAction(order.id, [...selected])
       show(done)
+      if (!done.ok) gate.signal("stop")
       if (done.ok && done.handedOver) {
-        navigator.vibrate?.([80, 60, 80])
+        gate.signal("go")
         setRecent((list) =>
           [
             { id: order.id, code: order.code, buyerName: order.buyerName, qty: done.handedOver!, at: new Date() },
@@ -108,7 +114,11 @@ export function Scanner() {
   }
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-10" onPointerDown={gate.prime}>
+      <NoService lines={["danus"]}>
+        <p>Orders can&apos;t be looked up until it reconnects. Meanwhile, hand over from the printed pickup list.</p>
+      </NoService>
+      <GateSoundToggle className="self-start" />
       {/* The camera keeps running behind the result, so the next scan starts at once. */}
       <section aria-label="Scan QR code" hidden={result !== null} className="flex flex-col gap-6">
         <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-surface-strong">
@@ -256,7 +266,7 @@ function ScanResultCard({
 }) {
   const { canHandOver } = order
   const selectedQty = [...selected].reduce((sum, i) => sum + (order.items[i]?.qty ?? 0), 0)
-  const remaining = order.items.filter((item) => !item.pickedUp).length
+  const remaining = remainingOf(order)
   const gate = gateFor(result, order, remaining)
   const actionRef = useRef<HTMLButtonElement>(null)
   // Each new result moves focus to the next action; the gate announces itself.
@@ -344,6 +354,10 @@ function ScanResultCard({
       </div>
     </section>
   )
+}
+
+function remainingOf(order: ScannedOrder) {
+  return order.items.filter((item) => !item.pickedUp).length
 }
 
 interface GateCopy {

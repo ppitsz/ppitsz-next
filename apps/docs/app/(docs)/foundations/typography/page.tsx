@@ -22,7 +22,7 @@ const SCALE: [string, string, string, string][] = [
   ["type-display-xl", "Archivo 800 · 38→80px · wdth 112→125", "Page h1", "Kepengurusan"],
   ["type-display-lg", "Archivo 750 · 32→56px · wdth 112", "Section h2, lead member name", "Upcoming events"],
   ["type-heading-lg", "Archivo 700 · 24→32px", "h3, event and article titles", "Shenzhen Cup 2026"],
-  ["type-heading-md", "Archivo 650 · 20→24px", "h4, member names", "Nadia Putri Rahman"],
+  ["type-heading-md", "Archivo 650 · 20→24px", "h4, member names", "Malik Ihsan Fathurrahman"],
   ["type-heading-sm", "Archivo 700 · 17px", "Form section headings, footer titles", "Data diri"],
   ["type-numeral", "Archivo 700 · 40→72px · tabular", "Dates and stats", "14"],
   ["type-sign", "Archivo 600 · 15px · wdth 87.5", "Station names, timetable cells, metadata", "CUHK-Shenzhen · 19.00"],
