@@ -1,7 +1,7 @@
 import { cache } from "react"
 
 import { bucket } from "./firebase"
-import { ensureProfile, getProfile, setAvatarPath, shownAvatarPath } from "./profile"
+import { ensureProfile, getProfile, setAvatarSlot, shownAvatarPath } from "./profile"
 import { getSession, type Session } from "./session"
 
 /*
@@ -18,7 +18,7 @@ export const AVATAR_PREFIX = "avatars/"
 export const AVATAR_MAX_BYTES = 1024 * 1024
 
 /** Shown in every browser: no HEIC. */
-const AVATAR_TYPES: Record<string, string> = {
+export const AVATAR_TYPES: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/webp": "webp",
@@ -31,17 +31,45 @@ export function avatarUrl(path: string | null): string | null {
   return path?.startsWith(AVATAR_PREFIX) ? `/${path}` : null
 }
 
+type AvatarFile = { bytes: Uint8Array; contentType: string }
+
 /** Stores a new photo as the person's own avatar and deletes the one it replaces. Returns its URL. */
-export async function saveAvatar(session: Session, file: { bytes: Uint8Array; contentType: string }) {
-  const ext = AVATAR_TYPES[file.contentType]
-  if (!ext) throw new AvatarError("Choose a JPEG, PNG or WebP photo.")
+export async function saveAvatar(session: Session, file: AvatarFile) {
+  if (!AVATAR_TYPES[file.contentType]) throw new AvatarError("Choose a JPEG, PNG or WebP photo.")
   if (file.bytes.byteLength === 0) throw new AvatarError("That file is empty.")
   if (file.bytes.byteLength > AVATAR_MAX_BYTES) throw new AvatarError("That photo is too large. Choose one under 1 MB.")
 
   // A staff account made by a script may have no profile yet.
   await ensureProfile(session, session.name === session.email ? "" : session.name)
+  return avatarUrl(await storeInSlot(session.uid, "avatarPath", file))
+}
+
+/** Removes the person's own avatar; a linked sign-in's photo, or the initials, show again. */
+export async function removeAvatar(session: Session) {
+  const profile = await getProfile(session.uid)
+  if (!profile?.avatarPath) return
+  await deleteAvatarFile(await setAvatarSlot(session.uid, "avatarPath", ""))
+}
+
+/**
+ * Stores our copy of the linked Google account's photo (already checked to
+ * be a JPEG, PNG or WebP under the size limit). The profile must exist.
+ */
+export async function saveProviderAvatar(uid: string, file: AvatarFile) {
+  await storeInSlot(uid, "providerAvatarPath", file)
+}
+
+/** Forgets the linked Google account's photo, when it is unlinked. */
+export async function removeProviderAvatar(uid: string) {
+  const profile = await getProfile(uid)
+  if (!profile?.providerAvatarPath) return
+  await deleteAvatarFile(await setAvatarSlot(uid, "providerAvatarPath", ""))
+}
+
+/** Uploads the photo under a new name, points the slot at it and deletes the one it replaces. */
+async function storeInSlot(uid: string, slot: "avatarPath" | "providerAvatarPath", file: AvatarFile) {
   const suffix = Buffer.from(crypto.getRandomValues(new Uint8Array(6))).toString("hex")
-  const path = `${AVATAR_PREFIX}${session.uid}/${Date.now()}-${suffix}.${ext}`
+  const path = `${AVATAR_PREFIX}${uid}/${Date.now()}-${suffix}.${AVATAR_TYPES[file.contentType]}`
   await bucket()
     .file(path)
     .save(Buffer.from(file.bytes), {
@@ -49,20 +77,12 @@ export async function saveAvatar(session: Session, file: { bytes: Uint8Array; co
       resumable: false,
       metadata: { cacheControl: "public, max-age=31536000, immutable" },
     })
-  const previous = await setAvatarPath(session.uid, path).catch(async (error) => {
+  const previous = await setAvatarSlot(uid, slot, path).catch(async (error) => {
     await deleteAvatarFile(path)
     throw error
   })
   await deleteAvatarFile(previous)
-  return avatarUrl(path)
-}
-
-/** Removes the person's own avatar; a linked sign-in's photo, or the initials, show again. */
-export async function removeAvatar(session: Session) {
-  const profile = await getProfile(session.uid)
-  if (!profile?.avatarPath) return
-  const previous = await setAvatarPath(session.uid, "")
-  await deleteAvatarFile(previous)
+  return path
 }
 
 async function deleteAvatarFile(path: string) {

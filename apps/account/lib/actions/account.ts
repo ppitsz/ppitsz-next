@@ -5,7 +5,8 @@ import { redirect } from "next/navigation"
 
 import { AvatarError, removeAvatar, saveAvatar } from "@ppitsz/accounts/avatar"
 import { cleanProfile, isEmail, normalizeEmail, passwordIssue } from "@ppitsz/accounts/fields"
-import { findAccount, resetLink, resetPassword, sendFirebaseResetEmail } from "@ppitsz/accounts/passwords"
+import { unlinkGoogle } from "@ppitsz/accounts/google-sign-in"
+import { addPassword, findAccount, resetLink, resetPassword, sendFirebaseResetEmail } from "@ppitsz/accounts/passwords"
 import { saveProfile } from "@ppitsz/accounts/profile"
 import { endSession, signIn, signUp, startSession } from "@ppitsz/accounts/session"
 import { accountOrigin, safeNext } from "@ppitsz/accounts/urls"
@@ -17,7 +18,8 @@ import { failure, str, type ActionState } from "./state"
 
 /*
  * Signing in, up and out, resetting a password, editing the profile and its
- * photo. The one place in every app where this happens (ADR 0008, 0009).
+ * photo, and the Google link (Google's own sign-in is app/auth/google). The
+ * one place in every app where this happens (ADR 0008, 0009, 0011).
  */
 
 const UNREACHABLE = "The server can't reach the sign-in service. Try again in a moment."
@@ -129,6 +131,37 @@ export async function resetPasswordAction(code: string, _prev: ActionState, form
   // A reset signs out every device, this one included.
   await endSession()
   redirect(`/sign-in?reset=1&email=${encodeURIComponent(result.email)}`)
+}
+
+/** A first password, for an account that signs in with Google only (ADR 0011). */
+export async function addPasswordAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const session = await requireSession()
+  const password = String(formData.get("password") ?? "")
+  const weak = passwordIssue(password)
+  if (weak) return { fieldErrors: { password: weak } }
+  try {
+    if (!(await addPassword(session.uid, password))) {
+      return { error: "Your account already has a password. Use Change password instead." }
+    }
+  } catch (error) {
+    return failure(error)
+  }
+  revalidatePath("/")
+  return { done: Date.now() }
+}
+
+/** Unlinks Google from the account, unless it is the only way in (ADR 0011). */
+export async function unlinkGoogleAction(): Promise<ActionState> {
+  const session = await requireSession()
+  try {
+    if ((await unlinkGoogle(session.uid)) === "no-password") {
+      return { error: "Add a password first, so you can still sign in without Google." }
+    }
+  } catch (error) {
+    return failure(error)
+  }
+  revalidatePath("/")
+  return { done: Date.now() }
 }
 
 /** Sets the photo every app shows for the account (ADR 0009). The browser has shrunk it already. */

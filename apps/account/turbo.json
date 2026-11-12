@@ -10,7 +10,9 @@
         "FIREBASE_CLIENT_EMAIL",
         "FIREBASE_PRIVATE_KEY",
         "VERCEL",
-        "ROOT_DOMAIN"
+        "ROOT_DOMAIN",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET"
       ]
     }
   }

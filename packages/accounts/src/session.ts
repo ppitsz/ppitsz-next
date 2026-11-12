@@ -9,8 +9,9 @@ import { sessionCookieDomain } from "./urls"
 
 /*
  * One PPITSZ account, one sign-in for every app (ADR 0008). The browser
- * never talks to Google: the password goes to our server, which checks it
+ * never talks to Firebase: the password goes to our server, which checks it
  * with the Identity Toolkit and answers with a Firebase session cookie.
+ * Google sign-in (ADR 0011) ends in the same cookie, from sessionCookieFor.
  *
  * The cookie is set on the apps' root domain (".ppitshenzhen.org" in
  * production, ./urls.ts), so the shop, Forms and the account app all read
@@ -99,6 +100,18 @@ export async function signIn(email: string, password: string): Promise<AuthResul
     expiresIn: SESSION_MAX_AGE_SECONDS * 1000,
   })
   return { ok: true, cookie, session }
+}
+
+/**
+ * A session cookie for an account whose sign-in our server has already
+ * checked another way (Google, ./google-sign-in.ts): a custom token is
+ * traded for an ID token, which becomes the cookie.
+ */
+export async function sessionCookieFor(uid: string): Promise<string> {
+  const token = await adminAuth().createCustomToken(uid)
+  const result = await identityToolkit<{ idToken: string }>("signInWithCustomToken", { token, returnSecureToken: true })
+  if (!result.ok) throw new Error(`Firebase refused the custom token: ${result.code}`)
+  return adminAuth().createSessionCookie(result.data.idToken, { expiresIn: SESSION_MAX_AGE_SECONDS * 1000 })
 }
 
 /** Creates the account and its profile, then signs in. The fields are already checked. */

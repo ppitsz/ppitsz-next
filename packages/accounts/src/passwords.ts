@@ -87,6 +87,18 @@ export async function resetPassword(
   return { ok: true, email: result.data.email }
 }
 
+/**
+ * Adds a first password to an account that signs in with Google only.
+ * False when it already has one: changing a password goes through a reset.
+ * Nobody is signed out: no one else could have known a password it lacked.
+ */
+export async function addPassword(uid: string, password: string): Promise<boolean> {
+  const user = await adminAuth().getUser(uid)
+  if (user.providerData.some((p) => p.providerId === "password")) return false
+  await adminAuth().updateUser(uid, { password })
+  return true
+}
+
 /** Sets `password` for the account and signs it out everywhere: a Portal admin's reset, or a script's. */
 export async function setPassword(uid: string, password: string) {
   await adminAuth().updateUser(uid, { password })

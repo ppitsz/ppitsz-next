@@ -19,7 +19,7 @@ One person's email and password, with a profile holding their name and, optional
 _Avoid_: user, member, login (that is the act)
 
 **Avatar**:
-The photo every app shows beside an account's name, in the profile menu. The person's own photo if they chose one in PPITSZ Account, else a linked sign-in's (Google, later), else their initials. Stored and served by us (ADR 0009).
+The photo every app shows beside an account's name, in the profile menu. The person's own photo if they chose one in PPITSZ Account, else a copy of their linked Google account's photo, else their initials. Stored and served by us (ADR 0009, 0011).
 _Avoid_: profile picture, pfp, photo (on its own)
 
 **Profile menu**:

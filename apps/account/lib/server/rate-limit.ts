@@ -23,6 +23,7 @@ export const LIMITS = {
   resetPerEmail: { max: 3, windowMs: 60 * MINUTE },
   signInPerIp: { max: 20, windowMs: 10 * MINUTE },
   signInPerEmail: { max: 10, windowMs: 10 * MINUTE },
+  googlePerIp: { max: 20, windowMs: 10 * MINUTE },
 } satisfies Record<string, Limit>
 
 export const RATE_LIMITED = "Too many tries. Wait a few minutes, then try again."

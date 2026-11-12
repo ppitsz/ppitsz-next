@@ -9,10 +9,12 @@ import { FieldGroup } from "@ppitsz/ui/components/field"
 import { MIN_PASSWORD_LENGTH, type ProfileFields } from "@ppitsz/accounts/fields"
 import type { ActionState } from "@/lib/actions/state"
 import {
+  addPasswordAction,
   forgotPasswordAction,
   resetPasswordAction,
   signInAction,
   signUpAction,
+  unlinkGoogleAction,
   updateProfileAction,
 } from "@/lib/actions/account"
 import { TextField } from "@/components/text-field"
@@ -180,6 +182,41 @@ export function ResetPasswordForm({ code }: { code: string }) {
       )}
       <Button type="submit" variant="primary" size="lg" loading={pending}>
         {pending ? "Saving…" : "Save password"}
+      </Button>
+    </form>
+  )
+}
+
+/** For an account that signs in with Google only. Once added, the page shows Change password instead. */
+export function AddPasswordForm() {
+  const [state, action, pending] = useActionState(addPasswordAction, INITIAL)
+
+  return (
+    <form action={action} className="flex w-full max-w-md flex-col gap-6" noValidate>
+      <TextField
+        name="password"
+        label="New password"
+        type="password"
+        helper={`At least ${MIN_PASSWORD_LENGTH} characters.`}
+        autoComplete="new-password"
+        error={state.fieldErrors?.password}
+      />
+      <Problem state={state} title="Password not added" />
+      <Button type="submit" loading={pending} className="self-start">
+        {pending ? "Adding…" : "Add password"}
+      </Button>
+    </form>
+  )
+}
+
+export function UnlinkGoogleForm() {
+  const [state, action, pending] = useActionState(unlinkGoogleAction, INITIAL)
+
+  return (
+    <form action={action} className="flex w-full flex-col items-start gap-4">
+      <Problem state={state} title="Google not unlinked" />
+      <Button type="submit" loading={pending}>
+        {pending ? "Unlinking…" : "Unlink Google"}
       </Button>
     </form>
   )

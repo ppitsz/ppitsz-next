@@ -9,13 +9,16 @@ import { Route } from "@ppitsz/ui/components/network/route"
 import { Sign, SignBoard, SignPictogram } from "@ppitsz/ui/components/network/sign"
 import { Container } from "@ppitsz/ui/components/container"
 import { avatarUrl } from "@ppitsz/accounts/avatar"
+import { googleConfigured, googleError } from "@ppitsz/accounts/google"
+import { signInMethods } from "@ppitsz/accounts/google-sign-in"
 import { profileOrBlank, shownAvatarPath } from "@ppitsz/accounts/profile"
 import { SHOP_ROLE_LABELS } from "@ppitsz/accounts/role-labels"
 import { latestRoleChanges, rolesOf } from "@ppitsz/accounts/roles"
 import { appLive, formsOrigin, shopOrigin } from "@ppitsz/accounts/urls"
 import { requireSession } from "@/lib/server/auth"
-import { ProfileForm } from "@/components/auth-forms"
+import { AddPasswordForm, ProfileForm, UnlinkGoogleForm } from "@/components/auth-forms"
 import { AvatarForm } from "@/components/avatar-form"
+import { LinkGoogleButton } from "@/components/google-button"
 import { RoleChanges } from "@/components/role-changes"
 
 export const metadata: Metadata = { title: "Your account" }
@@ -60,11 +63,19 @@ function AppSigns({ apps, label }: { apps: AppLink[]; label: string }) {
   )
 }
 
+const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value)
+
 /** Everyone's home: their profile, the apps, and the staff apps they can open. */
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: PageProps<"/">) {
   await connection()
   const session = await requireSession()
-  const [profile, roles] = await Promise.all([profileOrBlank(session), rolesOf(session.uid)])
+  const [profile, roles, methods] = await Promise.all([
+    profileOrBlank(session),
+    rolesOf(session.uid),
+    signInMethods(session.uid),
+  ])
+  const google = first((await searchParams).google)
+  const googleProblem = googleError(google)
   const changes = roles.portalAdmin ? await latestRoleChanges(10) : []
 
   const apps: AppLink[] = [
@@ -174,17 +185,71 @@ export default async function HomePage() {
           <ProfileForm profile={{ name: profile.name, wechatId: profile.wechatId, phone: profile.phone }} />
         </section>
 
-        <section aria-labelledby="password" className="flex flex-col items-start gap-4">
-          <h2 id="password" className="type-heading-lg text-text">
-            Password
+        <section aria-labelledby="signing-in" className="flex flex-col gap-8">
+          <h2 id="signing-in" className="type-heading-lg text-text">
+            Signing in
           </h2>
-          <p className="max-w-[66ch] type-body text-muted">
-            Your email can&apos;t be changed. To change your password, we send a link to {session.email}. Every device
-            is then signed out, in every app.
-          </p>
-          <NextLink href="/forgot-password" className="type-ui text-accent-text underline-offset-4 hover:underline">
-            Change password
-          </NextLink>
+          {google === "linked" && (
+            <Alert variant="success">
+              <AlertTitle>Google linked</AlertTitle>
+              <AlertDescription>Continue with Google now signs you in to this account.</AlertDescription>
+            </Alert>
+          )}
+          {googleProblem && (
+            <Alert variant="danger">
+              <AlertTitle>Google not linked</AlertTitle>
+              <AlertDescription>{googleProblem}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex flex-col items-start gap-4">
+            <h3 className="type-heading-sm text-text">Password</h3>
+            {methods.password ? (
+              <>
+                <p className="max-w-[66ch] type-body text-muted">
+                  Your email can&apos;t be changed. To change your password, we send a link to {session.email}. Every
+                  device is then signed out, in every app.
+                </p>
+                <NextLink href="/forgot-password" className="type-ui text-accent-text underline-offset-4 hover:underline">
+                  Change password
+                </NextLink>
+              </>
+            ) : (
+              <>
+                <p className="max-w-[66ch] type-body text-muted">
+                  You sign in with Google. Add a password to sign in with {session.email} and the password too, which
+                  works in China without a VPN.
+                </p>
+                <AddPasswordForm />
+              </>
+            )}
+          </div>
+
+          {(methods.google || googleConfigured()) && (
+            <div className="flex flex-col items-start gap-4">
+              <h3 className="type-heading-sm text-text">Google</h3>
+              {methods.google ? (
+                <>
+                  <p className="max-w-[66ch] type-body text-muted">
+                    Linked to {methods.google.email}. Continue with Google signs you in to this account.
+                  </p>
+                  {methods.password ? (
+                    <UnlinkGoogleForm />
+                  ) : (
+                    <p className="max-w-[66ch] type-body-sm text-muted">To unlink Google, add a password first.</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="max-w-[66ch] type-body text-muted">
+                    Link your Google account to sign in with it, and to use its photo until you choose your own. Google
+                    needs a VPN in mainland China.
+                  </p>
+                  <LinkGoogleButton />
+                </>
+              )}
+            </div>
+          )}
         </section>
       </div>
 

@@ -6,9 +6,11 @@ import { connection } from "next/server"
 import { Alert, AlertDescription, AlertTitle } from "@ppitsz/ui/components/alert"
 import { Card, CardContent } from "@ppitsz/ui/components/card"
 import { Container } from "@ppitsz/ui/components/container"
+import { googleConfigured, googleError } from "@ppitsz/accounts/google"
 import { getSession } from "@ppitsz/accounts/session"
 import { formsOrigin, safeNext, shopOrigin } from "@ppitsz/accounts/urls"
 import { SignInForm } from "@/components/auth-forms"
+import { ContinueWithGoogle } from "@/components/google-button"
 
 export const metadata: Metadata = { title: "Sign in" }
 
@@ -29,6 +31,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
   const params = await searchParams
   const next = safeNext(first(params.next))
   if (await getSession()) redirect(next)
+  const googleProblem = googleError(first(params.google))
 
   return (
     <Container narrow className="flex flex-col gap-8 py-10 lg:py-16">
@@ -44,8 +47,15 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
           <AlertDescription>Sign in with your new password.</AlertDescription>
         </Alert>
       )}
+      {googleProblem && (
+        <Alert variant="danger">
+          <AlertTitle>Couldn&apos;t continue with Google</AlertTitle>
+          <AlertDescription>{googleProblem}</AlertDescription>
+        </Alert>
+      )}
       <Card variant="outline">
-        <CardContent>
+        <CardContent className="flex flex-col gap-6">
+          {googleConfigured() && <ContinueWithGoogle next={next} />}
           <SignInForm next={next} email={first(params.email)} />
         </CardContent>
       </Card>

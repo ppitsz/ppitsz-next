@@ -9,8 +9,8 @@ import type { ProfileFields } from "./fields"
  * The email is the account's sign-in, copied here for lists.
  *
  * Two avatar slots (ADR 0009). `avatarPath` is the photo the person chose;
- * `providerAvatarPath` is a copy of a linked sign-in's photo (Google, once
- * it exists), stored by us because Google's own image URLs don't load in
+ * `providerAvatarPath` is a copy of a linked sign-in's photo (Google's),
+ * stored by us because Google's own image URLs don't load in
  * China. The person's own photo always wins; see shownAvatarPath.
  */
 
@@ -137,16 +137,22 @@ export async function profileOrBlank(session: { uid: string; email: string; name
 }
 
 /**
- * Sets the person's own photo (a stored path, or "" to remove it) and
- * returns the path it replaced, for the caller to delete.
+ * Sets one of the two photos (a stored path, or "" to remove it) and
+ * returns the path it replaced, for the caller to delete: `avatarPath` is
+ * the person's own, `providerAvatarPath` the linked Google account's copy.
  */
-export async function setAvatarPath(uid: string, path: string, now = new Date()): Promise<string> {
+export async function setAvatarSlot(
+  uid: string,
+  slot: "avatarPath" | "providerAvatarPath",
+  path: string,
+  now = new Date()
+): Promise<string> {
   const ref = profiles().doc(uid)
   return db().runTransaction(async (tx) => {
     const snap = await tx.get(ref)
     if (!snap.exists) throw new Error("NO_PROFILE")
-    const previous = (snap.get("avatarPath") as string | undefined) ?? ""
-    tx.update(ref, { avatarPath: path, updatedAt: Timestamp.fromDate(now) })
+    const previous = (snap.get(slot) as string | undefined) ?? ""
+    tx.update(ref, { [slot]: path, updatedAt: Timestamp.fromDate(now) })
     return previous
   })
 }
