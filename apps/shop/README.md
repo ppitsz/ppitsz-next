@@ -167,9 +167,7 @@ Set these on Vercel:
 | `FIREBASE_PRIVATE_KEY` | Same key; paste as is, `\n` escapes are fine |
 | `FIREBASE_STORAGE_BUCKET` | Defaults to `<project>.firebasestorage.app` |
 | `FIREBASE_API_KEY` | The project's Web API key (Project settings). Enable Email/Password in Authentication. |
-| `SESSION_COOKIE_DOMAIN` | `.ppitshenzhen.org`, so the one session reaches every app (ADR 0008) |
-| `ACCOUNT_URL` | `https://account.ppitshenzhen.org`, where everyone signs in |
-| `SITE_URL` | `https://shop.ppitshenzhen.org`, used in QR links |
+| `ROOT_DOMAIN` | Unset. On Vercel the apps are `<app>.ppitshenzhen.org` (ADR 0010); set it only to move them to another root, like a preview branch |
 | `CRON_SECRET` | Any long random string, for `/api/cron` |
 | `ALERT_WEBHOOK_URL` | Optional. A group chat webhook for server errors, see below |
 

@@ -99,9 +99,7 @@ Decided with the user on 2026-10-30 (grilling session). See ADR 0008 and `GLOSSA
 
 | Variable | Where | Value in production |
 |---|---|---|
-| `SESSION_COOKIE_DOMAIN` | all three | `.ppitshenzhen.org` |
-| `ACCOUNT_URL` | shop, forms | `https://account.ppitshenzhen.org` |
-| `SHOP_URL`, `FORMS_URL` | account | `https://shop.ppitshenzhen.org`, `https://forms.ppitshenzhen.org` |
+| `ROOT_DOMAIN` | all three, optional | Unset: on Vercel the apps are `<app>.ppitshenzhen.org` (ADR 0010, which replaced `SESSION_COOKIE_DOMAIN`, `ACCOUNT_URL`, `SHOP_URL` and `FORMS_URL`) |
 | `FIREBASE_*`, `RESEND_API_KEY`, `MAIL_FROM_DEFAULT` | account | as in Forms |
 
 ## Out of scope
@@ -111,7 +109,6 @@ Google sign-in, a Member status, email broadcasting, oprec applications, admin s
 ## Before going live
 
 - [ ] Vercel project for `apps/account` at `account.ppitshenzhen.org`, with the variables above.
-- [ ] `SESSION_COOKIE_DOMAIN` and `ACCOUNT_URL` on the Shop and Forms Vercel projects.
 - [ ] Run `migrate-profiles.ts` against production just before deploying all three apps together.
 - [ ] First Portal admin with `bun scripts/admins.ts add` in `apps/account`, with the production variables set.
 - [ ] Sign in on the account app, open the Danus dashboard and Forms staff without signing in again, sign out once and check all three are signed out.

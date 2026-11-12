@@ -5,15 +5,17 @@ import { adminAuth } from "./firebase"
 import { identityToolkit, SIGN_IN_ERRORS } from "./identity"
 import { ensureProfile, saveProfile } from "./profile"
 import type { ProfileFields } from "./fields"
+import { sessionCookieDomain } from "./urls"
 
 /*
  * One PPITSZ account, one sign-in for every app (ADR 0008). The browser
  * never talks to Google: the password goes to our server, which checks it
  * with the Identity Toolkit and answers with a Firebase session cookie.
  *
- * The cookie is set on SESSION_COOKIE_DOMAIN (".ppitshenzhen.org" in
- * production), so the shop, Forms and the account app all read it. Locally
- * it is unset: the cookie stays on localhost, whose ports share cookies.
+ * The cookie is set on the apps' root domain (".ppitshenzhen.org" in
+ * production, ./urls.ts), so the shop, Forms and the account app all read
+ * it. Locally it has no domain: it stays on localhost, whose ports share
+ * cookies.
  *
  * The cookie only proves who someone is. Every page and action looks up what
  * they may do in its own app's roles (ADR 0004, ./roles.ts).
@@ -37,7 +39,7 @@ function cookieOptions() {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
     path: "/",
-    ...(process.env.SESSION_COOKIE_DOMAIN ? { domain: process.env.SESSION_COOKIE_DOMAIN } : {}),
+    ...(sessionCookieDomain() ? { domain: sessionCookieDomain() } : {}),
   }
 }
 

@@ -25,11 +25,11 @@ On localhost, cookies ignore ports, so signing in on :3003 signs you in on :3001
 
 ## Production
 
-Environment (see `.env.example`): the `FIREBASE_*` variables of `ppitsz-next`, `SESSION_COOKIE_DOMAIN=.ppitshenzhen.org`, `ACCOUNT_URL`, `SHOP_URL`, `FORMS_URL`, `RESEND_API_KEY`, `MAIL_FROM_DEFAULT`. The shop and Forms need `SESSION_COOKIE_DOMAIN` and `ACCOUNT_URL` too.
+Environment (see `.env.example`): the `FIREBASE_*` variables of `ppitsz-next`, `RESEND_API_KEY`, `MAIL_FROM_DEFAULT`. No URLs: on Vercel every app is `<app>.ppitshenzhen.org`, from the list in `packages/accounts/src/urls.ts` (ADR 0010). `ROOT_DOMAIN` moves all of them to another root, for a preview.
 
-Without `FORMS_URL`, the home page leaves out the Forms cards, so a deploy without Forms has no dead links.
+Until Forms is marked `live` in that list, the home page leaves out the Forms cards, so production has no dead links.
 
-Without `RESEND_API_KEY`, Firebase sends the reset email itself (from `noreply@<project>.firebaseapp.com`, worded by its template). Its link must open our page, not Google's: in the Firebase console › Authentication › Templates › Password reset, set **Customize action URL** to `<ACCOUNT_URL>/reset-password`. Local development still writes its own link to `.outbox/`.
+Without `RESEND_API_KEY`, Firebase sends the reset email itself (from `noreply@<project>.firebaseapp.com`, worded by its template). Its link must open our page, not Google's: in the Firebase console › Authentication › Templates › Password reset, set **Customize action URL** to `https://account.ppitshenzhen.org/reset-password`. Local development still writes its own link to `.outbox/`.
 
 Once, at cutover:
 

@@ -1,28 +1,84 @@
 /*
- * Where each app lives. In production every app sets the ones it links to;
- * locally they default to the dev ports (`bun run dev`).
+ * Where each app lives (ADR 0010). Every app is `<subdomain>.<root domain>`:
+ * the root is ROOT_DOMAIN when set (a preview, say "preview.ppitshenzhen.org"),
+ * else "ppitshenzhen.org" on Vercel. Locally there is no root, and each app
+ * runs on its own port (`bun run dev`).
+ *
+ * A new app is one entry in APPS: its links, the Transfer menu and the
+ * sign-in's allowed redirects all follow.
  */
 
-const trim = (url: string) => url.replace(/\/$/, "")
+const PRODUCTION_ROOT_DOMAIN = "ppitshenzhen.org"
 
-export function accountOrigin() {
-  return trim(process.env.ACCOUNT_URL ?? "http://localhost:3003")
+export const APPS = {
+  shop: {
+    subdomain: "shop",
+    port: 3001,
+    live: true,
+    label: "PPITSZ Shop",
+    description: "Food and merchandise from Danus",
+  },
+  forms: {
+    subdomain: "forms",
+    port: 3002,
+    /** Not deployed yet. Flip once forms.ppitshenzhen.org serves it. */
+    live: false,
+    label: "PPITSZ Forms",
+    description: "Event sign-ups and tickets",
+  },
+  account: {
+    subdomain: "account",
+    port: 3003,
+    live: true,
+    label: "PPITSZ Account",
+    description: "Your details and staff apps",
+  },
+} as const satisfies Record<string, AppEntry>
+
+interface AppEntry {
+  subdomain: string
+  /** Its `next dev` port. */
+  port: number
+  /** Linked to in production. Locally every app is. */
+  live: boolean
+  label: string
+  description: string
 }
 
-export function shopOrigin() {
-  return trim(process.env.SHOP_URL ?? "http://localhost:3001")
+export type AppId = keyof typeof APPS
+
+const APP_IDS = Object.keys(APPS) as AppId[]
+
+/** "ppitshenzhen.org", a preview's root, or null locally. */
+export function rootDomain(): string | null {
+  const root = process.env.ROOT_DOMAIN?.trim().replace(/^\.+|\.+$/g, "")
+  if (root) return root
+  return process.env.VERCEL ? PRODUCTION_ROOT_DOMAIN : null
 }
 
-export function formsOrigin() {
-  return trim(process.env.FORMS_URL ?? "http://localhost:3002")
+/** An app's origin, without a trailing slash. */
+export function appOrigin(id: AppId) {
+  const root = rootDomain()
+  return root ? `https://${APPS[id].subdomain}.${root}` : `http://localhost:${APPS[id].port}`
 }
 
-/** In production, Forms is only linked to once FORMS_URL says where it lives. */
-export function formsLive() {
-  return !!process.env.FORMS_URL || process.env.NODE_ENV !== "production"
+/** Whether to link to an app: always locally, in production once it's live. */
+export function appLive(id: AppId) {
+  return APPS[id].live || process.env.NODE_ENV !== "production"
 }
 
-export type AppId = "shop" | "forms" | "account"
+/**
+ * The session cookie's domain, so one sign-in reaches every app (ADR 0008).
+ * Locally none: the cookie stays on localhost, whose ports share cookies.
+ */
+export function sessionCookieDomain(): string | undefined {
+  const root = rootDomain()
+  return root ? `.${root}` : undefined
+}
+
+export const accountOrigin = () => appOrigin("account")
+export const shopOrigin = () => appOrigin("shop")
+export const formsOrigin = () => appOrigin("forms")
 
 /** Another app, as the header's Transfer menu and the footer list it. */
 export interface TransferApp {
@@ -31,18 +87,13 @@ export interface TransferApp {
   description: string
 }
 
-/** The other PPITSZ apps, from `from`: where a buyer or responder can transfer to. */
+/** The other live PPITSZ apps, from `from`: where a buyer or responder can transfer to. */
 export function transferApps(from: AppId): TransferApp[] {
-  const apps: (TransferApp & { id: AppId })[] = [
-    { id: "shop", href: shopOrigin(), label: "PPITSZ Shop", description: "Food and merchandise from Danus" },
-    ...(formsLive()
-      ? [{ id: "forms" as const, href: formsOrigin(), label: "PPITSZ Forms", description: "Event sign-ups and tickets" }]
-      : []),
-    { id: "account", href: accountOrigin(), label: "PPITSZ Account", description: "Your details and staff apps" },
-  ]
-  return apps
-    .filter((app) => app.id !== from)
-    .map((app) => ({ href: app.href, label: app.label, description: app.description }))
+  return APP_IDS.filter((id) => id !== from && appLive(id)).map((id) => ({
+    href: appOrigin(id),
+    label: APPS[id].label,
+    description: APPS[id].description,
+  }))
 }
 
 /** The account app's sign-in, coming back to `next` (a full URL) afterwards. */
@@ -50,19 +101,22 @@ export function signInUrl(next: string) {
   return `${accountOrigin()}/sign-in?next=${encodeURIComponent(next)}`
 }
 
+/** The account app first, then every other live app: safeNext's default. */
+function ownOrigins() {
+  return [accountOrigin(), ...APP_IDS.filter((id) => id !== "account" && appLive(id)).map(appOrigin)]
+}
+
 /**
  * Where to go after signing in: a path on the account app, or a full URL on
  * one of our own apps, so a crafted `?next=` can't send anyone elsewhere.
+ * The apps are listed one by one, never as "any subdomain": a forgotten DNS
+ * record pointing at someone else's host must not become a redirect target.
  *
  * `next` is resolved the way the browser will resolve it, then its origin is
  * checked. A prefix check alone misses "/\t/evil.example": browsers drop tabs
  * and newlines from URLs, which leaves "//evil.example".
  */
-export function safeNext(
-  next: unknown,
-  fallback = "/",
-  origins: string[] = [accountOrigin(), shopOrigin(), formsOrigin()]
-): string {
+export function safeNext(next: unknown, fallback = "/", origins: string[] = ownOrigins()): string {
   if (typeof next !== "string" || next === "" || next.includes("\\")) return fallback
   const self = origins[0]!
   let url: URL

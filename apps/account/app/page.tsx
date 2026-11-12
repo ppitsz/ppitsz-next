@@ -12,7 +12,7 @@ import { avatarUrl } from "@ppitsz/accounts/avatar"
 import { profileOrBlank, shownAvatarPath } from "@ppitsz/accounts/profile"
 import { SHOP_ROLE_LABELS } from "@ppitsz/accounts/role-labels"
 import { latestRoleChanges, rolesOf } from "@ppitsz/accounts/roles"
-import { formsLive, formsOrigin, shopOrigin } from "@ppitsz/accounts/urls"
+import { appLive, formsOrigin, shopOrigin } from "@ppitsz/accounts/urls"
 import { requireSession } from "@/lib/server/auth"
 import { ProfileForm } from "@/components/auth-forms"
 import { AvatarForm } from "@/components/avatar-form"
@@ -74,7 +74,7 @@ export default async function HomePage() {
       icon: <StorefrontIcon />,
       description: "Order food and merchandise from Danus, and follow your orders.",
     },
-    ...(formsLive()
+    ...(appLive("forms")
       ? [
           {
             href: formsOrigin(),
@@ -100,7 +100,7 @@ export default async function HomePage() {
           },
         ]
       : []),
-    ...(formsLive() && (roles.formsAdmin || roles.panitia.length > 0)
+    ...(appLive("forms") && (roles.formsAdmin || roles.panitia.length > 0)
       ? [
           {
             href: `${formsOrigin()}/staff`,

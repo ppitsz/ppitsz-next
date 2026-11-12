@@ -9,11 +9,8 @@
         "FIREBASE_API_KEY",
         "FIREBASE_CLIENT_EMAIL",
         "FIREBASE_PRIVATE_KEY",
-        "SITE_URL",
-        "SESSION_COOKIE_DOMAIN",
-        "ACCOUNT_URL",
-        "SHOP_URL",
-        "FORMS_URL",
+        "VERCEL",
+        "ROOT_DOMAIN",
         "CRON_SECRET",
         "ALERT_WEBHOOK_URL"
       ]
