@@ -31,6 +31,7 @@ export const ERROR_MESSAGES = {
   QTY_LIMIT: "That quantity is too high.",
   CAMPAIGN_CLOSED: "This campaign isn't open right now.",
   INVALID_CAMPAIGN: "The campaign settings aren't right yet.",
+  CAMPAIGN_IN_USE: "A campaign with orders can't be deleted. Set its status to Ended instead.",
   ALREADY_REFUNDED: "A refund is already recorded for this order.",
   INVALID_REFUND: "The refund must be more than ¥0 and no more than the order total.",
   NO_BOOTH: "This campaign has no booth.",

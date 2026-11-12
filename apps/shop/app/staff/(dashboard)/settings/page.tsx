@@ -13,6 +13,7 @@ import { toShenzhenInput } from "@/lib/shenzhen-time"
 import { campaignHasOrders, listCampaigns, listProducts } from "@/lib/store"
 import { CampaignForm, type CampaignFormValues } from "@/components/staff/campaign-form"
 import { CampaignSwitcher } from "@/components/staff/campaign-switcher"
+import { DeleteCampaignButton } from "@/components/staff/delete-campaign-button"
 import { TestAlertButton } from "@/components/staff/test-alert-button"
 
 export const metadata: Metadata = { title: "Settings" }
@@ -92,6 +93,25 @@ export default async function SettingsPage() {
         locked={locked}
         products={products.map(({ id, name }) => ({ id, name }))}
       />
+
+      <section aria-labelledby="delete-campaign" className="flex flex-col items-start gap-3 border-t pt-8">
+        <h2 id="delete-campaign" className="type-heading-lg text-text">
+          Delete campaign
+        </h2>
+        {locked ? (
+          <p className="max-w-[66ch] type-body-sm text-muted">
+            This campaign has orders, so it can't be deleted. Set its status to Ended to take it off the
+            main page.
+          </p>
+        ) : (
+          <>
+            <p className="max-w-[66ch] type-body-sm text-muted">
+              Only for a campaign without orders, such as a test. Its products and bundles are deleted too.
+            </p>
+            <DeleteCampaignButton campaignId={campaign.id} name={campaign.name} />
+          </>
+        )}
+      </section>
 
       <section aria-labelledby="alerts" className="flex flex-col gap-3 border-t pt-8">
         <h2 id="alerts" className="type-heading-lg text-text">

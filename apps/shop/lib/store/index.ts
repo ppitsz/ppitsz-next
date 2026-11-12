@@ -755,6 +755,41 @@ export async function saveCampaign(campaignId: string | null, input: CampaignSav
   }
 }
 
+/**
+ * Deletes a campaign that has no orders yet, with its products, bundles and
+ * images. A campaign with orders can only be ended: its codes must keep
+ * naming one campaign (ADR 0002).
+ */
+export async function deleteCampaign(campaignId: string) {
+  const ref = col.campaigns().doc(campaignId)
+  const removed = await db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref)
+    if (!snap.exists) throw new ShopError("NOT_FOUND")
+    const [orders, products, bundles] = await Promise.all([
+      tx.get(col.orders().where("campaignId", "==", campaignId).limit(1)),
+      tx.get(col.products().where("campaignId", "==", campaignId)),
+      tx.get(col.bundles().where("campaignId", "==", campaignId)),
+    ])
+    if (!orders.empty) throw new ShopError("CAMPAIGN_IN_USE")
+    for (const doc of [...products.docs, ...bundles.docs]) tx.delete(doc.ref)
+    tx.delete(ref)
+    return {
+      campaign: campaignFromDoc(snap),
+      products: products.docs.map(productFromDoc),
+      bundles: bundles.docs.map(bundleFromDoc),
+    }
+  })
+  await deleteUnused(
+    [
+      removed.campaign.coverImagePath,
+      ...removed.campaign.paymentAccounts.map((a) => a.qrImagePath),
+      ...removed.products.flatMap((p) => [p.imagePath, p.sizeChartPath]),
+      ...removed.bundles.map((b) => b.imagePath),
+    ],
+    []
+  )
+}
+
 function newCampaignId(slug: string) {
   return `${slug || "campaign"}-${Buffer.from(crypto.getRandomValues(new Uint8Array(3))).toString("hex")}`
 }

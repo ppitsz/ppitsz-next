@@ -11,6 +11,7 @@ import { CAMPAIGN_STATUSES, CATEGORIES, type DeliverySlot } from "../domain/type
 import { fromShenzhenInput } from "../shenzhen-time"
 import {
   deleteBundle,
+  deleteCampaign,
   deleteProduct,
   getCampaign,
   listCampaigns,
@@ -247,6 +248,18 @@ export async function saveCampaignAction(
   if (!campaignId) await pickCampaignAction(saved.id)
   revalidatePath("/", "layout")
   return { done: Date.now(), id: saved.id }
+}
+
+/** Deletes a campaign with no orders, with its products and bundles. */
+export async function deleteCampaignAction(campaignId: string): Promise<ActionState> {
+  await requireStaff("admin")
+  try {
+    await deleteCampaign(String(campaignId))
+  } catch (error) {
+    return failure(error)
+  }
+  revalidatePath("/", "layout")
+  return { done: Date.now() }
 }
 
 /** Checks the alert webhook from Settings. */
