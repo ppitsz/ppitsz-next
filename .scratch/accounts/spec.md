@@ -35,7 +35,7 @@ Decided with the user on 2026-10-30 (grilling session). See ADR 0008 and `GLOSSA
 
 - **`/sign-in`**: email and password. The errors are the shop's today ("Wrong email or password.", too many attempts, disabled account). Then it returns to `next`.
 - **`/sign-up`**: name, email and a password of at least 8 characters. Nothing else is asked. If the email already has an account, the form says so and links to sign in. The email isn't verified, because delivery to Chinese mailboxes is unreliable.
-- **`/forgot-password`** and **`/reset-password`**: the reset email goes through Resend (ADR 0005), as Forms sends it today. The link opens our own `/reset-password`, never Firebase's page. The code comes from `generatePasswordResetLink`, so Firebase's email template isn't used and needs no setting. Old reset links to the shop's `/reset-password?oobCode=` and Forms' `/staff/reset-password?code=` are passed on.
+- **`/forgot-password`** and **`/reset-password`**: Firebase sends the reset email, with its template's action URL set to our own `/reset-password`, never Firebase's page. Development sends nothing and links to the reset itself, with a code from `generatePasswordResetLink`. Old reset links to the shop's `/reset-password?oobCode=` and Forms' `/staff/reset-password?code=` are passed on.
 - The shop's `/sign-in`, `/sign-up`, `/forgot-password` and `/reset-password`, Shop's `/danus/sign-in`, and Forms' `/staff/sign-in`, `/staff/forgot-password` and `/staff/reset-password` become redirects to the account app, keeping `next`.
 
 ### Home (`/`)
@@ -100,7 +100,7 @@ Decided with the user on 2026-10-30 (grilling session). See ADR 0008 and `GLOSSA
 | Variable | Where | Value in production |
 |---|---|---|
 | `ROOT_DOMAIN` | all three, optional | Unset: on Vercel the apps are `<app>.ppitshenzhen.org` (ADR 0010, which replaced `SESSION_COOKIE_DOMAIN`, `ACCOUNT_URL`, `SHOP_URL` and `FORMS_URL`) |
-| `FIREBASE_*`, `RESEND_API_KEY`, `MAIL_FROM_DEFAULT` | account | as in Forms |
+| `FIREBASE_*` | account | as in Forms |
 
 ## Out of scope
 

@@ -143,7 +143,7 @@ Development connects to the **real Firebase project**, `ppitsz-next`, like produ
 bun run dev          # from the repo root: the shop on http://localhost:3001 (dashboard at /staff), PPITSZ Account on :3003 for signing in
 ```
 
-Sign in with a real account. On localhost, cookies ignore ports, so signing in on :3003 signs you in on :3001 and :3002 too. Without `RESEND_API_KEY`, emails are written to `.outbox/` instead of sent.
+Sign in with a real account. On localhost, cookies ignore ports, so signing in on :3003 signs you in on :3001 and :3002 too.
 
 ## Tests
 
@@ -175,7 +175,7 @@ Create Firestore and the Storage bucket in **Hong Kong (`asia-east2`)**. The loc
 
 Then deploy the rules and indexes once: `firebase deploy --only firestore,storage --project <id>`.
 
-Password resets are sent by PPITSZ Account through Resend, to its own page, so Firebase's reset email template isn't used. An old Firebase reset link to `/reset-password?oobCode=…` still works: it is passed on to PPITSZ Account.
+Password resets are sent by PPITSZ Account, through Firebase's reset email with its action URL set to Account's own page (see its README). An old reset link to the shop's `/reset-password?oobCode=…` still works: it is passed on to PPITSZ Account.
 
 Fill in Danus's WeChat ID, Instagram handle and email in `lib/contact.ts`; the footer shows each once it is set.
 

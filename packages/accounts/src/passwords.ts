@@ -5,9 +5,9 @@ import { ensureProfile } from "./profile"
 /*
  * Setting a password, by the account itself (a reset link) or for it (a
  * Portal admin, a panitia invite). Firebase's own reset email links to its
- * hosted page, which needs Google, so our links carry the reset code to the
- * account app's /reset-password instead, and we send the email ourselves.
- * Without Resend, Firebase sends it, with its action URL set to that page.
+ * hosted page, which needs Google, so the reset code goes to the account
+ * app's /reset-password instead: in our own links, and in Firebase's email
+ * once its action URL is set to that page.
  */
 
 /** The account for `email`, or null. */
@@ -52,8 +52,8 @@ export async function resetLink(email: string, accountOrigin: string) {
 }
 
 /**
- * Has Firebase send its own reset email, for when we can't send one
- * (no Resend). Its link only reaches our /reset-password, and not Google's
+ * Has Firebase send its own reset email: how PPITSZ Account sends every
+ * reset. Its link only reaches our /reset-password, and not Google's
  * page, once the template's action URL is set to it: Firebase console ›
  * Authentication › Templates › Password reset › Customize action URL.
  */

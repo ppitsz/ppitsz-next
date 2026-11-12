@@ -11,7 +11,6 @@ import { endSession, signIn, signUp, startSession } from "@ppitsz/accounts/sessi
 import { accountOrigin, safeNext } from "@ppitsz/accounts/urls"
 
 import { requireSession } from "../server/auth"
-import { mailConfigured, sendResetEmail } from "../server/mail"
 import { allowRequest, LIMITS, RATE_LIMITED } from "../server/rate-limit"
 import { clientIp } from "../server/request-meta"
 import { failure, str, type ActionState } from "./state"
@@ -97,13 +96,12 @@ export async function forgotPasswordAction(_prev: ActionState, formData: FormDat
   let devLink: string | undefined
   try {
     if (await findAccount(email)) {
-      if (mailConfigured() || process.env.NODE_ENV !== "production") {
-        const url = await resetLink(email, accountOrigin())
-        await sendResetEmail(email, url)
-        if (!mailConfigured()) devLink = url
-      } else {
-        // No Resend: Firebase sends the email, linking to /reset-password (see sendFirebaseResetEmail).
+      if (process.env.NODE_ENV === "production") {
+        // Firebase sends the email, linking to /reset-password (see sendFirebaseResetEmail).
         await sendFirebaseResetEmail(email)
+      } else {
+        // Development sends nothing: the page links to the reset itself.
+        devLink = await resetLink(email, accountOrigin())
       }
     }
   } catch (error) {

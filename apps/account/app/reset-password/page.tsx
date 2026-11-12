@@ -17,7 +17,7 @@ const first = (value: string | string[] | undefined) => (Array.isArray(value) ? 
 export default async function ResetPasswordPage({ searchParams }: PageProps<"/reset-password">) {
   await connection()
   const params = await searchParams
-  // Our own links carry `code`; Firebase's email (no Resend) carries `oobCode`.
+  // Firebase's email carries `oobCode`; our own links (development, panitia invites) carry `code`.
   const code = first(params.code) ?? first(params.oobCode) ?? ""
   const email = code ? await checkResetCode(code).catch(() => null) : null
 

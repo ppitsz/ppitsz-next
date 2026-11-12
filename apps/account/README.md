@@ -12,24 +12,24 @@ A Portal admin can't remove their own Portal admin role, and the last Portal adm
 |---|---|
 | `../../packages/accounts` | `@ppitsz/accounts`, shared by every app: Firebase, the session (`session.ts`), the profile (`profile.ts`), roles and the change log (`roles.ts`), passwords |
 | `lib/actions/` | `account.ts` (sign in, up and out, reset, profile) · `admin.ts` (Accounts) |
-| `lib/server/` | `auth.ts` (requireSession, requirePortalAdmin), `mail.ts` (the reset email through Resend), rate limits |
+| `lib/server/` | `auth.ts` (requireSession, requirePortalAdmin), rate limits |
 | `app/` | `/` · `/sign-in` · `/sign-up` · `/forgot-password` · `/reset-password` · `/accounts` · `/accounts/new` · `/accounts/[uid]` |
 
 ## Local development
 
 Development connects to the **real Firebase project**, `ppitsz-next`, like production: there is no emulator. Everything you do locally (orders, accounts, role changes, password resets) happens to real data. Copy the `FIREBASE_*` variables into `.env.local` (the same five in the shop, Forms and PPITSZ Account).
 
-`bun run dev` from the repo root runs every app; this one is on http://localhost:3003. Reset emails land in `.outbox/` without `RESEND_API_KEY`, and the page links to the reset itself.
+`bun run dev` from the repo root runs every app; this one is on http://localhost:3003. Development sends no reset email: the page links to the reset itself.
 
 On localhost, cookies ignore ports, so signing in on :3003 signs you in on :3001 and :3002 too. A Vercel preview (`*.vercel.app`) can't share the cookie: test signed-in flows locally.
 
 ## Production
 
-Environment (see `.env.example`): the `FIREBASE_*` variables of `ppitsz-next`, `RESEND_API_KEY`, `MAIL_FROM_DEFAULT`. No URLs: on Vercel every app is `<app>.ppitshenzhen.org`, from the list in `packages/accounts/src/urls.ts` (ADR 0010). `ROOT_DOMAIN` moves all of them to another root, for a preview.
+Environment (see `.env.example`): the `FIREBASE_*` variables of `ppitsz-next`. No URLs: on Vercel every app is `<app>.ppitshenzhen.org`, from the list in `packages/accounts/src/urls.ts` (ADR 0010). `ROOT_DOMAIN` moves all of them to another root, for a preview.
 
 Until Forms is marked `live` in that list, the home page leaves out the Forms cards, so production has no dead links.
 
-Without `RESEND_API_KEY`, Firebase sends the reset email itself (from `noreply@<project>.firebaseapp.com`, worded by its template). Its link must open our page, not Google's: in the Firebase console › Authentication › Templates › Password reset, set **Customize action URL** to `https://account.ppitshenzhen.org/reset-password`. Local development still writes its own link to `.outbox/`.
+Firebase sends the reset email (from `noreply@<project>.firebaseapp.com`, worded by its template). Its link must open our page, not Google's: in the Firebase console › Authentication › Templates › Password reset, set **Customize action URL** to `https://account.ppitshenzhen.org/reset-password`.
 
 Once, at cutover:
 
