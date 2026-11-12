@@ -77,7 +77,12 @@ export function Chrome({
         }
         bottom={
           <>
-            <p className="type-caption text-muted">© {new Date().getFullYear()} PPIT Shenzhen</p>
+            <p className="type-caption text-muted">
+              © {new Date().getFullYear()} PPIT Shenzhen ·{" "}
+              <Link href="/privacy" className="underline-offset-4 hover:underline">
+                Privacy
+              </Link>
+            </p>
             <ThemeControl className="shrink-0" />
           </>
         }
