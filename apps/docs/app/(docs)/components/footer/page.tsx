@@ -33,7 +33,7 @@ export default function FooterPage() {
   socials={socials}
   wechat={<WeChatDialog qrSrc="/wechat-qr.png" />}
   transfers={transferApps("shop")}
-  help={<p>A problem with an order? Contact Danus on the PPITSZ socials and give your order code.</p>}
+  help={<p>A problem with an order? Contact us on the PPITSZ socials and give your order code.</p>}
   bottom={<>© 2026 PPIT Shenzhen <ThemeControl /></>}
 />`}
         >
@@ -41,10 +41,10 @@ export default function FooterPage() {
             {...ORG_FOOTER_PROPS}
             currentHref="/news"
             transfers={[
-              { href: "#", label: "PPITSZ Shop", description: "Food and merchandise from Danus" },
+              { href: "#", label: "PPITSZ Shop", description: "Food and merchandise from our campaigns" },
               { href: "#", label: "PPITSZ Forms", description: "Event sign-ups and tickets" },
             ]}
-            help={<p>A question about an event? Contact its panitia on the PPITSZ socials.</p>}
+            help={<p>A question about an event? Contact us on the PPITSZ socials.</p>}
           />
         </Example>
       </DocSection>

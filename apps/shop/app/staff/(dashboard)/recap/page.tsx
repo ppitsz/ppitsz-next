@@ -126,7 +126,7 @@ export default async function RecapPage() {
           )}
           <Tile term="Money in" value={formatYuan(money.receivedFen)} note="Includes paid orders later canceled" />
           <Tile term="Refunded" value={formatYuan(money.refundedFen)} note="As recorded on orders" />
-          <Tile term="Danus should hold" value={formatYuan(money.heldFen)} note="Money in minus refunds" />
+          <Tile term="We should hold" value={formatYuan(money.heldFen)} note="Money in minus refunds" />
         </dl>
         <p className="type-body-sm text-muted">
           Orders sold:{" "}

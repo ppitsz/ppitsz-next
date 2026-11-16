@@ -30,18 +30,18 @@ export function HowTo({
 }) {
   const last =
     offers.delivery && offers.pickup
-      ? { title: "Delivered or picked up", text: "Delivery orders arrive in the slot you chose. For Pickup, show your QR code to Danus." }
+      ? { title: "Delivered or picked up", text: "Delivery orders arrive in the slot you chose. For Pickup, show us your QR code." }
       : offers.delivery
-        ? { title: "Delivered to your address", text: "Danus or a courier delivers in the slot you chose when ordering." }
-        : { title: "Show your QR, get your order", text: "Come to the pickup place, and Danus scans your QR code and hands over your order." }
+        ? { title: "Delivered to your address", text: "We deliver, or send a courier, in the slot you chose when ordering." }
+        : { title: "Show your QR, get your order", text: "Come to the pickup place, and we scan your QR code and hand over your order." }
   const steps = [
     {
       title: "Order and transfer",
       text: "Choose products, sign in to your account, then pay by WeChat Pay, Alipay or bank transfer and upload the proof.",
     },
     {
-      title: "Danus checks",
-      text: "Danus checks your transfer proof. Every step shows in Your orders.",
+      title: "We check",
+      text: "We check your transfer proof. Every step shows in Your orders.",
     },
     last,
   ]
@@ -91,7 +91,7 @@ export function HowTo({
                     </SignPictogram>
                   }
                   title={place}
-                  description="Pickup place: show your QR code to Danus here"
+                  description="Pickup place: show us your QR code here"
                 />
               ))}
               <Sign

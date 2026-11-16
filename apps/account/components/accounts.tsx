@@ -34,6 +34,7 @@ export interface RoleValues {
   shop: ShopRole | null
   formsAdmin: boolean
   portalAdmin: boolean
+  siteAdmin: boolean
 }
 
 function Toggle({ name, label, help, defaultChecked }: { name: string; label: string; help: string; defaultChecked: boolean }) {
@@ -55,7 +56,7 @@ function RoleFields({ roles }: { roles: RoleValues }) {
   return (
     <FieldGroup>
       <Field>
-        <FieldLabel htmlFor="role-shop">Shop (Danus)</FieldLabel>
+        <FieldLabel htmlFor="role-shop">Shop</FieldLabel>
         <NativeSelect id="role-shop" name="shop" defaultValue={roles.shop ?? ""} aria-describedby="role-shop-helper">
           <NativeSelectOption value="">None</NativeSelectOption>
           {SHOP_ROLES.map((role) => (
@@ -65,13 +66,13 @@ function RoleFields({ roles }: { roles: RoleValues }) {
           ))}
         </NativeSelect>
         <FieldDescription id="role-shop-helper">
-          Booth staff hand over orders and record walk-in sales. Danus admins may do everything in the dashboard.
+          Booth staff hand over orders and record walk-in sales. Shop admins may do everything in the dashboard.
         </FieldDescription>
       </Field>
       <Toggle
         name="formsAdmin"
         label="Form admin"
-        help="Creates forms on PPITSZ Forms and picks each form's panitia."
+        help="Creates forms on PPITSZ Forms and picks each form's organizers."
         defaultChecked={roles.formsAdmin}
       />
       <Toggle
@@ -79,6 +80,12 @@ function RoleFields({ roles }: { roles: RoleValues }) {
         label="Portal admin"
         help="Manages accounts here: gives and removes every app's roles and resets passwords."
         defaultChecked={roles.portalAdmin}
+      />
+      <Toggle
+        name="siteAdmin"
+        label="Website admin"
+        help="Opens the control panel on ppitshenzhen.org: its forms and responses, recruitment applications, emails and tickets."
+        defaultChecked={roles.siteAdmin}
       />
     </FieldGroup>
   )
@@ -152,7 +159,7 @@ export function AddPersonForm({ email: initialEmail = "" }: { email?: string }) 
           {...field("name")}
         />
       </FieldGroup>
-      <RoleFields roles={{ shop: null, formsAdmin: false, portalAdmin: false }} />
+      <RoleFields roles={{ shop: null, formsAdmin: false, portalAdmin: false, siteAdmin: false }} />
       {state.error && (
         <Alert variant="danger" live>
           <AlertTitle>Not added</AlertTitle>

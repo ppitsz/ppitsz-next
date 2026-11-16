@@ -9,7 +9,7 @@ import type { Channel, Variant } from "./types"
  */
 
 export interface Availability {
-  /** Units left in total: what the kasir can still sell. */
+  /** Units left in total: what the register can still sell. */
   remaining: number
   /** Units a new online order can still take. */
   onlineRemaining: number

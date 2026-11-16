@@ -1,5 +1,5 @@
 /*
- * Manage Danus staff accounts.
+ * Manage shop staff accounts.
  *
  *   bun scripts/staff.ts add <email> <admin|booth> "<name>"   new accounts get a printed password
  *   bun scripts/staff.ts password <email>                     prints a new password, signs out everywhere
@@ -8,7 +8,7 @@
  *
  * Runs against the real project, with the FIREBASE_* variables from
  * .env.local. An account that already exists
- * (a Forms panitia, a buyer) keeps its password on `add`.
+ * (a Forms organizer, a buyer) keeps its password on `add`.
  */
 import { listStaff, removeStaff, setStaffPassword, STAFF_ROLES, upsertStaff, type StaffRole } from "../lib/server/staff"
 
@@ -54,7 +54,7 @@ switch (command) {
   case "remove": {
     if (!email) usage()
     await removeStaff(email)
-    console.log(`[${target}] ${email} is no longer Danus staff. The account itself stays.`)
+    console.log(`[${target}] ${email} is no longer shop staff. The account itself stays.`)
     break
   }
   case "list": {

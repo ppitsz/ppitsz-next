@@ -21,7 +21,7 @@ export function cleanProfile(input: ProfileFields): { profile: ProfileFields; is
   const issues: ProfileIssues = {}
   if (profile.name.length < 2) issues.name = "Write your name, at least 2 characters."
   else if (profile.name.length > 60) issues.name = "Your name can be at most 60 characters."
-  if (!profile.wechatId) issues.wechatId = "Write your WeChat ID so Danus can reach you."
+  if (!profile.wechatId) issues.wechatId = "Write your WeChat ID so we can reach you."
   else if (profile.wechatId.length > 40) issues.wechatId = "Your WeChat ID can be at most 40 characters."
   if (profile.phone.length > 30) issues.phone = "Your phone number can be at most 30 characters."
   else if (!/^[0-9+()\s-]*$/.test(profile.phone)) issues.phone = "Your phone number can only have digits, spaces and +."
@@ -56,7 +56,7 @@ const SUMMARY_PARTS = [
   ["ready", "ready to pick up"],
   ["sending", "on its way"],
   ["pending_payment", "waiting for payment"],
-  ["awaiting_verification", "being checked by Danus"],
+  ["awaiting_verification", "being checked"],
   ["to_deliver", "waiting for delivery"],
 ] as const
 

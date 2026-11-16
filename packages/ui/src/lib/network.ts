@@ -1,5 +1,5 @@
 /*
- * The PPITSZ network as data: divisions (lines), campuses (stations), oprec
+ * The PPITSZ network as data: divisions (lines), campuses (stations), recruitment
  * stages and status labels. The single source for every site and component.
  */
 
@@ -52,7 +52,7 @@ export function getDivision(code: LineCode): Division {
 }
 
 /**
- * The old codebase uses two code sets: oprec (`DU`, `DO`, `HM`, `MK`, `SB`)
+ * The old codebase uses two code sets: recruitment (`DU`, `DO`, `HM`, `MK`, `SB`)
  * and committee (`DANUS`, `DEPOL` …). Map either to the canonical line code.
  */
 const LEGACY_CODES: Record<string, LineCode> = {
@@ -131,24 +131,24 @@ export function getCampus(id: CampusId): Campus {
 }
 
 /* -------------------------------------------------------------------------
-   Oprec — the applicant's route
+   Recruitment — the applicant's route
    ------------------------------------------------------------------------- */
 
-export interface OprecStage {
-  /** Matches `currentStage` in the existing oprec data. */
+export interface RecruitmentStage {
+  /** Matches `currentStage` in the existing recruitment data. */
   stage: 0 | 1 | 2 | 3
   label: string
 }
 
-export const OPREC_STAGES: readonly OprecStage[] = [
+export const RECRUITMENT_STAGES: readonly RecruitmentStage[] = [
   { stage: 0, label: "Online form" },
   { stage: 1, label: "Written test" },
   { stage: 2, label: "Interview" },
   { stage: 3, label: "Results" },
 ]
 
-/** `currentStage` value the oprec data uses for a rejected applicant. */
-export const OPREC_REJECTED_STAGE = 4
+/** `currentStage` value the recruitment data uses for a rejected applicant. */
+export const RECRUITMENT_REJECTED_STAGE = 4
 
 /* -------------------------------------------------------------------------
    Status labels. Status is always shown in words.
@@ -190,7 +190,7 @@ export const STATUSES = {
     ended: { label: "Registration closed", tone: "neutral" },
     cancelled: { label: "Canceled", tone: "danger" },
   },
-  oprec: {
+  recruitment: {
     pending: { label: "Under review", tone: "warning" },
     scheduled: { label: "Interview scheduled", tone: "outline" },
     accepted: { label: "Accepted", tone: "success" },

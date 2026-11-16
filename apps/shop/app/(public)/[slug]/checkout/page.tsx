@@ -8,7 +8,7 @@ import { StationNameplate } from "@ppitsz/ui/components/network/station-nameplat
 import { StripMap } from "@ppitsz/ui/components/network/strip-map"
 import { toCatalog } from "@/lib/catalog"
 import { campaignRoute } from "@/lib/domain/order"
-import { requireBuyer } from "@/lib/server/auth"
+import { getStaff, requireBuyer } from "@/lib/server/auth"
 import { visibleCampaign } from "@/lib/server/buyer-campaign"
 import { listBundles, listProducts, slotPlaces } from "@/lib/store"
 import { CheckoutForm } from "@/components/checkout-form"
@@ -23,12 +23,13 @@ export default async function CheckoutPage({ params }: PageProps<"/[slug]/checko
   // Signing in comes back here; the cart waits on the phone meanwhile.
   const buyer = await requireBuyer(`/${campaign.slug}/checkout`)
   const now = new Date()
-  const [products, bundles, places] = await Promise.all([
+  const [products, bundles, places, staff] = await Promise.all([
     listProducts(campaign.id, { includeInactive: true, now }),
     listBundles(campaign.id),
     slotPlaces(campaign, now),
+    getStaff(),
   ])
-  const catalog = toCatalog(campaign, products, bundles, { now, slotPlaces: places })
+  const catalog = toCatalog(campaign, products, bundles, { now, slotPlaces: places, staff: !!staff })
 
   return (
     <Container narrow className="flex flex-col gap-8 py-10 lg:py-16">

@@ -1,6 +1,6 @@
 # 6. The new apps get their own Firebase project
 
-Date: 2026-10-30 · Status: accepted
+Date: 2026-10-30 · Status: superseded by ADR 0013
 
 ## Context
 

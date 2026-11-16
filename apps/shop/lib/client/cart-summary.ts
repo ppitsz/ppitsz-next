@@ -35,7 +35,7 @@ export const variantKey = (productId: string, variantId: string) => `${productId
  * bundles that disappeared, or aren't on sale yet, are dropped; the server
  * re-prices everything anyway.
  * `stock` is what a variant has left: `available` for an online order, `remaining`
- * at the kasir. `demand` says how many units of each variant (by variantKey)
+ * at the register. `demand` says how many units of each variant (by variantKey)
  * the whole cart takes.
  */
 export function cartSummary(

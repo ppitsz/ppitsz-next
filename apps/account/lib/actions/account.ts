@@ -4,14 +4,14 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { AvatarError, removeAvatar, saveAvatar } from "@ppitsz/accounts/avatar"
-import { cleanProfile, isEmail, normalizeEmail, passwordIssue } from "@ppitsz/accounts/fields"
+import { cleanMember, cleanProfile, isEmail, normalizeEmail, passwordIssue } from "@ppitsz/accounts/fields"
 import { unlinkGoogle } from "@ppitsz/accounts/google-sign-in"
 import { addPassword, findAccount, resetLink, resetPassword, sendFirebaseResetEmail } from "@ppitsz/accounts/passwords"
 import { saveProfile } from "@ppitsz/accounts/profile"
 import { endSession, signIn, signUp, startSession } from "@ppitsz/accounts/session"
 import { accountOrigin, safeNext } from "@ppitsz/accounts/urls"
 
-import { requireSession } from "../server/auth"
+import { afterSignIn, requireSession } from "../server/auth"
 import { allowRequest, LIMITS, RATE_LIMITED } from "../server/rate-limit"
 import { clientIp } from "../server/request-meta"
 import { failure, str, type ActionState } from "./state"
@@ -48,14 +48,15 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
   if (!result.ok) return { error: result.error }
 
   await startSession(result.cookie)
-  redirect(safeNext(formData.get("next")))
+  redirect(await afterSignIn(result.session.uid, safeNext(formData.get("next"))))
 }
 
 export async function signUpAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const email = normalizeEmail(str(formData, "email"))
   const password = String(formData.get("password") ?? "")
   const { profile, issues } = cleanProfile({ name: str(formData, "name"), wechatId: "", phone: "" })
-  const fieldErrors: ActionState["fieldErrors"] = { ...issues }
+  const { member, issues: memberIssues } = cleanMember({ birthday: str(formData, "birthday"), cohortYear: str(formData, "cohortYear") })
+  const fieldErrors: ActionState["fieldErrors"] = { ...issues, ...memberIssues }
   if (!isEmail(email)) fieldErrors.email = "Write a valid email, like name@qq.com."
   const weak = passwordIssue(password)
   if (weak) fieldErrors.password = weak
@@ -67,7 +68,7 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
 
   let result
   try {
-    result = await signUp({ ...profile, email, password })
+    result = await signUp({ name: profile.name, ...member, email, password })
   } catch (error) {
     console.error("sign up", error)
     return { error: UNREACHABLE }
@@ -199,11 +200,28 @@ export async function updateProfileAction(_prev: ActionState, formData: FormData
     wechatId: str(formData, "wechatId"),
     phone: str(formData, "phone"),
   })
-  if (Object.keys(issues).length > 0) return { fieldErrors: issues }
+  const { member, issues: memberIssues } = cleanMember({ birthday: str(formData, "birthday"), cohortYear: str(formData, "cohortYear") })
+  const fieldErrors = { ...issues, ...memberIssues }
+  if (Object.keys(fieldErrors).length > 0) return { fieldErrors }
   try {
-    await saveProfile(session, profile)
+    await saveProfile(session, { ...profile, ...member })
   } catch (error) {
     return failure(error)
   }
   return { done: Date.now() }
+}
+
+/** The details sign-up asks for, for an account that came without them (Google, a staff script). Then on to `next`. */
+export async function finishProfileAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const session = await requireSession()
+  const { profile, issues } = cleanProfile({ name: str(formData, "name"), wechatId: "", phone: "" })
+  const { member, issues: memberIssues } = cleanMember({ birthday: str(formData, "birthday"), cohortYear: str(formData, "cohortYear") })
+  const fieldErrors = { ...issues, ...memberIssues }
+  if (Object.keys(fieldErrors).length > 0) return { fieldErrors }
+  try {
+    await saveProfile(session, { name: profile.name, ...member })
+  } catch (error) {
+    return failure(error)
+  }
+  redirect(safeNext(formData.get("next")))
 }

@@ -3,9 +3,9 @@ import { describe, expect, test } from "bun:test"
 import { MAX_QTY_PER_LINE, parseCart } from "./cart"
 import { ShopError, type ErrorCode } from "./errors"
 import { campaign } from "./fixtures"
-import { proofAccount, saleAccount } from "./payment"
+import { proofAccount, proofTransactionDigits, saleAccount } from "./payment"
 
-/* What arrives from the shop and the kasir, and which account a payment went to. */
+/* What arrives from the shop and the register, and which account a payment went to. */
 
 function code(run: () => unknown): ErrorCode | undefined {
   try {
@@ -67,6 +67,24 @@ describe("payment accounts", () => {
     expect(code(() => saleAccount(campaign(), "wechat", "ali"))).toBe("INVALID_ACCOUNT")
     expect(code(() => saleAccount(campaign(), "wechat", undefined))).toBe("INVALID_ACCOUNT")
     expect(code(() => saleAccount(campaign(), "cash", "wx"))).toBe("INVALID_ACCOUNT")
+  })
+
+  test("a WeChat Pay or Alipay proof carries the transaction number's last 6 digits", () => {
+    const [wx, ali] = campaign().paymentAccounts
+    expect(proofTransactionDigits(wx!, "567890")).toBe("567890")
+    expect(proofTransactionDigits(ali!, " 567 890 ")).toBe("567890")
+    // A whole number pasted from the app is cut to its end.
+    expect(proofTransactionDigits(wx!, "4200 0012-3420 2611 1312 3456 7890")).toBe("567890")
+    // Too short, a typo'd seventh digit, letters, or the order code are refused.
+    for (const bad of [undefined, "", "12345", "1234567", "wxid_nadia", "GC-7K3P", "56789O", "4200001234202611131234567890x"]) {
+      expect(code(() => proofTransactionDigits(wx!, bad))).toBe("INVALID_TRANSACTION_DIGITS")
+    }
+  })
+
+  test("a bank transfer proof needs no transaction number", () => {
+    const bank = { id: "bca", method: "bank", holder: "Nadia", detail: "BCA 123" } as const
+    expect(proofTransactionDigits(bank, undefined)).toBeUndefined()
+    expect(proofTransactionDigits(bank, "567890")).toBeUndefined()
   })
 
   test("a method without an account in the campaign needs none", () => {

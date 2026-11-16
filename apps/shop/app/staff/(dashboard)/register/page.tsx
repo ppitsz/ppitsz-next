@@ -8,12 +8,12 @@ import { pickedCampaign } from "@/lib/server/dashboard-campaign"
 import { toCatalog } from "@/lib/catalog"
 import { listBundles, listCampaigns, listProducts } from "@/lib/store"
 import { CampaignSwitcher } from "@/components/staff/campaign-switcher"
-import { Kasir } from "@/components/staff/kasir"
+import { Register } from "@/components/staff/register"
 
-export const metadata: Metadata = { title: "Kasir" }
+export const metadata: Metadata = { title: "Register" }
 
 /** Walk-in sales for one open campaign with a booth at a time; a buyer of two campaigns gets two sales. */
-export default async function KasirPage() {
+export default async function RegisterPage() {
   const staff = await requireStaff()
   const open = (await listCampaigns()).filter((c) => c.status === "open" && c.offers.booth)
   const campaign = await pickedCampaign(open)
@@ -22,8 +22,8 @@ export default async function KasirPage() {
     ? await Promise.all([listProducts(campaign.id, { includeInactive: true }), listBundles(campaign.id)])
     : [[], []]
   const catalog = campaign ? toCatalog(campaign, products, bundles) : { products: [], bundles: [] }
-  // Upcoming products are in the catalog for buyers to see; the kasir can't sell them yet.
-  const forKasir = { ...catalog, products: catalog.products.filter((p) => !p.onSaleFrom) }
+  // Upcoming products are in the catalog for buyers to see; the register can't sell them yet.
+  const forRegister = { ...catalog, products: catalog.products.filter((p) => !p.onSaleFrom) }
 
   return (
     <Container className="flex flex-col gap-8 py-8">
@@ -33,9 +33,9 @@ export default async function KasirPage() {
         ) : (
           <p className="type-kicker text-accent-text">Walk-in sales at the booth</p>
         )}
-        <h1 className="type-display-lg text-text">Kasir</h1>
+        <h1 className="type-display-lg text-text">Register</h1>
       </div>
-      {forKasir.products.length === 0 && forKasir.bundles.length === 0 ? (
+      {forRegister.products.length === 0 && forRegister.bundles.length === 0 ? (
         <Empty>
           <EmptyHeader>
             <EmptyTitle>{campaign ? "No products for sale yet." : "No open campaign has a booth."}</EmptyTitle>
@@ -45,17 +45,17 @@ export default async function KasirPage() {
                   {campaign ? "Add products" : "Set up a booth in Settings"}
                 </NextLink>
               ) : (
-                "Ask a Danus admin to add the products."
+                "Ask a shop admin to add the products."
               )}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (
-        <Kasir
+        <Register
           key={campaign!.id}
           campaignId={campaign!.id}
-          products={forKasir.products}
-          bundles={forKasir.bundles}
+          products={forRegister.products}
+          bundles={forRegister.bundles}
           accounts={campaign!.paymentAccounts.map(({ id, method, holder }) => ({ id, method, holder }))}
         />
       )}

@@ -13,6 +13,7 @@ import {
   deleteBundle,
   deleteCampaign,
   deleteProduct,
+  deleteTestOrders,
   getCampaign,
   listCampaigns,
   saveBundle,
@@ -255,6 +256,18 @@ export async function deleteCampaignAction(campaignId: string): Promise<ActionSt
   await requireStaff("admin")
   try {
     await deleteCampaign(String(campaignId))
+  } catch (error) {
+    return failure(error)
+  }
+  revalidatePath("/", "layout")
+  return { done: Date.now() }
+}
+
+/** Deletes a campaign's test orders and gives their stock back. */
+export async function deleteTestOrdersAction(campaignId: string): Promise<ActionState> {
+  await requireStaff("admin")
+  try {
+    await deleteTestOrders(String(campaignId))
   } catch (error) {
     return failure(error)
   }

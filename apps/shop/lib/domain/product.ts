@@ -2,7 +2,7 @@ import { ShopError } from "./errors"
 import type { Category, PaymentAccount, Product, SizeChart, Variant } from "./types"
 
 /*
- * What Danus admins edit. The stock counters (onlineOrdered, walkIn) are never
+ * What shop admins edit. The stock counters (onlineOrdered, walkIn) are never
  * part of an edit: orders change them, so a save keeps whatever the stored
  * product has at that moment.
  *

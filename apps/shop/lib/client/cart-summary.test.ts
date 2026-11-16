@@ -48,12 +48,12 @@ describe("cart summary", () => {
     expect(summary.demand.get("kaos/m")).toBe(4)
   })
 
-  test("the kasir counts what is left after online orders", () => {
+  test("the register counts what is left after online orders", () => {
     const lines = [{ bundleId: "paket", picks: ["l", "default"], qty: 1 }]
     expect(cartSummary(lines, catalog).lines[0]!.short).toBe(true)
-    const kasir = cartSummary(lines, catalog, "remaining")
-    expect(kasir.lines[0]!.short).toBe(false)
-    expect(fitsOneMore(kasir.lines[0]!, kasir.demand, "remaining")).toBe(true)
+    const register = cartSummary(lines, catalog, "remaining")
+    expect(register.lines[0]!.short).toBe(false)
+    expect(fitsOneMore(register.lines[0]!, register.demand, "remaining")).toBe(true)
   })
 
   test("drops lines whose bundle or picks no longer exist", () => {

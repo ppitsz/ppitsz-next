@@ -4,7 +4,7 @@ import { PAYMENT_METHOD_LABELS } from "@/lib/catalog"
 import type { ShownStatus } from "@/lib/domain/delivery"
 import type { Campaign, Order } from "@/lib/domain/types"
 
-/* Small pieces shared by the Danus pages. */
+/* Small pieces shared by the staff pages. */
 
 export const when = (date: Date) => `${formatDate(date)}, ${formatTime(date)}`
 
@@ -13,7 +13,7 @@ export function OrderStatusBadge({ status }: { status: ShownStatus }) {
   return <StatusBadge domain="order" value={status} />
 }
 
-/** "WeChat Pay · Example: Danus Treasurer" — where the buyer says they paid. */
+/** "WeChat Pay · Example: Treasurer" — where the buyer says they paid. */
 export function paymentDestination(order: Order, campaign: Campaign) {
   const method = order.payment.method
   if (!method) return null

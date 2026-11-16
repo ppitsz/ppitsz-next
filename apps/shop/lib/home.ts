@@ -125,7 +125,7 @@ export interface Featured {
 }
 
 /**
- * The hero's product: the one Danus picked, while the catalog still shows
+ * The hero's product: the one an admin picked, while the catalog still shows
  * it. Null otherwise, and the hero shows the cover photo instead.
  */
 export function featuredOf(campaign: Campaign, catalog: Catalog, items: ShowcaseItem[], bundles: Bundle[]): Featured | null {

@@ -50,19 +50,19 @@ export default async function PersonPage({ params }: PageProps<"/accounts/[uid]"
           {session.uid === uid && (
             <p className="type-body-sm text-muted">This is you. Another Portal admin has to remove your Portal admin role.</p>
           )}
-          <RolesForm uid={uid} roles={{ shop: roles.shop, formsAdmin: roles.formsAdmin, portalAdmin: roles.portalAdmin }} />
+          <RolesForm uid={uid} roles={{ shop: roles.shop, formsAdmin: roles.formsAdmin, portalAdmin: roles.portalAdmin, siteAdmin: roles.siteAdmin }} />
         </section>
 
         <div className="flex flex-col gap-12">
-          <section aria-labelledby="panitia" className="flex flex-col gap-4">
-            <h2 id="panitia" className="type-heading-lg text-text">
-              Panitia
+          <section aria-labelledby="organizing" className="flex flex-col gap-4">
+            <h2 id="organizing" className="type-heading-lg text-text">
+              Organizer
             </h2>
-            {roles.panitia.length === 0 ? (
-              <p className="type-body text-muted">Not on the panitia of any form that hasn&apos;t ended.</p>
+            {roles.organizing.length === 0 ? (
+              <p className="type-body text-muted">Not an organizer of any form that hasn&apos;t ended.</p>
             ) : (
               <ul className="flex flex-col gap-2">
-                {roles.panitia.map((form) => (
+                {roles.organizing.map((form) => (
                   <li key={form.id} className="type-body text-text">
                     <Link href={`${formsOrigin()}/staff/${form.id}`}>{form.title || "Untitled form"}</Link>
                     <span className="text-muted"> · {STATUS_LABELS[form.status] ?? form.status}</span>
@@ -70,7 +70,7 @@ export default async function PersonPage({ params }: PageProps<"/accounts/[uid]"
                 ))}
               </ul>
             )}
-            <p className="type-body-sm text-muted">Panitia are added and removed on each form, in PPITSZ Forms.</p>
+            <p className="type-body-sm text-muted">Organizers are added and removed on each form, in PPITSZ Forms.</p>
           </section>
 
           <section aria-labelledby="password" className="flex flex-col items-start gap-4">

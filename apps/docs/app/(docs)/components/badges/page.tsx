@@ -48,13 +48,13 @@ export default function BadgesPage() {
         intro={<p>Status is always shown in words, from one shared table in <code>@ppitsz/ui/lib/network</code>, so every site says “Fully booked” the same way. Tinted tones carry a small leading dot.</p>}
       >
         <Example code={`<StatusBadge domain="event" value="registration_open" />
-<StatusBadge domain="oprec" value="accepted" suffix="Humas" />`}>
+<StatusBadge domain="recruitment" value="accepted" suffix="Humas" />`}>
           <StatusBadge domain="event" value="upcoming" />
           <StatusBadge domain="event" value="registration_open" />
           <StatusBadge domain="event" value="full" />
           <StatusBadge domain="event" value="past" />
-          <StatusBadge domain="oprec" value="accepted" suffix="Humas" />
-          <StatusBadge domain="oprec" value="rejected" />
+          <StatusBadge domain="recruitment" value="accepted" suffix="Humas" />
+          <StatusBadge domain="recruitment" value="rejected" />
           <StatusBadge domain="content" value="new" />
         </Example>
         <SpecTable head={["Domain", "Value", "Label", "Badge"]} rows={rows} />

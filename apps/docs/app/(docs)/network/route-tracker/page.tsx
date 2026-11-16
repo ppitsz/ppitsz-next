@@ -19,7 +19,7 @@ export default function RouteTrackerPage() {
       href="/network/route-tracker"
       kicker="Network · route-tracker"
       title="Route tracker"
-      lede="The oprec applicant's journey as a route: Online form → Written test → Interview → Results. Horizontal on desktop, vertical on phones, with one “You are here”."
+      lede="The recruitment applicant's journey as a route: Online form → Written test → Interview → Results. Horizontal on desktop, vertical on phones, with one “You are here”."
       sections={SECTIONS}
     >
       <DocSection

@@ -4,7 +4,7 @@ import { readMedia } from "@/lib/store"
  * Product and bundle photos, campaign covers and payment QRs, streamed from
  * Firebase Storage through our own domain so they load in China without a
  * VPN. `payment-accounts/` holds the payment accounts' QR images. Transfer proofs
- * are not public: they go to signed-in Danus staff only, at /staff/proofs.
+ * are not public: they go to signed-in shop staff only, at /staff/proofs.
  */
 const PUBLIC_PREFIXES = ["products/", "bundles/", "campaigns/", "payment-accounts/"]
 

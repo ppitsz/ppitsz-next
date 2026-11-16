@@ -13,7 +13,7 @@ import { getCampaign, listBundles, listOrders, listProducts } from "@/lib/store"
  */
 export async function GET(request: NextRequest) {
   const staff = await getStaff()
-  if (staff?.role !== "admin") return new Response("Danus admins only.", { status: 401 })
+  if (staff?.role !== "admin") return new Response("Shop admins only.", { status: 401 })
   const campaign = await getCampaign(request.nextUrl.searchParams.get("campaign") ?? "")
   if (!campaign) return new Response("Campaign not found.", { status: 404 })
 

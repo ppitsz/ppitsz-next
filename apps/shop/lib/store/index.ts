@@ -27,6 +27,7 @@ import {
   countUnpaid,
   generateOrderCode,
   generateToken,
+  heldByTestOrder,
   isPastDeadline,
   isToken,
   MAX_UNPAID_PER_BUYER,
@@ -38,7 +39,7 @@ import {
   releaseItems,
   stockUnits,
 } from "../domain/order"
-import { proofAccount, saleAccount } from "../domain/payment"
+import { proofAccount, proofTransactionDigits, saleAccount } from "../domain/payment"
 import { applyProductEdit, isUnsold, mergePaymentAccounts, type ProductEdit } from "../domain/product"
 import type {
   Bundle,
@@ -94,9 +95,9 @@ export { readMedia, type ImageChange, type ImageFile } from "./media"
  *   products/{id}       campaignId, variants[] with stock counters
  *   bundles/{id}        campaignId, components[]; no stock, it takes its components'
  *   orders/{id}         token (secret), code (short); buyerUid (the account); slotKey for a delivery order's slot
- *   accounts/{uid}      the PPITSZ account's profile, shared by every app (@ppitsz/accounts/profile)
+ *   users/{uid}         the person's record, shared by every app and the old website (@ppitsz/accounts/profile)
  *   orderCodes/{code}   { orderId } — makes codes unique
- *   checkouts/{id}      { orderId } — one order per checkout attempt or kasir sale (idempotency)
+ *   checkouts/{id}      { orderId } — one order per checkout attempt or register sale (idempotency)
  *   rateLimits/{hash}   request counters, see rate-limit.ts
  */
 
@@ -229,7 +230,7 @@ function awaitingQuery(campaignId?: string) {
   return campaignId ? awaiting.where("campaignId", "==", campaignId) : awaiting
 }
 
-/** Proofs waiting for Danus, of one campaign or of all, oldest first: first come, first checked. */
+/** Proofs waiting to be checked, of one campaign or of all, oldest first: first come, first checked. */
 export async function listAwaitingVerification(campaignId?: string): Promise<Order[]> {
   const snap = await awaitingQuery(campaignId).get()
   return snap.docs
@@ -238,6 +239,24 @@ export async function listAwaitingVerification(campaignId?: string): Promise<Ord
       (a, b) =>
         (a.payment.submittedAt?.getTime() ?? 0) - (b.payment.submittedAt?.getTime() ?? 0)
     )
+}
+
+/**
+ * Orders whose latest proof carries one of `transactionDigitss`, by number: the
+ * verify queue warns when one transfer is sent as proof for two orders.
+ */
+export async function ordersByTransactionDigits(transactionDigitss: string[]): Promise<Map<string, Order[]>> {
+  const ids = [...new Set(transactionDigitss)]
+  const found = new Map<string, Order[]>()
+  // Firestore takes up to 30 values in one `in`.
+  for (let i = 0; i < ids.length; i += 30) {
+    const snap = await col.orders().where("payment.transactionDigits", "in", ids.slice(i, i + 30)).get()
+    for (const order of snap.docs.map(orderFromDoc)) {
+      const id = order.payment.transactionDigits!
+      found.set(id, [...(found.get(id) ?? []), order])
+    }
+  }
+  return found
 }
 
 /** The order a checkout attempt created, if it got that far. */
@@ -285,7 +304,7 @@ function slotKeyOf(campaignId: string, slotId: string) {
   return `${campaignId}/${slotId}`
 }
 
-/** How many proofs wait for Danus, in every campaign unless one is given: the dashboard badge. */
+/** How many proofs wait to be checked, in every campaign unless one is given: the dashboard badge. */
 export async function countAwaitingVerification(campaignId?: string): Promise<number> {
   const snap = await awaitingQuery(campaignId).count().get()
   return snap.data().count
@@ -300,7 +319,7 @@ export async function getProduct(id: string): Promise<Product | null> {
    Buyer actions
    ------------------------------------------------------------------------- */
 
-/** A buyer account's profile, or null when it has none yet. The PPITSZ account's own (accounts/{uid}). */
+/** A buyer account's profile, or null when it has none yet. The person's own record (users/{uid}). */
 export const getBuyerProfile = getProfile
 
 /** Stores the profile's fields (already checked with cleanProfile), keeping when it was made. */
@@ -332,6 +351,8 @@ export async function createOnlineOrder(
     fulfillment?: FulfillmentChoice
     checkoutId?: string
     deviceKey?: string
+    /** Signed-in staff may order in a draft campaign: a test order. */
+    staff?: boolean
   },
   now = new Date()
 ): Promise<Order> {
@@ -345,8 +366,9 @@ export async function createOnlineOrder(
 
   const campaign = await getCampaign(input.campaignId)
   if (!campaign) throw new ShopError("PRODUCT_UNAVAILABLE")
-  const window = onlineWindowState(campaign, now)
+  const window = onlineWindowState(campaign, now, { staff: input.staff })
   if (window === "not_open") throw new ShopError("ORDERING_NOT_OPEN")
+  const test = campaign.status === "draft"
   if (window === "closed") throw new ShopError("ORDERING_CLOSED")
   const fulfillment = input.fulfillment ?? { type: "pickup" }
   assertFulfillment(campaign, fulfillment.type)
@@ -358,7 +380,8 @@ export async function createOnlineOrder(
     const existing = await orderOfCheckout(tx, checkoutRef)
     if (existing) return existing
 
-    await assertUnpaidLimit(tx, campaign.id, input.buyer.uid, input.deviceKey, now)
+    // Staff trying a draft may leave any number of orders unpaid.
+    if (!test) await assertUnpaidLimit(tx, campaign.id, input.buyer.uid, input.deviceKey, now)
     let delivery: Order["delivery"]
     if (fulfillment.type === "delivery") {
       const inSlot = await tx.get(col.orders().where("slotKey", "==", slotKeyOf(campaign.id, fulfillment.slotId)))
@@ -381,6 +404,7 @@ export async function createOnlineOrder(
       pickedUpAt: null,
       handledBy: null,
       deviceKey: input.deviceKey,
+      test: test || undefined,
     })
     write()
     return order
@@ -388,7 +412,7 @@ export async function createOnlineOrder(
 }
 
 /**
- * Stores the buyer's transfer screenshot and puts the order in Danus's
+ * Stores the buyer's transfer screenshot and puts the order in the
  * verification queue. Allowed again after a rejection. The file is removed
  * again if the order can't take it.
  */
@@ -397,6 +421,8 @@ export async function submitPaymentProof(
     token: string
     file: { bytes: Uint8Array; contentType: string }
     accountId: string | undefined
+    /** Required for WeChat Pay and Alipay accounts. */
+    transactionDigits?: string
   },
   now = new Date()
 ): Promise<Order> {
@@ -409,11 +435,17 @@ export async function submitPaymentProof(
   // Refuse before uploading anything; the transaction checks again.
   const refused = refusal(order, "submit_proof", "buyer", now)
   if (refused) throw new ShopError(refused)
-  proofAccount(campaign, input.accountId)
+  proofTransactionDigits(proofAccount(campaign, input.accountId), input.transactionDigits)
 
   const proofPath = await uploadProof(order.id, input.file, now)
   try {
-    const command = { type: "submit_proof", campaign, accountId: input.accountId, proofPath } as const
+    const command = {
+      type: "submit_proof",
+      campaign,
+      accountId: input.accountId,
+      transactionDigits: input.transactionDigits,
+      proofPath,
+    } as const
     return (await runCommand(order.id, command, "buyer", now)).order
   } catch (error) {
     await deleteMediaQuietly(proofPath)
@@ -422,7 +454,7 @@ export async function submitPaymentProof(
 }
 
 /* -------------------------------------------------------------------------
-   Danus actions. `staff` is the signed-in staff member; the lifecycle
+   Staff actions. `staff` is the signed-in staff member; the lifecycle
    decides what their role allows.
    ------------------------------------------------------------------------- */
 
@@ -526,7 +558,7 @@ export async function cancelOrder(orderId: string, staff: StaffActor, reason: st
   return (await runCommand(orderId, { type: "cancel", reason }, staff, now)).order
 }
 
-/** Records the money Danus sent back for a canceled or expired online order. Once per order. */
+/** Records the money we sent back for a canceled or expired online order. Once per order. */
 export async function recordRefund(
   orderId: string,
   staff: StaffActor,
@@ -710,8 +742,9 @@ export async function saveCampaign(campaignId: string | null, input: CampaignSav
       const hasOrders = before
         ? !(await tx.get(col.orders().where("campaignId", "==", id).limit(1))).empty
         : false
+      const hasTestOrders = hasOrders && !(await tx.get(testOrdersQuery(id).limit(1))).empty
       const others = all.docs.filter((d) => d.id !== id).map(campaignFromDoc)
-      const issue = checkCampaignEdit(input, { current: before, others, hasOrders })[0]
+      const issue = checkCampaignEdit(input, { current: before, others, hasOrders, hasTestOrders })[0]
       if (issue) throw new ShopError("INVALID_CAMPAIGN", issue.message)
       if (input.featuredProductId) {
         const featured = await tx.get(col.products().doc(input.featuredProductId))
@@ -788,6 +821,49 @@ export async function deleteCampaign(campaignId: string) {
     ],
     []
   )
+}
+
+function testOrdersQuery(campaignId: string) {
+  return col.orders().where("campaignId", "==", campaignId).where("test", "==", true)
+}
+
+/** How many test orders a campaign has: Settings offers to delete them. */
+export async function countTestOrders(campaignId: string): Promise<number> {
+  const snap = await testOrdersQuery(campaignId).count().get()
+  return snap.data().count
+}
+
+/**
+ * Deletes a campaign's test orders, whatever their status, with their codes,
+ * checkouts and proofs, and gives back the stock they still take. Returns
+ * how many were deleted.
+ */
+export async function deleteTestOrders(campaignId: string): Promise<number> {
+  const snap = await testOrdersQuery(campaignId).get()
+  const proofs: (string | undefined)[] = []
+  let deleted = 0
+  for (const doc of snap.docs) {
+    const removed = await db().runTransaction(async (tx) => {
+      const fresh = await tx.get(doc.ref)
+      if (!fresh.exists) return null
+      const order = orderFromDoc(fresh)
+      const held = heldByTestOrder(order)
+      const [products, checkouts] = await Promise.all([
+        readProductsById(tx, productIdsOf(held)),
+        tx.get(col.checkouts().where("orderId", "==", order.id)),
+      ])
+      writeProducts(tx, releaseItems(held, order.channel, products))
+      for (const checkout of checkouts.docs) tx.delete(checkout.ref)
+      tx.delete(col.orderCodes().doc(order.code))
+      tx.delete(doc.ref)
+      return order
+    })
+    if (!removed) continue
+    deleted++
+    proofs.push(removed.payment.proofPath, ...removed.rejections.map((r) => r.proofPath))
+  }
+  await deleteUnused(proofs, [])
+  return deleted
 }
 
 function newCampaignId(slug: string) {
@@ -900,7 +976,7 @@ async function readOrder(tx: Transaction, orderId: string) {
   return orderFromDoc(snap)
 }
 
-/** Where a checkout attempt or kasir sale records its order; null for a missing or malformed id. */
+/** Where a checkout attempt or register sale records its order; null for a missing or malformed id. */
 function checkoutRefOf(id: string | undefined) {
   return id && CHECKOUT_ID_PATTERN.test(id) ? col.checkouts().doc(id) : null
 }

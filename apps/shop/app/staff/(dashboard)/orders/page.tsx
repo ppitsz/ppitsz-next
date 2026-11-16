@@ -9,6 +9,7 @@ import { displayStatus, FULFILLMENTS, fulfillmentOf, type Fulfillment } from "@/
 import { ORDER_STATUSES, type Order, type OrderStatus } from "@/lib/domain/types"
 import { listCampaigns, listOrders } from "@/lib/store"
 import { itemsSummary, OrderStatusBadge, when } from "@/components/staff/order-bits"
+import { TestBadge } from "@/components/test-badge"
 import { OrderFilters } from "@/components/staff/order-filters"
 
 export const metadata: Metadata = { title: "Orders" }
@@ -25,7 +26,13 @@ function matches(order: Order, query: string) {
     .toLowerCase()
   // "7k3p", "gc 7k3p" and "GC-7K3P" all find GC-7K3P.
   const code = order.code.toLowerCase().replace("-", "")
-  return haystack.includes(q) || (compact.length >= 3 && code.includes(compact))
+  // Proofs keep a transaction number's last 6 digits: staff search by them, or paste the whole number from a bill.
+  const transaction = order.payment.transactionDigits
+  return (
+    haystack.includes(q) ||
+    (compact.length >= 3 && code.includes(compact)) ||
+    (!!transaction && /^\d{6,}$/.test(compact) && compact.endsWith(transaction))
+  )
 }
 
 export default async function OrdersPage({ searchParams }: PageProps<"/staff/orders">) {
@@ -110,8 +117,9 @@ export default async function OrdersPage({ searchParams }: PageProps<"/staff/ord
                   </span>
                   <span className="truncate type-body-sm text-muted">{itemsSummary(order)}</span>
                   <span className="type-ui text-text @3xl:text-right">{formatYuan(order.totalFen)}</span>
-                  <span className="@3xl:justify-self-end">
+                  <span className="flex flex-wrap gap-2 @3xl:justify-self-end">
                     <OrderStatusBadge status={displayStatus(order)} />
+                    {order.test && <TestBadge />}
                   </span>
                 </Link>
               </li>

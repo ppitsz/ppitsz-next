@@ -26,7 +26,7 @@ const COURIERS = ["SF Express 顺丰", "闪送", "JD 京东", "ZTO 中通"]
 
 /**
  * What staff do with a paid delivery order: hand it to a courier with a
- * tracking number, then mark it delivered. A Danus member delivering by hand
+ * tracking number, then mark it delivered. A staff member delivering by hand
  * only marks it delivered.
  */
 export function DeliveryActions({

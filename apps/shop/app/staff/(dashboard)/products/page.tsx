@@ -69,7 +69,7 @@ export default async function ProductsPage() {
         <Empty>
           <EmptyHeader>
             <EmptyTitle>No products yet.</EmptyTitle>
-            <EmptyDescription>Products you add show up in the catalog and the kasir right away.</EmptyDescription>
+            <EmptyDescription>Products you add show up in the catalog and the register right away.</EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (

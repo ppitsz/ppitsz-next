@@ -1,6 +1,6 @@
 # 4. Staff roles live in Firestore, not in custom claims
 
-Date: 2026-10-29, shop added 2026-10-30 · Status: accepted, sessions superseded by ADR 0008
+Date: 2026-10-29, shop added 2026-10-30 · Status: accepted, sessions superseded by ADR 0008, storage by ADR 0014
 
 > Roles still live per app, as below. Sessions no longer do: one sign-in on PPITSZ Account covers every app (ADR 0008), and Portal admins (`portalStaff`) grant roles in the app.
 

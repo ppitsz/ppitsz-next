@@ -20,6 +20,7 @@ import { useGateSignal } from "@ppitsz/ui/hooks/use-gate-signal"
 import { formatTime } from "@ppitsz/ui/lib/format"
 import { handOverAction, lookupScanAction, type ScanResult, type ScannedOrder } from "@/lib/actions/staff"
 import { OrderStatusBadge, when } from "./order-bits"
+import { TestBadge } from "../test-badge"
 import { decodeImageFile, useQrCamera, type CameraState } from "./qr-camera"
 
 interface Handover {
@@ -282,6 +283,7 @@ function ScanResultCard({
             {order.campaignName}
             {order.buyerName && ` · WeChat ${order.wechatId}`}
             <OrderStatusBadge status={order.shownStatus} />
+            {order.test && <TestBadge />}
           </span>
         </GateHolder>
         {gate.description && <GateDescription>{gate.description}</GateDescription>}
@@ -390,7 +392,7 @@ function gateFor(result: ScanResult, order: ScannedOrder, remaining: number): Ga
         description: (
           <>
             {order.pickedUpAt && `Handed over ${when(order.pickedUpAt)} by ${order.handledByName ?? "staff"}. `}
-            Don&apos;t hand it over again. If the buyer says they didn&apos;t get it, call a Danus admin.
+            Don&apos;t hand it over again. If the buyer says they didn&apos;t get it, call a shop admin.
           </>
         ),
       }
@@ -407,7 +409,7 @@ function gateFor(result: ScanResult, order: ScannedOrder, remaining: number): Ga
             , then scan again.
           </>
         ) : (
-          "The transfer proof has been sent but not checked. Ask a Danus admin to check it, then scan again."
+          "The transfer proof has been sent but not checked. Ask a shop admin to check it, then scan again."
         ),
       }
     case "pending_payment":
@@ -415,15 +417,15 @@ function gateFor(result: ScanResult, order: ScannedOrder, remaining: number): Ga
         verdict: "stop",
         title: "Not paid",
         description:
-          "The buyer hasn't sent a transfer proof. Ask them to pay and send the proof from their order page, or buy at the kasir.",
+          "The buyer hasn't sent a transfer proof. Ask them to pay and send the proof from their order page, or buy at the register.",
       }
     case "expired":
       return {
         verdict: "stop",
         title: "Expired",
-        description: "The order was canceled automatically because it wasn't paid in time. The buyer can buy at the kasir.",
+        description: "The order was canceled automatically because it wasn't paid in time. The buyer can buy at the register.",
       }
     case "cancelled":
-      return { verdict: "stop", title: "Canceled", description: "Danus has canceled this order." }
+      return { verdict: "stop", title: "Canceled", description: "An admin has canceled this order." }
   }
 }

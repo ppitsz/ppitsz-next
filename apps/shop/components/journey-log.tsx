@@ -34,7 +34,7 @@ export function JourneyLog({ orders, campaigns }: { orders: Order[]; campaigns: 
             </NextLink>
             <p className="flex min-w-0 flex-col">
               <span className="truncate type-ui text-text group-hover/row:underline underline-offset-4">
-                {campaigns.get(order.campaignId)?.name ?? "Danus campaign"}
+                {campaigns.get(order.campaignId)?.name ?? "Campaign"}
               </span>
               <span className="type-caption text-muted">
                 {items} {items === 1 ? "item" : "items"}

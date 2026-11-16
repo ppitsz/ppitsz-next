@@ -1,15 +1,15 @@
 import { generatePassword } from "@ppitsz/accounts/fields"
 import { ensureAccount, findAccount, setPassword } from "@ppitsz/accounts/passwords"
-import { logPasswordReset, SCRIPT, setRole, shopRoleOf } from "@ppitsz/accounts/roles"
+import { holdersOf, logPasswordReset, SCRIPT, setRole, shopRoleOf } from "@ppitsz/accounts/roles"
 import type { Session } from "@ppitsz/accounts/session"
 
-import { adminAuth, db } from "../firebase/admin"
+import { adminAuth } from "../firebase/admin"
 import { isStaffRole, type StaffRole } from "../staff-roles"
 
 export { STAFF_ROLE_LABELS, STAFF_ROLES, type StaffRole } from "../staff-roles"
 
 /*
- * Danus staff: a PPITSZ account (ADR 0008) with a role in shopStaff/{uid}.
+ * shop staff: a PPITSZ account (ADR 0008) with a shop role on users/{uid} (ADR 0014).
  * Signing in happens on PPITSZ Account; the shop only reads the role, on
  * every request, so a change takes effect at once (docs/adr/0004).
  *
@@ -24,7 +24,7 @@ export interface Staff {
   role: StaffRole
 }
 
-/** The staff member behind a signed-in account, or null when the account has no Danus role. */
+/** The staff member behind a signed-in account, or null when the account has no shop role. */
 export async function staffOf(session: Session): Promise<Staff | null> {
   const record = await shopRoleOf(session.uid)
   if (!record) return null
@@ -36,8 +36,8 @@ export async function staffOf(session: Session): Promise<Staff | null> {
    ------------------------------------------------------------------------- */
 
 /**
- * Gives the account for `email` a Danus role. A new account gets `password`;
- * an existing one (a Forms panitia, a buyer) keeps its own, so adding someone
+ * Gives the account for `email` a shop role. A new account gets `password`;
+ * an existing one (a Forms organizer, a buyer) keeps its own, so adding someone
  * never locks them out of the other apps. `created` says which happened.
  */
 export async function upsertStaff(input: { email: string; password: string; name: string; role: StaffRole }) {
@@ -56,7 +56,7 @@ export async function setStaffPassword(email: string, password = generatePasswor
   await logPasswordReset(SCRIPT, { uid: user.uid, email, name: user.displayName ?? "" })
 }
 
-/** Takes away the role. Their Danus pages stop on the next request; the account itself is untouched. */
+/** Takes away the role. Their staff pages stop on the next request; the account itself is untouched. */
 export async function removeStaff(email: string) {
   const account = await findAccount(email)
   if (!account) throw new Error(`No account with ${email}`)
@@ -64,15 +64,8 @@ export async function removeStaff(email: string) {
 }
 
 export async function listStaff(): Promise<Staff[]> {
-  const snap = await db().collection("shopStaff").get()
-  const result: Staff[] = []
-  for (const doc of snap.docs) {
-    const role: unknown = doc.get("role")
-    if (!isStaffRole(role)) continue
-    const email = (doc.get("email") as string | undefined) ?? ""
-    result.push({ uid: doc.id, email, name: (doc.get("name") as string | undefined) || email, role })
-  }
-  return result.sort((a, b) => a.name.localeCompare(b.name))
+  const holders = await holdersOf("shop")
+  return holders.flatMap((h) => (isStaffRole(h.role) ? [{ uid: h.uid, email: h.email, name: h.name, role: h.role }] : []))
 }
 
 /** Display names for the uids stored on orders ("approved by …"). */

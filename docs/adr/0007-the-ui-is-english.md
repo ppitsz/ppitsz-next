@@ -1,6 +1,6 @@
 # 7. The UI is English
 
-Date: 2026-10-30 · Status: accepted
+Date: 2026-10-30 · Status: accepted, amended by ADR 0012 (no insider words)
 
 ## Context
 

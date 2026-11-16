@@ -6,10 +6,12 @@ import { getStorage } from "firebase-admin/storage"
 /*
  * The Admin SDK is the only way our apps touch Firebase. Browsers never call
  * Google directly, so people in mainland China without a VPN only need to
- * reach our own domains. Security rules therefore deny all client access.
+ * reach our own domains. Our collections need no security rules: the Admin SDK
+ * bypasses them, and the project's Firestore rules, which belong to the old
+ * website, name its own collections only, so every other one stays closed.
  *
- * Every app uses the same project (`ppitsz-next`, ADR 0006), so one session
- * cookie works in all of them (ADR 0008).
+ * Every app uses the same project, `ppitsz`, shared with the old website
+ * (ADR 0013), so one session cookie works in all of them (ADR 0008).
  *
  * Every run, development included, connects to the real project: set
  * FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY,

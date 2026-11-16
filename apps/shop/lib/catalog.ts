@@ -86,6 +86,8 @@ export interface Catalog {
   onlineOpensAt: string | null
   onlineClosesAt: string | null
   window: "not_open" | "open" | "closed"
+  /** A draft opened by staff: orders placed now are test orders. */
+  testOrdering: boolean
   offers: CampaignOffers
   deliveryFeeFen: number
   deliverySlots: CatalogSlot[]
@@ -105,12 +107,13 @@ export function mediaUrl(path: string) {
  * left out. Products whose sale dates are over are left out too; upcoming
  * ones are listed with their start, for buyers to see what is coming. `slotPlaces` is how many orders each delivery slot holds
  * (store.slotPlaces); without it every slot counts as empty.
+ * `staff` opens a draft for test orders.
  */
 export function toCatalog(
   campaign: Campaign,
   products: Product[],
   bundles: Bundle[],
-  { now = new Date(), slotPlaces = new Map<string, number>() } = {}
+  { now = new Date(), slotPlaces = new Map<string, number>(), staff = false } = {}
 ): Catalog {
   const byId = new Map(products.map((p) => [p.id, p]))
   // Without a booth there are no walk-ins to keep stock for.
@@ -127,7 +130,8 @@ export function toCatalog(
     pickupInfo: campaign.pickupInfo,
     onlineOpensAt: campaign.onlineOpensAt?.toISOString() ?? null,
     onlineClosesAt: campaign.onlineClosesAt?.toISOString() ?? null,
-    window: onlineWindowState(campaign, now),
+    window: onlineWindowState(campaign, now, { staff }),
+    testOrdering: staff && campaign.status === "draft",
     offers: campaign.offers,
     deliveryFeeFen: campaign.deliveryFeeFen,
     deliverySlots: campaign.offers.delivery

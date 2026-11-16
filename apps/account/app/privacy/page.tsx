@@ -41,7 +41,7 @@ export default function PrivacyPage() {
       <Section id="who" title="Who we are">
         <p>
           PPI Tiongkok Cabang Shenzhen (PPIT Shenzhen) is the association of Indonesian students in Shenzhen. We run
-          these apps for our members and anyone who orders from Danus or signs up for our events.
+          these apps for our members and anyone who orders from the shop or signs up for our events.
         </p>
       </Section>
 
@@ -62,22 +62,22 @@ export default function PrivacyPage() {
             <strong>Form responses:</strong> your answers and any files you upload, and your ticket for an event.
           </li>
           <li>
-            <strong>Staff roles:</strong> for panitia and Danus staff, their roles and a log of who changed them.
+            <strong>Staff roles:</strong> for organizers and shop staff, their roles and a log of who changed them.
           </li>
         </ul>
       </Section>
 
       <Section id="why" title="Why">
         <p>
-          Only to run the apps: to sign you in, fill in your details for you, let Danus handle your order and reach you
-          about it on WeChat, and let panitia run their event. We don&apos;t sell your data, show ads or use analytics or
+          Only to run the apps: to sign you in, fill in your details for you, let us handle your order and reach you
+          about it on WeChat, and let organizers run their events. We don&apos;t sell your data, show ads or use analytics or
           tracking.
         </p>
       </Section>
 
       <Section id="who-sees" title="Who sees it">
         <p>
-          You see your own data. Danus staff see the orders they handle, panitia see the responses to their own forms,
+          You see your own data. Shop staff see the orders they handle, organizers see the responses to their own forms,
           and Portal admins see accounts and roles. Nobody else in PPIT Shenzhen does.
         </p>
         <p>
@@ -98,7 +98,7 @@ export default function PrivacyPage() {
       <Section id="how-long" title="How long">
         <p>
           Your account and profile stay until you ask us to delete them. Form responses are deleted 90 days after their
-          event ends. Shop orders stay as Danus&apos;s sales records.
+          event ends. Shop orders stay as our sales records.
         </p>
       </Section>
 

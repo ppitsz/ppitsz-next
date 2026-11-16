@@ -9,7 +9,7 @@ import type { Bundle, Campaign, Channel, Order, OrderItem, PaymentMethod, Produc
  * and the tests all count the same way.
  *
  * A sold order is a paid online order or a walk-in sale, collected or not. A
- * canceled walk-in sale was a kasir mistake undone on the spot, so it
+ * canceled walk-in sale was a register mistake undone on the spot, so it
  * counts for nothing. A canceled online order counts only for the money that
  * came in and went back. Delivery fees are part of sales but not of any line.
  */
@@ -34,7 +34,7 @@ export interface RecapMoney {
   /** Everything that came in: sales, plus canceled online orders that were paid. */
   receivedFen: number
   refundedFen: number
-  /** What Danus should hold now: received minus refunded. */
+  /** What we should hold now: received minus refunded. */
   heldFen: number
   /** Canceled online orders still waiting for their money back. */
   owedFen: number
@@ -51,7 +51,7 @@ export interface RecapMoney {
 export interface RecapAccount {
   key: string
   method: PaymentMethod
-  /** "WeChat Pay · Nadia (Danus)", or "Cash". */
+  /** "WeChat Pay · Nadia (Treasurer)", or "Cash". */
   label: string
   orders: number
   receivedFen: number

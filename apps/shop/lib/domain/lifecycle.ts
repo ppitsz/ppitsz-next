@@ -2,7 +2,7 @@ import type { StaffRole } from "../staff-roles"
 import { MAX_COURIER_LENGTH, MAX_TRACKING_LENGTH } from "./delivery"
 import { ShopError, type ErrorCode } from "./errors"
 import { isOpenStatus, isPastDeadline, paymentDeadline } from "./order"
-import { proofAccount } from "./payment"
+import { proofAccount, proofTransactionDigits } from "./payment"
 import { PAYMENT_METHODS, type Campaign, type Order, type OrderItem, type OrderStatus, type PaymentMethod } from "./types"
 
 /*
@@ -30,7 +30,14 @@ export interface StaffActor {
 }
 
 export type OrderCommand =
-  | { type: "submit_proof"; campaign: Campaign; accountId: string | undefined; proofPath: string }
+  | {
+      type: "submit_proof"
+      campaign: Campaign
+      accountId: string | undefined
+      /** As the buyer typed it; required for WeChat Pay and Alipay. */
+      transactionDigits: string | undefined
+      proofPath: string
+    }
   | { type: "approve" }
   | { type: "reject"; campaign: Campaign; reason: string }
   /** The items at `indexes`, or every item not yet handed over. */
@@ -121,6 +128,7 @@ export function applyCommand(order: Order, command: OrderCommand, actor: Actor, 
   switch (command.type) {
     case "submit_proof": {
       const account = proofAccount(command.campaign, command.accountId)
+      const transactionDigits = proofTransactionDigits(account, command.transactionDigits)
       return {
         ...unchanged,
         order: {
@@ -131,6 +139,7 @@ export function applyCommand(order: Order, command: OrderCommand, actor: Actor, 
             method: account.method,
             accountId: account.id,
             proofPath: command.proofPath,
+            transactionDigits,
             submittedAt: now,
           },
         },
@@ -157,7 +166,13 @@ export function applyCommand(order: Order, command: OrderCommand, actor: Actor, 
           expiresAt: paymentDeadline(command.campaign, now),
           rejections: [
             ...order.rejections,
-            { reason: reasonOf(command.reason), at: now, by: staffUid(actor), proofPath: order.payment.proofPath },
+            {
+              reason: reasonOf(command.reason),
+              at: now,
+              by: staffUid(actor),
+              proofPath: order.payment.proofPath,
+              transactionDigits: order.payment.transactionDigits,
+            },
           ],
         },
       }

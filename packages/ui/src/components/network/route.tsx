@@ -150,11 +150,11 @@ function RouteStop({
   line?: LineCode
   /** No segment after this stop: the route stops here. */
   end?: boolean
-  /** A danger bar across the line after this stop (oprec: not selected). */
+  /** A danger bar across the line after this stop (recruitment: not selected). */
   terminus?: boolean
   /** Gray out the station: a stop the route no longer reaches. */
   dim?: boolean
-  /** Continue a short way in a division color (oprec: accepted). */
+  /** Continue a short way in a division color (recruitment: accepted). */
   extend?: LineCode
   /** Scroll-linked draw-in for the segment (horizontal, below the fold). */
   draw?: boolean

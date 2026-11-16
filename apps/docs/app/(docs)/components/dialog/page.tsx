@@ -72,7 +72,7 @@ export default function DialogPage() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Note for the interviewer</DialogTitle>
-                <DialogDescription>Only the oprec panitia can see it.</DialogDescription>
+                <DialogDescription>Only the recruitment organizers can see it.</DialogDescription>
               </DialogHeader>
               <DialogBody>
                 <Field>
@@ -114,7 +114,7 @@ export default function DialogPage() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Reject Raka Pratama?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  The applicant gets a “Not selected” email and their oprec route stops at the
+                  The applicant gets a “Not selected” email and their recruitment route stops at the
                   interview stage. This can't be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>

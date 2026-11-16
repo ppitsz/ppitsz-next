@@ -4,8 +4,8 @@ import * as React from "react"
 
 import { cn } from "@ppitsz/ui/lib/utils"
 import {
-  OPREC_REJECTED_STAGE,
-  OPREC_STAGES,
+  RECRUITMENT_REJECTED_STAGE,
+  RECRUITMENT_STAGES,
   type LineCode,
 } from "@ppitsz/ui/lib/network"
 import { StatusBadge } from "@ppitsz/ui/components/status-badge"
@@ -13,7 +13,7 @@ import { LineBadge } from "@ppitsz/ui/components/network/line-badge"
 import { RouteList, RouteStop, type StopState } from "@ppitsz/ui/components/network/route"
 
 /*
- * Route tracker: the applicant's journey through oprec as a route.
+ * Route tracker: the applicant's journey through recruitment as a route.
  * Horizontal from lg, vertical on phones. Passed stations show a short result
  * line, the current one says what to do next, upcoming ones show their date.
  * Rejected: the route stops at that station with a danger terminus and later
@@ -30,9 +30,9 @@ export interface RouteTrackerStage {
 }
 
 export interface RouteTrackerProps {
-  /** Defaults to the four oprec stages. */
+  /** Defaults to the four recruitment stages. */
   stages?: RouteTrackerStage[]
-  /** 0–3, or 4 when rejected (as in the oprec data). */
+  /** 0–3, or 4 when rejected (as in the recruitment data). */
   currentStage: number
   /** With currentStage 4: the stage the applicant stopped at. */
   rejectedAtStage?: number
@@ -64,7 +64,7 @@ function resolveStops({
   acceptedLine,
 }: Required<Pick<RouteTrackerProps, "stages" | "currentStage">> &
   Pick<RouteTrackerProps, "rejectedAtStage" | "acceptedLine">): ResolvedStop[] {
-  const rejected = currentStage === OPREC_REJECTED_STAGE && rejectedAtStage !== undefined
+  const rejected = currentStage === RECRUITMENT_REJECTED_STAGE && rejectedAtStage !== undefined
   const last = stages.length - 1
   const here = rejected ? rejectedAtStage! : acceptedLine ? last : currentStage
   return stages.map((stage, index) => {
@@ -93,7 +93,7 @@ function RouteTracker({
   className,
   "aria-label": ariaLabel = "Application progress",
 }: RouteTrackerProps) {
-  const resolvedStages = stages ?? OPREC_STAGES.map((s) => ({ label: s.label }))
+  const resolvedStages = stages ?? RECRUITMENT_STAGES.map((s) => ({ label: s.label }))
   const stops = resolveStops({
     stages: resolvedStages,
     currentStage,
@@ -140,11 +140,11 @@ function RouteTracker({
             <span className="type-kicker text-accent-text">{hereLabel}</span>
           )}
           {stop.rejectedHere && (
-            <StatusBadge domain="oprec" value="rejected" />
+            <StatusBadge domain="recruitment" value="rejected" />
           )}
           {stop.acceptedHere && acceptedLine && (
             <span className="flex flex-wrap items-center gap-2 group-data-[orientation=horizontal]/route:justify-center">
-              <StatusBadge domain="oprec" value="accepted" />
+              <StatusBadge domain="recruitment" value="accepted" />
               <LineBadge code={acceptedLine} />
             </span>
           )}

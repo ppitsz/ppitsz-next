@@ -16,7 +16,7 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number]
 export interface PaymentAccount {
   id: string
   method: Exclude<PaymentMethod, "cash">
-  /** Whose account it is, as the buyer sees it in their app: "Nadia (Danus)". */
+  /** Whose account it is, as the buyer sees it in their app: "Nadia (Treasurer)". */
   holder: string
   /** WeChat ID, Alipay account or bank + number. */
   detail: string
@@ -53,7 +53,7 @@ export interface Campaign {
   onlineClosesAt: Date | null
   /** How this campaign sells. At least one is on. */
   offers: CampaignOffers
-  /** Where and when pickup orders are collected: "Booth Danus, SZ Cup · Wed, Mar 17". */
+  /** Where and when pickup orders are collected: "Booth PPIT, SZ Cup · Wed, Mar 17". */
   pickupInfo: string
   /** Added once to every delivery order; 0 is free delivery. */
   deliveryFeeFen: number
@@ -64,7 +64,7 @@ export interface Campaign {
   paymentWindowMinutes: number
 }
 
-/** delivery: online orders delivered. pickup: online orders collected at the pickup place. booth: walk-in sales at the kasir. */
+/** delivery: online orders delivered. pickup: online orders collected at the pickup place. booth: walk-in sales at the register. */
 export interface CampaignOffers {
   delivery: boolean
   pickup: boolean
@@ -93,7 +93,7 @@ export interface Variant {
   /** "M", "Spicy"; empty for a product without options. */
   label: string
   priceFen: number
-  /** Physical units Danus has (or will make) for this campaign. */
+  /** Physical units we have (or will make) for this campaign. */
   stock: number
   /** The most units online orders may take; the rest is held for walk-ins. Null: no cap. Ignored without a booth. */
   onlineCap: number | null
@@ -130,7 +130,7 @@ export interface Product {
   /** What it contains or may contain, one per entry: "Coconut", "May contain shrimp paste". */
   allergens: string[]
   /**
-   * Hidden from the catalog and the kasir when false. A bundle can still
+   * Hidden from the catalog and the register when false. A bundle can still
    * contain it, for items sold only in a bundle.
    */
   active: boolean
@@ -162,7 +162,7 @@ export interface Bundle {
   /** Storage path, served through /media. */
   imagePath?: string
   priceFen: number
-  /** Hidden from the catalog and the kasir when false. */
+  /** Hidden from the catalog and the register when false. */
   active: boolean
   sortOrder: number
   /** In the order the buyer picks them. Two may name the same product, for two sizes of one shirt. */
@@ -212,7 +212,7 @@ export interface Buyer {
 }
 
 /**
- * A buyer's account details: the PPITSZ account's profile, accounts/{uid},
+ * A buyer's account details: the PPITSZ account's profile, users/{uid} (ADR 0014),
  * shared by every app (@ppitsz/accounts/profile). The email is the sign-in.
  * WeChat ID and phone are "" until filled in; checkout asks for them.
  */
@@ -256,6 +256,8 @@ export interface Payment {
   method?: PaymentMethod
   accountId?: string
   proofPath?: string
+  /** WeChat Pay or Alipay only: the transaction number the buyer copied from the payment's details. */
+  transactionDigits?: string
   submittedAt?: Date
   /** When an admin approved the proof, or when the walk-in sale was made. */
   verifiedAt?: Date
@@ -271,6 +273,7 @@ export interface Rejection {
   by: string
   /** The rejected proof, kept for the record. */
   proofPath?: string
+  transactionDigits?: string
 }
 
 /**
@@ -291,7 +294,7 @@ export interface Delivery {
   sentBy?: string
 }
 
-/** Money Danus sent back for a canceled or expired online order, recorded by an admin. */
+/** Money we sent back for a canceled or expired online order, recorded by an admin. */
 export interface Refund {
   amountFen: number
   /** How the money went back. */
@@ -335,9 +338,14 @@ export interface Order {
   refund?: Refund
   /** Hash of the ordering device's cookie, for the unpaid-orders limit. */
   deviceKey?: string
+  /**
+   * Placed by staff in a draft campaign to try it out. It runs like a real
+   * order, and is deleted before the campaign leaves Draft.
+   */
+  test?: boolean
 }
 
-/** What a buyer or kasir asks for: a variant, or a bundle with a variant picked per component. */
+/** What a buyer or register asks for: a variant, or a bundle with a variant picked per component. */
 export type CartLine = ProductLine | BundleLine
 
 export interface ProductLine {

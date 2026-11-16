@@ -30,7 +30,7 @@ const SCALE: [string, string, string, string][] = [
   ["type-ui", "Archivo 600 · 16px", "Buttons, nav links, labels", "See all events"],
   ["type-lede", "Atkinson 400 · 20→24px", "Standfirst under an h1", "More than five hundred students on six campuses."],
   ["type-body-lg", "Atkinson 400 · 18→20px", "Articles, About", "We meet every month on a different campus."],
-  ["type-body", "Atkinson 400 · 17→18px", "Default body, input text", "Oprec is open until September 30."],
+  ["type-body", "Atkinson 400 · 17→18px", "Default body, input text", "Recruitment is open until September 30."],
   ["type-body-sm", "Atkinson 400 · 15px", "Summaries, toast messages", "We'll let you know by email."],
   ["type-caption", "Atkinson 400 · 14px", "Captions, helper and error text", "Photo: Media Kreatif division"],
 ]

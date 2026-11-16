@@ -116,7 +116,7 @@ export default function TicketPage() {
                 <TicketField label="Order">GC-7K3P</TicketField>
                 <TicketField label="Items">3</TicketField>
                 <TicketField label="Pick up">Wed, Mar 17</TicketField>
-                <TicketField label="Station">Booth Danus</TicketField>
+                <TicketField label="Station">Booth PPIT</TicketField>
               </TicketFields>
             </TicketBody>
             <TicketStub>

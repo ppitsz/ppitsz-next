@@ -239,7 +239,7 @@ export default function ColourPage() {
           <Button>See schedule</Button>
           <StatusBadge domain="event" value="registration_open" />
           <StatusBadge domain="event" value="full" />
-          <StatusBadge domain="oprec" value="rejected" />
+          <StatusBadge domain="recruitment" value="rejected" />
           <a href="#tokens" className="type-body text-accent-text underline underline-offset-4">Tautan</a>
         </Example>
       </DocSection>

@@ -1,6 +1,6 @@
 import { ogSize, stationSignImage } from "@/lib/og"
 
-export const alt = "PPITSZ Shop: food and merchandise from Danus PPIT Shenzhen"
+export const alt = "PPITSZ Shop: food and merchandise from PPIT Shenzhen"
 export const size = ogSize
 export const contentType = "image/png"
 
@@ -8,7 +8,7 @@ export const contentType = "image/png"
 export default function Image() {
   return stationSignImage({
     title: "PPITSZ Shop",
-    kicker: "Danus PPIT Shenzhen",
+    kicker: "PPIT Shenzhen",
     details: "Food and merchandise, picked up or delivered",
     line: "danus",
     lines: ["danus"],

@@ -31,7 +31,7 @@ export function sampleCampaign(now = new Date()): Campaign {
     name: "GumamChan · SZ Cup 2027",
     slug: "gumamchan",
     codePrefix: "GC",
-    tagline: "Makanan rumahan Indonesia. Diantar ke asrama, atau ambil di booth Danus.",
+    tagline: "Makanan rumahan Indonesia. Diantar ke asrama, atau ambil di booth PPIT.",
     featuredProductId: "nasi-kuning",
     sortOrder: 1,
     status: "open",
@@ -40,14 +40,14 @@ export function sampleCampaign(now = new Date()): Campaign {
     onlineOpensAt: new Date(now.getTime() - 86_400_000),
     onlineClosesAt: new Date("2027-03-15T23:59:00+08:00"),
     offers: { delivery: true, pickup: true, booth: true },
-    pickupInfo: "Booth Danus di SZ Cup · Rab, 17 Mar 2027, 09.00–17.00",
+    pickupInfo: "Booth PPIT di SZ Cup · Rab, 17 Mar 2027, 09.00–17.00",
     deliveryFeeFen: 5_00,
     // Slots in the coming days, so they can be picked locally.
     deliverySlots: [slot("sabtu", now, 2, 15, 18, 20), slot("minggu", now, 3, 11, 14, null)],
     paymentWindowMinutes: 120,
     paymentAccounts: [
-      { id: "wechat-1", method: "wechat", holder: "Contoh: Bendahara Danus", detail: "wxid_contoh" },
-      { id: "alipay-1", method: "alipay", holder: "Contoh: Bendahara Danus", detail: "contoh@alipay" },
+      { id: "wechat-1", method: "wechat", holder: "Contoh: Bendahara", detail: "wxid_contoh" },
+      { id: "alipay-1", method: "alipay", holder: "Contoh: Bendahara", detail: "contoh@alipay" },
     ],
   }
 }

@@ -13,11 +13,11 @@ export const metadata: Metadata = { title: "New password", referrer: "no-referre
 
 const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value)
 
-/** Opened from the emailed link, or from a panitia invite to set a first password. */
+/** Opened from the emailed link, or from an organizer invite to set a first password. */
 export default async function ResetPasswordPage({ searchParams }: PageProps<"/reset-password">) {
   await connection()
   const params = await searchParams
-  // Firebase's email carries `oobCode`; our own links (development, panitia invites) carry `code`.
+  // Firebase's email carries `oobCode`; our own links (development, organizer invites) carry `code`.
   const code = first(params.code) ?? first(params.oobCode) ?? ""
   const email = code ? await checkResetCode(code).catch(() => null) : null
 

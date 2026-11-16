@@ -19,6 +19,7 @@ import { staffNames } from "@/lib/server/staff"
 import { getCampaign, getOrder } from "@/lib/store"
 import { BuyerMessagePanel } from "@/components/staff/buyer-message"
 import { ItemList, OrderStatusBadge, paymentDestination, ProofImage, when } from "@/components/staff/order-bits"
+import { TestBadge } from "@/components/test-badge"
 import { DeliveryActions } from "@/components/staff/delivery-actions"
 import { CancelOrderButton, CopyBuyerLink, RefundButton, ReviewActions } from "@/components/staff/order-actions"
 
@@ -62,6 +63,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/staff/orde
         <div className="flex flex-wrap items-center gap-4">
           <h1 className="type-display-xl text-text">{order.code}</h1>
           <OrderStatusBadge status={displayStatus(order)} />
+          {order.test && <TestBadge />}
         </div>
       </div>
 
@@ -160,6 +162,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/staff/orde
         </h2>
         <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 type-body-sm">
           {destination && <Row term="Paid via" value={destination} />}
+          {order.payment.transactionDigits && <Row term="Transaction no. ends in" value={order.payment.transactionDigits} />}
           {order.payment.submittedAt && <Row term="Proof sent" value={when(order.payment.submittedAt)} />}
           {order.payment.verifiedAt && !isWalkIn && (
             <Row
@@ -168,7 +171,13 @@ export default async function OrderDetailPage({ params }: PageProps<"/staff/orde
             />
           )}
           {order.rejections.map((r) => (
-            <Row key={r.at.getTime()} term="Rejected" value={`${when(r.at)} · ${nameOf(r.by)} · ${r.reason}`} />
+            <Row
+              key={r.at.getTime()}
+              term="Rejected"
+              value={[when(r.at), nameOf(r.by), r.reason, r.transactionDigits && `transaction …${r.transactionDigits}`]
+                .filter(Boolean)
+                .join(" · ")}
+            />
           ))}
           {order.status === "pending_payment" && order.expiresAt && (
             <Row term="Payment deadline" value={when(order.expiresAt)} />

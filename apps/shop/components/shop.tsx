@@ -91,7 +91,7 @@ export function Shop({ catalog, signedIn }: { catalog: Catalog; signedIn: boolea
                       <AlertTitle>Check the allergens</AlertTitle>
                       <AlertDescription>
                         Allergens are listed on every product, and the kitchen handles other ingredients too. Have a serious allergy? Ask
-                        Danus on WeChat before ordering.
+                        us on WeChat before ordering.
                       </AlertDescription>
                     </Alert>
                   )}

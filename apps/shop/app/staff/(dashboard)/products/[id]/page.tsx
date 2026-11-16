@@ -45,7 +45,7 @@ export default async function EditProductPage({ params }: PageProps<"/staff/prod
         {!isUnsold(product) ? (
           <p className="type-body-sm text-muted">
             This product has been ordered or sold, so it can't be deleted. Untick For sale to
-            hide it from the catalog and the kasir.
+            hide it from the catalog and the register.
           </p>
         ) : inBundles.length > 0 ? (
           <p className="type-body-sm text-muted">

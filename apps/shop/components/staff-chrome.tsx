@@ -95,7 +95,7 @@ export function StaffChrome({
           : []),
         { href: "/staff/scan", label: "Scan" },
         { href: "/staff/delivery", label: "Delivery" },
-        { href: "/staff/kasir", label: "Kasir" },
+        { href: "/staff/register", label: "Register" },
         { href: "/staff/orders", label: "Orders" },
         ...(isAdmin
           ? [

@@ -41,7 +41,7 @@ export default function ShareImagePage() {
         <Preview>
           <OgStationSign
             app="PPITSZ Shop"
-            kicker="Danus PPIT Shenzhen"
+            kicker="PPIT Shenzhen"
             title="GumamChan at SZ Cup"
             details="Order online until Mon, Mar 15 at 21:00"
             line="danus"

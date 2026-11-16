@@ -41,7 +41,7 @@ import {
 import { allowRequest, LIMITS } from "../store/rate-limit"
 
 /*
- * Danus server actions. Each one checks the session itself, since a server
+ * Staff server actions. Each one checks the session itself, since a server
  * action is a public endpoint whatever page renders it. What each role may
  * do is decided by the order lifecycle (lib/domain/lifecycle.ts).
  */
@@ -157,7 +157,7 @@ export async function markDeliveredAction(orderId: string): Promise<ActionState>
   return { done: Date.now() }
 }
 
-/** Admins cancel any open order or sale; booth staff only their own recent kasir sale. */
+/** Admins cancel any open order or sale; booth staff only their own recent register sale. */
 export async function cancelAction(
   orderId: string,
   _prev: ActionState,
@@ -177,7 +177,7 @@ export async function cancelAction(
    The dashboard's campaign (lib/server/dashboard-campaign.ts)
    ------------------------------------------------------------------------- */
 
-/** Switches the campaign that Kasir, Products, Recap and Settings work on, on this device. */
+/** Switches the campaign that Register, Products, Recap and Settings work on, on this device. */
 export async function pickCampaignAction(campaignId: string): Promise<ActionState> {
   await requireStaff()
   const campaign = await getCampaign(String(campaignId))
@@ -194,7 +194,7 @@ export async function pickCampaignAction(campaignId: string): Promise<ActionStat
 }
 
 /* -------------------------------------------------------------------------
-   Kasir: walk-in sales at the booth (every staff role)
+   Register: walk-in sales at the booth (every staff role)
    ------------------------------------------------------------------------- */
 
 const saleSchema = z.object({
@@ -218,12 +218,12 @@ export type SaleResult = { ok: true; sale: SaleSummary } | { ok: false; error: s
 
 /**
  * Records a walk-in sale and takes its stock at once. `saleId` is made by
- * the kasir screen per sale, so a double tap or a retry sells only once.
+ * the register screen per sale, so a double tap or a retry sells only once.
  */
 export async function sellAction(input: z.input<typeof saleSchema>): Promise<SaleResult> {
   const staff = await requireStaff()
   const parsed = saleSchema.safeParse(input)
-  if (!parsed.success) return { ok: false, error: "The sale isn't complete. Reload the kasir." }
+  if (!parsed.success) return { ok: false, error: "The sale isn't complete. Reload the register." }
 
   try {
     const { campaignId, method, accountId, lines, saleId } = parsed.data
@@ -244,16 +244,16 @@ export async function sellAction(input: z.input<typeof saleSchema>): Promise<Sal
   } catch (error) {
     return { ok: false, error: messageOf(error) }
   } finally {
-    // Fresh stock for this kasir, and for the other pages, even after a refusal.
+    // Fresh stock for this register, and for the other pages, even after a refusal.
     revalidatePath("/staff", "layout")
   }
 }
 
-/** Undoes a kasir mistake: the sale is canceled and its stock returns. */
+/** Undoes a register mistake: the sale is canceled and its stock returns. */
 export async function undoSaleAction(orderId: string): Promise<ActionState> {
   const staff = await requireStaff()
   try {
-    await cancelOrder(String(orderId), staff, "Undone at the kasir")
+    await cancelOrder(String(orderId), staff, "Undone at the register")
   } catch (error) {
     return failure(error)
   }
@@ -279,6 +279,8 @@ export interface ScannedOrder {
   campaignName: string
   /** The status as shown: "On its way" for a delivery order with a courier. */
   shownStatus: ShownStatus
+  /** Placed by staff in a draft campaign. */
+  test: boolean
   /** A delivery order is handed over whole; its slot and address, for the booth to see. */
   delivery: { slot: string; address: string } | null
   /** This staff member may hand over its items now. */
@@ -353,6 +355,7 @@ async function toScanned(order: Order, staff: StaffActor): Promise<ScannedOrder>
     handledByName: order.handledBy ? (names.get(order.handledBy) ?? "staff") : null,
     campaignName: campaign?.name ?? "Deleted campaign",
     shownStatus: displayStatus(order),
+    test: !!order.test,
     delivery: order.delivery ? { slot: slotLabel(order.delivery.slot), address: order.delivery.address } : null,
     canHandOver: can(order, "hand_over", staff, now),
     canVerify: can(order, "approve", staff, now),

@@ -348,7 +348,7 @@ export function ProductForm({
           <FieldContent>
             <FieldLabel htmlFor="for-sale">For sale</FieldLabel>
             <FieldDescription id="for-sale-helper">
-              Shown in the catalog and the kasir. Untick to hide the product without deleting it.
+              Shown in the catalog and the register. Untick to hide the product without deleting it.
               Bundles that hold it stay on sale.
             </FieldDescription>
           </FieldContent>
@@ -377,7 +377,7 @@ export function ProductForm({
           </div>
           <FieldDescription>
             Shenzhen time, for seasonal products. Before the start, it shows in the catalog but can't be ordered;
-            after the end, it leaves the catalog and the kasir. Leave empty to sell it while the campaign is open.
+            after the end, it leaves the catalog and the register. Leave empty to sell it while the campaign is open.
           </FieldDescription>
           {saleError && <FieldError>{saleError}</FieldError>}
         </FieldSet>
@@ -727,7 +727,7 @@ export function DeleteProductButton({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete {name}?</AlertDialogTitle>
-          <AlertDialogDescription>The product and its photo leave the catalog and the kasir. This can't be undone.</AlertDialogDescription>
+          <AlertDialogDescription>The product and its photo leave the catalog and the register. This can't be undone.</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>

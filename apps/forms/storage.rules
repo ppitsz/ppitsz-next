@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// Files (product photos, payment QRs, transfer proofs) are uploaded and
+// served by the server only, through the app's own /media route.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

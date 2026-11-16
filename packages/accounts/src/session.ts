@@ -3,8 +3,8 @@ import { cache } from "react"
 
 import { adminAuth } from "./firebase"
 import { identityToolkit, SIGN_IN_ERRORS } from "./identity"
-import { ensureProfile, saveProfile } from "./profile"
-import type { ProfileFields } from "./fields"
+import { ensureProfile, noteSignIn, saveProfile } from "./profile"
+import type { MemberFields, ProfileFields } from "./fields"
 import { sessionCookieDomain } from "./urls"
 
 /*
@@ -94,8 +94,9 @@ export async function signIn(email: string, password: string): Promise<AuthResul
   const decoded = await adminAuth().verifyIdToken(result.data.idToken)
   const accountEmail = decoded.email ?? email
   const session = { uid: decoded.uid, email: accountEmail, name: (decoded.name as string | undefined) || accountEmail }
-  // An account made by a staff script or a panitia invite has no profile yet.
+  // An account made by a staff script or an organizer invite has no profile yet.
   await ensureProfile(session, (decoded.name as string | undefined) ?? "")
+  await noteSignIn(session.uid)
   const cookie = await adminAuth().createSessionCookie(result.data.idToken, {
     expiresIn: SESSION_MAX_AGE_SECONDS * 1000,
   })
@@ -115,19 +116,30 @@ export async function sessionCookieFor(uid: string): Promise<string> {
 }
 
 /** Creates the account and its profile, then signs in. The fields are already checked. */
-export async function signUp(input: ProfileFields & { email: string; password: string }): Promise<AuthResult> {
+export async function signUp(
+  input: Pick<ProfileFields, "name"> & MemberFields & { email: string; password: string }
+): Promise<AuthResult> {
   let uid: string
   try {
     uid = (await adminAuth().createUser({ email: input.email, password: input.password, displayName: input.name })).uid
   } catch (error) {
     const code = (error as { code?: string }).code
     if (code === "auth/email-already-exists") {
-      return { ok: false, field: "email", error: "This email already has an account. Sign in instead." }
+      // Every account from the old website signs in with Google only.
+      const existing = await adminAuth().getUserByEmail(input.email).catch(() => null)
+      const googleOnly = !!existing && existing.providerData.length > 0 && existing.providerData.every((p) => p.providerId === "google.com")
+      return {
+        ok: false,
+        field: "email",
+        error: googleOnly
+          ? "This email already has an account that signs in with Google. Use Continue with Google on the sign-in page."
+          : "This email already has an account. Sign in instead.",
+      }
     }
     if (code === "auth/invalid-email") return { ok: false, field: "email", error: "This email isn't valid." }
     if (code === "auth/invalid-password") return { ok: false, field: "password", error: "Your password needs at least 8 characters." }
     throw error
   }
-  await saveProfile({ uid, email: input.email }, input)
+  await saveProfile({ uid, email: input.email }, { name: input.name, birthday: input.birthday, cohortYear: input.cohortYear })
   return signIn(input.email, input.password)
 }

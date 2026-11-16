@@ -8,13 +8,12 @@
  *
  * Runs against the real project, with the FIREBASE_* variables from
  * .env.local. An account that already exists
- * (Danus staff, a buyer) keeps its password. Every change is logged in
+ * (shop staff, a buyer) keeps its password. Every change is logged in
  * roleChanges, by "Script".
  */
-import { db } from "@ppitsz/accounts/firebase"
 import { generatePassword } from "@ppitsz/accounts/fields"
 import { ensureAccount, findAccount } from "@ppitsz/accounts/passwords"
-import { SCRIPT, setRole } from "@ppitsz/accounts/roles"
+import { holdersOf, SCRIPT, setRole } from "@ppitsz/accounts/roles"
 
 const [command, email, ...nameParts] = process.argv.slice(2)
 const target = process.env.FIREBASE_PROJECT_ID
@@ -50,9 +49,9 @@ switch (command) {
     break
   }
   case "list": {
-    const snap = await db().collection("portalStaff").get()
-    if (snap.empty) console.log(`[${target}] No Portal admins yet.`)
-    for (const doc of snap.docs) console.log(`${doc.get("email")}  ${doc.get("name")}`)
+    const admins = await holdersOf("portal")
+    if (admins.length === 0) console.log(`[${target}] No Portal admins yet.`)
+    for (const admin of admins) console.log(`${admin.email}  ${admin.name}`)
     break
   }
   default:

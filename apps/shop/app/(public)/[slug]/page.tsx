@@ -12,12 +12,12 @@ import { Route, RouteList, RouteStop } from "@ppitsz/ui/components/network/route
 import { campaignRoute } from "@/lib/domain/order"
 import { fulfillmentNote, orderingNote } from "@/lib/campaign-copy"
 import { toCatalog } from "@/lib/catalog"
-import { getBuyer } from "@/lib/server/auth"
+import { getBuyer, getStaff } from "@/lib/server/auth"
 import { visibleCampaign } from "@/lib/server/buyer-campaign"
 import { listBundles, listProducts, slotPlaces } from "@/lib/store"
 import { Shop } from "@/components/shop"
 
-const ROUTE_NOTES = ["Choose products and fill in your name", "Transfer, then upload the proof", "Danus checks the payment"]
+const ROUTE_NOTES = ["Choose products and fill in your name", "Transfer, then upload the proof", "We check the payment"]
 const LAST_NOTE = {
   delivery: "Delivered in the slot you choose",
   pickup: "Show your QR code at pickup",
@@ -40,7 +40,7 @@ export default async function CatalogPage({ params }: PageProps<"/[slug]">) {
   // apart from how ordering works.
   const nameplate = (
     <StationNameplate
-      kicker="Danus PPIT Shenzhen"
+      kicker="PPIT Shenzhen"
       name={campaign.name}
       line="danus"
       lines={["danus"]}
@@ -58,7 +58,7 @@ export default async function CatalogPage({ params }: PageProps<"/[slug]">) {
         {nameplate}
         <ServiceNotice kind="ended" lines={["danus"]} title="This campaign has ended">
           <p>
-            Thank you for supporting Danus. You can still open your orders from{" "}
+            Thank you for supporting us. You can still open your orders from{" "}
             <NextLink href="/orders">Your orders</NextLink> in your account.
           </p>
         </ServiceNotice>
@@ -67,13 +67,14 @@ export default async function CatalogPage({ params }: PageProps<"/[slug]">) {
   }
 
   const now = new Date()
-  const [products, bundles, places, buyer] = await Promise.all([
+  const [products, bundles, places, buyer, staff] = await Promise.all([
     listProducts(campaign.id, { includeInactive: true, now }),
     listBundles(campaign.id),
     slotPlaces(campaign, now),
     getBuyer(),
+    getStaff(),
   ])
-  const catalog = toCatalog(campaign, products, bundles, { now, slotPlaces: places })
+  const catalog = toCatalog(campaign, products, bundles, { now, slotPlaces: places, staff: !!staff })
   const { delivery, pickup } = campaign.offers
   // The last stop: Delivery, Pick up, or Receive when the buyer picks at checkout.
   const route = campaignRoute(campaign.offers)
@@ -84,9 +85,11 @@ export default async function CatalogPage({ params }: PageProps<"/[slug]">) {
       <Container className="flex flex-col gap-8 pt-10 pb-12 lg:pt-16">
         {campaign.status === "draft" && (
           <Alert variant="warning">
-            <AlertTitle>Staff preview</AlertTitle>
+            <AlertTitle>Draft: test orders only</AlertTitle>
             <AlertDescription>
-              This campaign is still a draft: buyers can't see it yet. Open it in Settings.
+              Buyers can't see this campaign yet. Orders you place here are test orders: they take stock and go
+              through payment, verification and pickup like real ones. Delete them in Settings before you open the
+              campaign.
             </AlertDescription>
           </Alert>
         )}

@@ -11,7 +11,7 @@ import { cleanProfile } from "../domain/account"
 import { ERROR_MESSAGES } from "../domain/errors"
 import { orderPath } from "../order-path"
 import { reportError } from "../server/alerts"
-import { getBuyer } from "../server/auth"
+import { getBuyer, getStaff } from "../server/auth"
 import { clientIp, deviceId, deviceKeyOf } from "../server/request-meta"
 import { allowRequest, LIMITS } from "../store/rate-limit"
 import { createOnlineOrder, findOrderByCheckout, saveBuyerProfile, submitPaymentProof } from "../store"
@@ -86,6 +86,7 @@ export async function createOrderAction(_prev: ActionState, formData: FormData):
       fulfillment: fulfillment === "delivery" ? { type: "delivery", address, slotId } : { type: "pickup" },
       checkoutId: parsed.data.checkoutId,
       deviceKey: deviceKeyOf(device),
+      staff: !!(await getStaff()),
     })
     token = order.token
   } catch (error) {
@@ -120,14 +121,16 @@ export async function submitProofAction(
   }
 
   const accountId = formData.get("accountId")
+  const transactionDigits = formData.get("transactionDigits")
   try {
     await submitPaymentProof({
       token,
       file: { bytes: new Uint8Array(await file.arrayBuffer()), contentType: file.type },
       accountId: typeof accountId === "string" ? accountId : undefined,
+      transactionDigits: typeof transactionDigits === "string" ? transactionDigits.slice(0, 100) : undefined,
     })
   } catch (error) {
-    return failure(error, { INVALID_ACCOUNT: "accountId", INVALID_FILE: "proof" })
+    return failure(error, { INVALID_ACCOUNT: "accountId", INVALID_FILE: "proof", INVALID_TRANSACTION_DIGITS: "transactionDigits" })
   }
 
   redirect(orderPath(token))

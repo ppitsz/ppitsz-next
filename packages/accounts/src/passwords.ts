@@ -4,7 +4,7 @@ import { ensureProfile } from "./profile"
 
 /*
  * Setting a password, by the account itself (a reset link) or for it (a
- * Portal admin, a panitia invite). Firebase's own reset email links to its
+ * Portal admin, an organizer invite). Firebase's own reset email links to its
  * hosted page, which needs Google, so the reset code goes to the account
  * app's /reset-password instead: in our own links, and in Firebase's email
  * once its action URL is set to that page.
@@ -28,7 +28,7 @@ export async function findAccount(email: string) {
 
 /**
  * The account for `email`, made when there is none: with `password`, or
- * without one (a panitia invite, whose link sets it). An existing account
+ * without one (an organizer invite, whose link sets it). An existing account
  * keeps its password, so giving someone a role never locks them out.
  */
 export async function ensureAccount(email: string, name: string, password?: string) {
@@ -42,7 +42,7 @@ export async function ensureAccount(email: string, name: string, password?: stri
 /**
  * A link to the account app's /reset-password with a Firebase reset code,
  * for an account that exists. Works for an account without a password too
- * (a panitia invite), which then sets its first one.
+ * (an organizer invite), which then sets its first one.
  */
 export async function resetLink(email: string, accountOrigin: string) {
   const link = await adminAuth().generatePasswordResetLink(email)

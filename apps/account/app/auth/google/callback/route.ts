@@ -5,6 +5,7 @@ import type { NextRequest } from "next/server"
 import { parseGoogleFlow, type GoogleFlow } from "@ppitsz/accounts/google"
 import { completeGoogle, exchangeGoogleCode } from "@ppitsz/accounts/google-sign-in"
 import { getSession, sessionCookieFor, startSession } from "@ppitsz/accounts/session"
+import { afterSignIn } from "@/lib/server/auth"
 import { GOOGLE_FLOW_COOKIE, flowCookieOptions, googleBackTo, googleCallbackUrl } from "@/lib/server/google"
 
 /**
@@ -40,7 +41,7 @@ async function finish(flow: GoogleFlow, code: string | null): Promise<string> {
     if (flow.intent === "link") return googleBackTo("link", "/", "linked")
 
     await startSession(await sessionCookieFor(result.value))
-    return flow.next
+    return afterSignIn(result.value, flow.next)
   } catch (error) {
     console.error("google sign-in", error)
     return googleBackTo(flow.intent, flow.next, "failed")

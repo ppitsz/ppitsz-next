@@ -58,14 +58,14 @@ export function OrderFilters({
         {way && <input type="hidden" name="cara" value={way} />}
         {status && <input type="hidden" name="status" value={status} />}
         <label htmlFor="order-search" className="sr-only">
-          Search code, name or WeChat ID
+          Search code, name, WeChat ID or the last 6 digits of a transaction number
         </label>
         <Input
           id="order-search"
           name="q"
           type="search"
           defaultValue={q}
-          placeholder="Code, name or WeChat ID"
+          placeholder="Code, name, WeChat ID or transaction digits"
         />
         <Button type="submit" className="h-12">
           <MagnifyingGlassIcon aria-hidden />

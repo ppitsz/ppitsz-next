@@ -24,9 +24,10 @@ function RoleBadges({ account }: { account: StaffAccount }) {
       {account.portalAdmin && <Badge variant="highlight">Portal admin</Badge>}
       {account.shop && <Badge variant="outline">{SHOP_ROLE_LABELS[account.shop]}</Badge>}
       {account.formsAdmin && <Badge variant="outline">Form admin</Badge>}
-      {account.panitia.length > 0 && (
+      {account.siteAdmin && <Badge variant="outline">Website admin</Badge>}
+      {account.organizing.length > 0 && (
         <Badge variant="neutral">
-          Panitia · {account.panitia.length} {account.panitia.length === 1 ? "form" : "forms"}
+          Organizer · {account.organizing.length} {account.organizing.length === 1 ? "form" : "forms"}
         </Badge>
       )}
     </span>

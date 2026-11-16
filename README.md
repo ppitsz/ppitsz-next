@@ -6,7 +6,7 @@ The PPIT Shenzhen monorepo. It starts with **Jaringan**, the design system for e
 |---|---|---|
 | `packages/ui` | `@ppitsz/ui` | The design system: tokens, shadcn/ui components restyled to Jaringan, network components and page blocks |
 | `apps/docs` | `docs` | The preview site: foundations, components, network graphics and an example home page |
-| `apps/shop` | `shop` | Toko PPIT Shenzhen, Danus's sales site: online orders delivered or collected by QR, payment proof, and walk-in sales ([README](apps/shop/README.md)) |
+| `apps/shop` | `shop` | Toko PPIT Shenzhen, the sales site: online orders delivered or collected by QR, payment proof, and walk-in sales ([README](apps/shop/README.md)) |
 | `apps/forms` | `forms` | PPITSZ Forms: forms, registrations and tickets with check-in ([README](apps/forms/README.md)) |
 | `apps/account` | `account` | PPITSZ Account: the one sign-in for every app, profiles, and Accounts for Portal admins (ADR 0008) |
 | `packages/typescript-config`, `packages/eslint-config` | | Shared config |

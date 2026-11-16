@@ -19,7 +19,7 @@ function refused(o: Order, command: OrderCommand, actor: Actor, code: ErrorCode,
     expect(error).toBeInstanceOf(ShopError)
     expect((error as ShopError).code).toBe(code)
     // These depend on what was typed, not on the order, so the button still shows.
-    const typed: ErrorCode[] = ["REASON_REQUIRED", "INVALID_ACCOUNT", "INVALID_REFUND"]
+    const typed: ErrorCode[] = ["REASON_REQUIRED", "INVALID_ACCOUNT", "INVALID_TRANSACTION_DIGITS", "INVALID_REFUND"]
     expect(can(o, command.type, actor, now)).toBe(typed.includes(code))
     return
   }
@@ -31,13 +31,20 @@ const unpaid = (overrides: Partial<Order> = {}) =>
 const awaiting = (overrides: Partial<Order> = {}) =>
   order({
     status: "awaiting_verification",
-    payment: { method: "wechat", accountId: "wx", proofPath: "proofs/o1/1.png", submittedAt: NOW },
+    payment: {
+      method: "wechat",
+      accountId: "wx",
+      proofPath: "proofs/o1/1.png",
+      transactionDigits: "567890",
+      submittedAt: NOW,
+    },
     ...overrides,
   })
-const proof = (accountId = "wx"): OrderCommand => ({
+const proof = (accountId = "wx", transactionDigits: string | undefined = "901234"): OrderCommand => ({
   type: "submit_proof",
   campaign: campaign(),
   accountId,
+  transactionDigits,
   proofPath: "proofs/o1/2.png",
 })
 
@@ -46,7 +53,18 @@ describe("payment proof", () => {
     const { order: next } = applyCommand(unpaid(), proof("ali"), "buyer", NOW)
     expect(next.status).toBe("awaiting_verification")
     expect(next.expiresAt).toBeNull()
-    expect(next.payment).toEqual({ method: "alipay", accountId: "ali", proofPath: "proofs/o1/2.png", submittedAt: NOW })
+    expect(next.payment).toEqual({
+      method: "alipay",
+      accountId: "ali",
+      proofPath: "proofs/o1/2.png",
+      transactionDigits: "901234",
+      submittedAt: NOW,
+    })
+  })
+
+  test("a WeChat Pay or Alipay proof needs the transaction number", () => {
+    refused(unpaid(), proof("wx", ""), "buyer", "INVALID_TRANSACTION_DIGITS")
+    refused(unpaid(), proof("ali", "GC-7K3P"), "buyer", "INVALID_TRANSACTION_DIGITS")
   })
 
   test("needs one of the campaign's accounts", () => {
@@ -87,7 +105,13 @@ describe("verification", () => {
     expect(next.status).toBe("pending_payment")
     expect(next.expiresAt!.getTime()).toBe(NOW.getTime() + 120 * 60_000)
     expect(next.rejections).toEqual([
-      { reason: "Nominal kurang ¥5", at: NOW, by: "admin-1", proofPath: "proofs/o1/1.png" },
+      {
+        reason: "Nominal kurang ¥5",
+        at: NOW,
+        by: "admin-1",
+        proofPath: "proofs/o1/1.png",
+        transactionDigits: "567890",
+      },
     ])
 
     // The next proof replaces the payment but keeps the rejection.
@@ -231,7 +255,7 @@ describe("refunds", () => {
     refused(paidThenCancelled(), refund(0), admin, "INVALID_REFUND")
   })
 
-  test("what is owed: the items not handed over, for an order Danus took money for", () => {
+  test("what is owed: the items not handed over, for an order we took money for", () => {
     const partly = paidThenCancelled({ items: order().items.map((item, i) => ({ ...item, pickedUp: i === 0 })) })
     expect(refundDue(partly)).toBe(8000)
     expect(awaitsRefund(partly)).toBe(true)

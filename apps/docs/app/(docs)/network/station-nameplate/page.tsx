@@ -34,7 +34,7 @@ export default function StationNameplatePage() {
           lang="en"
           layout="block"
           code={`<StationNameplate
-  kicker="Danus PPIT Shenzhen"
+  kicker="PPIT Shenzhen"
   name="GumamChan at SZ Cup"
   line="danus"
   lines={["danus"]}
@@ -44,7 +44,7 @@ export default function StationNameplatePage() {
 />`}
         >
           <StationNameplate
-            kicker="Danus PPIT Shenzhen"
+            kicker="PPIT Shenzhen"
             name="GumamChan at SZ Cup"
             line="danus"
             lines={["danus"]}

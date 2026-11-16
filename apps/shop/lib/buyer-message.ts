@@ -4,7 +4,7 @@ import { openRejection } from "./domain/order"
 import type { Order } from "./domain/types"
 
 /*
- * What Danus sends a buyer over WeChat. Buyers have no account and the app
+ * What we send a buyer over WeChat. Buyers have no account and the app
  * can't message them, so staff copy this text and paste it to the buyer.
  */
 
@@ -22,7 +22,7 @@ export function rejectionMessage(order: Order, orderUrl: string): BuyerMessage |
     ? ` before ${formatDate(order.expiresAt)} at ${formatTime(order.expiresAt)} Shenzhen time`
     : ""
   const lines = [
-    `Hi ${order.buyer.name}, this is Danus PPIT Shenzhen.`,
+    `Hi ${order.buyer.name}, this is PPIT Shenzhen.`,
     `We couldn't accept the transfer proof for order ${order.code}: ${rejection.reason}.`,
     `The total due is ${formatYuan(order.totalFen)}, with ${order.code} in the transfer note. Send the right proof${deadline} through this link:`,
     orderUrl,
@@ -36,7 +36,7 @@ export function courierMessage(order: Order, orderUrl: string): BuyerMessage | n
   const delivery = order.delivery
   if (!delivery?.sentAt || order.status !== "paid" || !order.buyer) return null
   const lines = [
-    `Hi ${order.buyer.name}, this is Danus PPIT Shenzhen.`,
+    `Hi ${order.buyer.name}, this is PPIT Shenzhen.`,
     `Your order ${order.code} is on its way with ${delivery.courier}, tracking number ${delivery.trackingNumber}.`,
     "Your order details are at this link:",
     orderUrl,

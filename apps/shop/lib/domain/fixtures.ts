@@ -58,7 +58,7 @@ export function campaign(overrides: Partial<Campaign> = {}): Campaign {
     onlineOpensAt: new Date(0),
     onlineClosesAt: new Date("2027-03-15T23:59:00+08:00"),
     offers: { delivery: true, pickup: true, booth: true },
-    pickupInfo: "Booth Danus",
+    pickupInfo: "Booth PPIT",
     deliveryFeeFen: 500,
     deliverySlots: [
       {

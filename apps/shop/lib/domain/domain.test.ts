@@ -6,6 +6,7 @@ import {
   countUnpaid,
   generateOrderCode,
   generateToken,
+  heldByTestOrder,
   isPastDeadline,
   cleanOrderCode,
   orderCodeCandidates,
@@ -165,6 +166,35 @@ describe("deadlines", () => {
     // The status wins over the dates.
     expect(onlineWindowState({ ...campaign, status: "draft" }, new Date(150))).toBe("not_open")
     expect(onlineWindowState({ ...campaign, status: "closed" }, new Date(150))).toBe("closed")
+  })
+
+  test("staff may order in a draft whatever its dates: test orders", () => {
+    const draft = {
+      status: "draft",
+      onlineOpensAt: new Date(100),
+      onlineClosesAt: new Date(200),
+      offers: { delivery: false, pickup: true, booth: true },
+    } as Campaign
+    expect(onlineWindowState(draft, new Date(0), { staff: true })).toBe("open")
+    expect(onlineWindowState(draft, new Date(500), { staff: true })).toBe("open")
+    expect(onlineWindowState(draft, new Date(150))).toBe("not_open")
+    // Being staff opens nothing else.
+    expect(onlineWindowState({ ...draft, offers: { delivery: false, pickup: false, booth: true } }, new Date(150), { staff: true })).toBe("closed")
+    expect(onlineWindowState({ ...draft, status: "open" }, new Date(0), { staff: true })).toBe("not_open")
+    expect(onlineWindowState({ ...draft, status: "closed" }, new Date(150), { staff: true })).toBe("closed")
+  })
+
+  test("a deleted test order gives back every unit it still takes", () => {
+    const items = [
+      { ...order().items[0]!, pickedUp: true },
+      { ...order().items[0]!, variantId: "l", pickedUp: false },
+    ]
+    for (const status of ["pending_payment", "awaiting_verification", "paid", "picked_up"] as const) {
+      expect(heldByTestOrder({ status, items })).toEqual(items)
+    }
+    // Cancelling or expiring gave back what wasn't handed over.
+    expect(heldByTestOrder({ status: "cancelled", items })).toEqual([items[0]!])
+    expect(heldByTestOrder({ status: "expired", items })).toEqual([items[0]!])
   })
 })
 

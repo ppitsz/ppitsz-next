@@ -12,7 +12,7 @@ const edit = (overrides: Partial<CampaignEdit> = {}): CampaignEdit => ({
   slug: "merch",
   codePrefix: "MR",
   tagline: "",
-  pickupInfo: "Booth Danus",
+  pickupInfo: "Booth PPIT",
   onlineOpensAt: new Date(0),
   onlineClosesAt: new Date(1000),
   offers: { delivery: false, pickup: true, booth: true },
@@ -78,6 +78,17 @@ describe("after the first order", () => {
     expect(fields(edit({ codePrefix: "MC" }), context)).toEqual(["codePrefix"])
     expect(fields(edit({ name: "Merch PPITSZ", status: "closed" }), context)).toEqual([])
     expect(fields(edit({ slug: "merch-2027" }), { current, hasOrders: false })).toEqual([])
+  })
+})
+
+describe("test orders", () => {
+  test("keep a draft a draft until they're deleted", () => {
+    const current = campaign({ id: "merch", slug: "merch", codePrefix: "MR", status: "draft" })
+    const tested = { current, hasOrders: true, hasTestOrders: true }
+    expect(fields(edit({ status: "open" }), tested)).toEqual(["status"])
+    expect(fields(edit({ status: "closed" }), tested)).toEqual(["status"])
+    expect(fields(edit({ status: "draft", name: "Merch 2027" }), tested)).toEqual([])
+    expect(fields(edit({ status: "open" }), { current, hasOrders: true, hasTestOrders: false })).toEqual([])
   })
 })
 

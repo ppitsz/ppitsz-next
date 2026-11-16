@@ -17,7 +17,7 @@ import {
 export const metadata: Metadata = { title: "Header" }
 
 const TRANSFERS = [
-  { href: "#", label: "PPITSZ Shop", description: "Food and merchandise from Danus" },
+  { href: "#", label: "PPITSZ Shop", description: "Food and merchandise from our campaigns" },
   { href: "#", label: "PPITSZ Forms", description: "Event sign-ups and tickets" },
 ]
 

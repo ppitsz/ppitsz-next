@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test"
 
-import { cleanProfile, generatePassword, passwordIssue } from "./fields"
+import { cleanMember, cleanProfile, cohortYears, generatePassword, isProfileComplete, passwordIssue } from "./fields"
 import { roleLabel } from "./role-labels"
 import { appOrigin, rootDomain, safeNext, sessionCookieDomain, transferApps } from "./urls"
 
@@ -56,6 +56,42 @@ describe("cleanProfile", () => {
   })
 })
 
+describe("cleanMember", () => {
+  const NOW = new Date("2026-11-16T12:00:00Z")
+
+  test("keeps the old website's format: a YYYY-MM-DD birthday and a numeric intake year", () => {
+    expect(cleanMember({ birthday: " 2004-08-17 ", cohortYear: "2023" }, NOW)).toEqual({
+      member: { birthday: "2004-08-17", cohortYear: 2023 },
+      issues: {},
+    })
+  })
+
+  test("both are required", () => {
+    expect(Object.keys(cleanMember({ birthday: "", cohortYear: "" }, NOW).issues).sort()).toEqual(["birthday", "cohortYear"])
+  })
+
+  test("refuses dates that don't exist, unlikely ages and years off the list, as the old website did", () => {
+    expect(cleanMember({ birthday: "2004-02-30", cohortYear: "2023" }, NOW).issues.birthday).toBeDefined()
+    expect(cleanMember({ birthday: "17/08/2004", cohortYear: "2023" }, NOW).issues.birthday).toBeDefined()
+    expect(cleanMember({ birthday: "2020-01-01", cohortYear: "2023" }, NOW).issues.birthday).toContain("between 10 and 100")
+    expect(cleanMember({ birthday: "2004-08-17", cohortYear: "1999" }, NOW).issues.cohortYear).toBeDefined()
+    expect(cleanMember({ birthday: "2004-08-17", cohortYear: "2028" }, NOW).issues.cohortYear).toBeDefined()
+  })
+
+  test("intake years run from next year back to 2000", () => {
+    const years = cohortYears(NOW)
+    expect(years[0]).toBe(2027)
+    expect(years.at(-1)).toBe(2000)
+  })
+})
+
+test("isProfileComplete wants a name, a birthday and an intake year", () => {
+  expect(isProfileComplete({ name: "Sari", birthday: "2004-08-17", cohortYear: 2023 })).toBe(true)
+  expect(isProfileComplete({ name: "Sari", birthday: "", cohortYear: 2023 })).toBe(false)
+  expect(isProfileComplete({ name: "Sari", birthday: "2004-08-17", cohortYear: null })).toBe(false)
+  expect(isProfileComplete({ name: "", birthday: "2004-08-17", cohortYear: 2023 })).toBe(false)
+})
+
 test("passwordIssue", () => {
   expect(passwordIssue("1234567")).not.toBeNull()
   expect(passwordIssue("12345678")).toBeNull()
@@ -69,6 +105,7 @@ test("roleLabel", () => {
   expect(roleLabel("shop", "booth")).toBe("Booth staff")
   expect(roleLabel("portal", "admin")).toBe("Yes")
   expect(roleLabel("forms", null)).toBe("None")
+  expect(roleLabel("site", "admin")).toBe("Yes")
 })
 
 describe("app origins", () => {

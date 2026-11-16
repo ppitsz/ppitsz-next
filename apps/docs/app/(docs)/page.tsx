@@ -49,9 +49,9 @@ const PRINCIPLES = [
   {
     name: "Bahasa yang jelas",
     en: "Plain English, Indonesian where it belongs",
-    body: "The interface speaks plain English. Indonesian stays for proper names, the words members already use (Panitia, Danus, Oprec, Kasir) and the organization's own prose (ADR 0007).",
+    body: "The interface speaks plain English. Indonesian stays for proper names and the organization's own prose. It says \"we\": one organization, not its divisions (ADR 0007, ADR 0012).",
     does: "English buttons, statuses and emails; division names in Indonesian, marked lang=\"id\"; station labels still stack the Chinese name under the Latin one.",
-    doesnt: "Translating Panitia or Danus, glossing them, or a language switcher that doubles every string.",
+    doesnt: "Insider words like panitia or kasir, \"Danus checks…\" where \"we check\" will do, or a language switcher that doubles every string.",
   },
 ]
 

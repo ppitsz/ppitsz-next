@@ -87,6 +87,15 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
     <Container narrow className="flex flex-col gap-10 py-10 lg:py-16">
       {isNew === "1" && <AfterCheckout campaignId={order.campaignId} />}
       <OrderWatcher token={order.token} version={orderVersion(order)} active={isOpenStatus(order.status)} />
+      {order.test && (
+        <Alert variant="warning">
+          <AlertTitle>Test order</AlertTitle>
+          <AlertDescription>
+            Placed while {campaign.name} was a draft. It works like a real order, and we delete it before the
+            campaign opens.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <StationNameplate
         kicker={campaign.name}
@@ -118,9 +127,9 @@ export default async function OrderPage({ params, searchParams }: PageProps<"/or
       <Items order={order} />
 
       {order.buyer && (
-        <section aria-labelledby="pemesan" className="flex flex-col gap-2">
-          <h2 id="pemesan" className="type-heading-sm text-text">
-            Pemesan
+        <section aria-labelledby="buyer" className="flex flex-col gap-2">
+          <h2 id="buyer" className="type-heading-sm text-text">
+            Buyer
           </h2>
           <p className="type-body text-text">
             {order.buyer.name} · WeChat {order.buyer.wechatId}
@@ -141,7 +150,7 @@ function stageNote(order: Order, index: number, stage: number) {
   if (order.status === "pending_payment" && order.expiresAt) {
     return `Before ${formatTime(order.expiresAt)}`
   }
-  if (order.status === "awaiting_verification") return "Waiting for Danus"
+  if (order.status === "awaiting_verification") return "Being checked"
   if (order.status === "paid") return order.delivery ? slotLabel(order.delivery.slot) : "Show QR at the booth"
   if (order.status === "picked_up" && order.pickedUpAt) return `Done · ${formatTime(order.pickedUpAt)}`
   return undefined
@@ -190,7 +199,7 @@ async function StatusPanel({ order, campaign }: { order: Order; campaign: Campai
         <Alert>
           <AlertTitle>Proof of payment received</AlertTitle>
           <AlertDescription>
-            Sent {order.payment.submittedAt && when(order.payment.submittedAt)}. Danus will
+            Sent {order.payment.submittedAt && when(order.payment.submittedAt)}. We'll
             check your transfer, then{" "}
             {order.delivery
               ? `your order is delivered ${slotLabel(order.delivery.slot)}.`
@@ -251,7 +260,7 @@ async function StatusPanel({ order, campaign }: { order: Order; campaign: Campai
           <AlertTitle>{order.delivery ? "Order delivered" : "Order picked up"}</AlertTitle>
           <AlertDescription>
             {order.pickedUpAt && `${order.delivery ? "Delivered" : "Handed over"} ${when(order.pickedUpAt)}. `}Thank
-            you for supporting Danus PPIT Shenzhen.
+            you for supporting PPIT Shenzhen.
           </AlertDescription>
         </Alert>
       )
@@ -263,7 +272,7 @@ async function StatusPanel({ order, campaign }: { order: Order; campaign: Campai
             <AlertTitle>The payment deadline has passed</AlertTitle>
             <AlertDescription>
               This order was canceled automatically and its stock released. Already transferred? Contact
-              Danus and give the code {order.code}. Or <Link as={NextLink} href={`/${campaign.slug}`}>order again</Link>.
+              us and give the code {order.code}. Or <Link as={NextLink} href={`/${campaign.slug}`}>order again</Link>.
             </AlertDescription>
           </Alert>
           <RefundNote order={order} />
@@ -274,12 +283,12 @@ async function StatusPanel({ order, campaign }: { order: Order; campaign: Campai
       return (
         <div className="flex flex-col gap-4">
           <Alert variant="warning">
-            <AlertTitle>Danus canceled this order</AlertTitle>
+            <AlertTitle>We canceled this order</AlertTitle>
             <AlertDescription>
               {order.cancelReason ? `${order.cancelReason}. ` : ""}
               {order.refund
-                ? `Questions? Contact Danus and give the code ${order.code}.`
-                : `Contact Danus with questions or about a refund, and give the code ${order.code}.`}
+                ? `Questions? Contact us and give the code ${order.code}.`
+                : `Contact us with questions or about a refund, and give the code ${order.code}.`}
             </AlertDescription>
           </Alert>
           <RefundNote order={order} />
@@ -311,7 +320,7 @@ function DeliveryPanel({ delivery }: { delivery: NonNullable<Order["delivery"]> 
       <p className="type-body-sm text-muted">
         {delivery.sentAt
           ? "Track it with the tracking number in the courier's app."
-          : "Danus delivers your order in this slot. Keep your phone on."}
+          : "We deliver your order in this slot. Keep your phone on."}
       </p>
     </section>
   )

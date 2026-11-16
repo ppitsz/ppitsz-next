@@ -1,6 +1,6 @@
 # 8. One PPITSZ account and a shared sign-in
 
-Date: 2026-10-30 · Status: accepted
+Date: 2026-10-30 · Status: accepted, the profile moved to users/{uid} by ADR 0014
 
 ## Context
 
@@ -19,7 +19,7 @@ Sign-in stays email and password through our server, so it works in China withou
 - One password and one sign-in for everything. A role change still takes effect on the next request without signing anyone out.
 - The cookie reaches every `ppitshenzhen.org` subdomain, including any future app. Only our own apps may live under that domain.
 - Signed-in pages don't work on Vercel previews: `*.vercel.app` can't share a cookie. Staff and buyer flows are tested locally, where cookies ignore ports.
-- Every app, locally too, connects to the same real project, `ppitsz-next`, since a session cookie only verifies against the project that issued it. Development has no emulator; only the automated tests use a throwaway one. The shared Firebase setup, session, profile and roles live in `packages/accounts` (`@ppitsz/accounts`).
+- Every app, locally too, connects to the same real project, `ppitsz-next` (now `ppitsz`, ADR 0013), since a session cookie only verifies against the project that issued it. Development has no emulator; only the automated tests use a throwaway one. The shared Firebase setup, session, profile and roles live in `packages/accounts` (`@ppitsz/accounts`).
 - At cutover every existing session ends, and everyone signs in once more.
 - A booth device signed in for the kasir is signed in to every app as that person.
 - ADR 0004's consequence that removing someone keeps "their sessions in the other apps" working no longer applies: there is one session.

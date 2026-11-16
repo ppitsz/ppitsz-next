@@ -4,7 +4,7 @@ import { MAX_DESCRIPTION_LENGTH, MAX_NAME_LENGTH, MAX_PRICE_FEN, MAX_SORT_ORDER 
 import type { Bundle, BundleComponent, BundleUnit } from "./types"
 
 /*
- * Bundles: what Danus admins edit, and how many a buyer can still get.
+ * Bundles: what shop admins edit, and how many a buyer can still get.
  *
  * checkBundleEdit holds every rule. The bundle form runs it to show errors
  * next to the fields; applyBundleEdit runs it again in the store's

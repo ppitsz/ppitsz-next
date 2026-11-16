@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     template: "%s · PPITSZ Shop",
   },
   description:
-    "Order food and merchandise from Danus PPIT Shenzhen, pay, then pick it up or have it delivered.",
+    "Order food and merchandise from PPIT Shenzhen, pay, then pick it up or have it delivered.",
 }
 
 export const viewport: Viewport = {

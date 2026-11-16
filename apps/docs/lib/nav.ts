@@ -64,7 +64,7 @@ export const DOCS_GROUPS: DocsGroup[] = [
       { href: "/network/station-label", title: "Station label", description: "The Latin name with the Chinese name below." },
       { href: "/network/station-code", title: "Station code", description: "Order and ticket codes as station numbers." },
       { href: "/network/station-nameplate", title: "Station nameplate", description: "A flow page's title as a platform name sign, with the stations either side." },
-      { href: "/network/route-tracker", title: "Route tracker", description: "The oprec applicant's journey, with “You are here”." },
+      { href: "/network/route-tracker", title: "Route tracker", description: "The recruitment applicant's journey, with “You are here”." },
       { href: "/network/strip-map", title: "Strip map", description: "The map above the train doors: an order or a ticket on its way." },
       { href: "/network/route-strip", title: "Route strip", description: "In-page wayfinding for long pages." },
       { href: "/network/sign", title: "Signs and exits", description: "Overhead signs to the next destination; yellow exits out of the app." },

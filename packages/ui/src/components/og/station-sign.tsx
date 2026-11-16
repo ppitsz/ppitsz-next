@@ -21,7 +21,7 @@ export interface OgStationSignProps {
   app: string
   /** The name: a campaign, an event. */
   title: string
-  /** One short line above the name: "Danus PPIT Shenzhen", "Event". */
+  /** One short line above the name: "PPIT Shenzhen", "Event". */
   kicker?: string
   /** When and where: "Order online until Mon, Mar 15". */
   details?: string

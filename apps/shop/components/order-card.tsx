@@ -11,6 +11,7 @@ import { displayStatus } from "@/lib/domain/delivery"
 import { DELIVERY_ROUTE, ORDER_ROUTE, routeStage } from "@/lib/domain/order"
 import type { Campaign, Order } from "@/lib/domain/types"
 import { orderPath } from "@/lib/order-path"
+import { TestBadge } from "./test-badge"
 
 /*
  * One of a buyer's orders, as a card: where it is on its route, what it
@@ -32,10 +33,13 @@ export function OrderCard({ order, campaign }: { order: Order; campaign: Pick<Ca
             Order <StationCode code={order.code} line="danus" />
           </h3>
           <p className="type-caption text-muted">
-            {campaign?.name ?? "Danus campaign"} · {formatDate(order.createdAt)} · {formatYuan(order.totalFen)}
+            {campaign?.name ?? "Campaign"} · {formatDate(order.createdAt)} · {formatYuan(order.totalFen)}
           </p>
         </div>
-        <StatusBadge domain="order" value={status} />
+        <span className="flex flex-wrap gap-2">
+          {order.test && <TestBadge />}
+          <StatusBadge domain="order" value={status} />
+        </span>
       </header>
 
       <OrderRoute order={order} />
@@ -55,7 +59,7 @@ export function OrderCard({ order, campaign }: { order: Order; campaign: Pick<Ca
           <MapPinIcon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted" />
           {order.delivery
             ? `Delivery ${slotLabel(order.delivery.slot)} to ${order.delivery.address}`
-            : `Pick up at ${campaign?.pickupInfo || "the Danus pickup place"}`}
+            : `Pick up at ${campaign?.pickupInfo || "the pickup place"}`}
         </p>
       )}
 

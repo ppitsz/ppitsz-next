@@ -7,7 +7,7 @@ import { requireStaff } from "@/lib/server/auth"
 import { countAwaitingVerification } from "@/lib/store"
 import { StaffChrome } from "@/components/staff-chrome"
 
-/** Signed-in Danus pages. Each page also checks the session itself. */
+/** Signed-in staff pages. Each page also checks the session itself. */
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   await connection()
   const staff = await requireStaff()

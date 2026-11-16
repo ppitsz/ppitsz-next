@@ -6,10 +6,12 @@ import { useActionState, useState } from "react"
 import { Alert, AlertDescription, AlertTitle } from "@ppitsz/ui/components/alert"
 import { Button } from "@ppitsz/ui/components/button"
 import { FieldGroup } from "@ppitsz/ui/components/field"
-import { MIN_PASSWORD_LENGTH, type ProfileFields } from "@ppitsz/accounts/fields"
+import { cohortYears, MIN_PASSWORD_LENGTH, type ProfileFields } from "@ppitsz/accounts/fields"
 import type { ActionState } from "@/lib/actions/state"
+import type { ProfileValues } from "@/lib/profile-values"
 import {
   addPasswordAction,
+  finishProfileAction,
   forgotPasswordAction,
   resetPasswordAction,
   signInAction,
@@ -17,7 +19,7 @@ import {
   unlinkGoogleAction,
   updateProfileAction,
 } from "@/lib/actions/account"
-import { TextField } from "@/components/text-field"
+import { SelectField, TextField } from "@/components/text-field"
 
 /*
  * Sign-in, sign-up, password and profile forms. Fields are controlled, so an
@@ -33,6 +35,40 @@ function Problem({ state, title }: { state: ActionState; title: string }) {
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription>{state.error}</AlertDescription>
     </Alert>
+  )
+}
+
+/** Birthday and intake year: asked of everyone, as the old website did, and shared with it. */
+function MemberInputs({
+  values,
+  onChange,
+  errors,
+}: {
+  values: { birthday: string; cohortYear: string }
+  onChange: (name: "birthday" | "cohortYear", value: string) => void
+  errors?: ActionState["fieldErrors"]
+}) {
+  return (
+    <>
+      <TextField
+        name="birthday"
+        label="Birthday"
+        type="date"
+        autoComplete="bday"
+        value={values.birthday}
+        onChange={(value) => onChange("birthday", value)}
+        error={errors?.birthday}
+      />
+      <SelectField
+        name="cohortYear"
+        label="Intake year"
+        prompt="Choose your intake year"
+        options={cohortYears().map((year) => ({ value: String(year), label: String(year) }))}
+        value={values.cohortYear}
+        onChange={(value) => onChange("cohortYear", value)}
+        error={errors?.cohortYear}
+      />
+    </>
   )
 }
 
@@ -74,7 +110,7 @@ export function SignInForm({ next, email: initialEmail = "" }: { next: string; e
 
 export function SignUpForm({ next }: { next: string }) {
   const [state, action, pending] = useActionState(signUpAction, INITIAL)
-  const [values, setValues] = useState({ name: "", email: "" })
+  const [values, setValues] = useState({ name: "", email: "", birthday: "", cohortYear: "" })
   const field = (name: keyof typeof values) => ({
     value: values[name],
     onChange: (value: string) => setValues((current) => ({ ...current, [name]: value })),
@@ -88,7 +124,7 @@ export function SignUpForm({ next }: { next: string }) {
         <TextField
           name="name"
           label="Name"
-          helper="As on your WeChat, so Danus and panitia can recognize you."
+          helper="As on your WeChat, so we can recognize you."
           autoComplete="name"
           {...field("name")}
         />
@@ -107,6 +143,11 @@ export function SignUpForm({ next }: { next: string }) {
           helper={`At least ${MIN_PASSWORD_LENGTH} characters.`}
           autoComplete="new-password"
           error={state.fieldErrors?.password}
+        />
+        <MemberInputs
+          values={values}
+          onChange={(name, value) => setValues((current) => ({ ...current, [name]: value }))}
+          errors={state.fieldErrors}
         />
       </FieldGroup>
       <Problem state={state} title="Account not created" />
@@ -222,7 +263,7 @@ export function UnlinkGoogleForm() {
   )
 }
 
-export function ProfileForm({ profile }: { profile: ProfileFields }) {
+export function ProfileForm({ profile }: { profile: ProfileValues }) {
   const [state, action, pending] = useActionState(updateProfileAction, INITIAL)
   const [values, setValues] = useState(profile)
   const field = (name: keyof ProfileFields) => ({
@@ -239,7 +280,7 @@ export function ProfileForm({ profile }: { profile: ProfileFields }) {
           name="wechatId"
           label="WeChat ID"
           optional
-          helper="Danus asks for it at checkout, so they can reach you about an order."
+          helper="The shop asks for it at checkout, so we can reach you about an order."
           autoComplete="off"
           {...field("wechatId")}
         />
@@ -252,6 +293,11 @@ export function ProfileForm({ profile }: { profile: ProfileFields }) {
           autoComplete="tel"
           {...field("phone")}
         />
+        <MemberInputs
+          values={values}
+          onChange={(name, value) => setValues((current) => ({ ...current, [name]: value }))}
+          errors={state.fieldErrors}
+        />
       </FieldGroup>
       <Problem state={state} title="Not saved" />
       {state.done && !pending && (
@@ -261,6 +307,38 @@ export function ProfileForm({ profile }: { profile: ProfileFields }) {
       )}
       <Button type="submit" loading={pending} className="self-start">
         {pending ? "Saving…" : "Save"}
+      </Button>
+    </form>
+  )
+}
+
+/** After a sign-in that came without them: name, birthday and intake year, then on to `next`. */
+export function FinishProfileForm({ next, profile }: { next: string; profile: ProfileValues }) {
+  const [state, action, pending] = useActionState(finishProfileAction, INITIAL)
+  const [values, setValues] = useState({ name: profile.name, birthday: profile.birthday, cohortYear: profile.cohortYear })
+
+  return (
+    <form action={action} className="flex flex-col gap-6" noValidate>
+      <input type="hidden" name="next" value={next} />
+      <FieldGroup>
+        <TextField
+          name="name"
+          label="Name"
+          helper="As on your WeChat, so we can recognize you."
+          autoComplete="name"
+          value={values.name}
+          onChange={(value) => setValues((current) => ({ ...current, name: value }))}
+          error={state.fieldErrors?.name}
+        />
+        <MemberInputs
+          values={values}
+          onChange={(name, value) => setValues((current) => ({ ...current, [name]: value }))}
+          errors={state.fieldErrors}
+        />
+      </FieldGroup>
+      <Problem state={state} title="Not saved" />
+      <Button type="submit" variant="primary" size="lg" loading={pending}>
+        {pending ? "Saving…" : "Continue"}
       </Button>
     </form>
   )

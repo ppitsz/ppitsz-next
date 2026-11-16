@@ -17,8 +17,9 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## Language
 
 - Everything is English, in American spelling and a casual "you": routes, copy, emails, titles, errors, comments and docs (ADR 0007). No i18n layer, no `locale` props on components.
-- Indonesian only for proper names (PPIT Shenzhen, division names, GumamChan), the insider words **Panitia**, **Danus**, **Oprec** and **Kasir** (no gloss), and the organization's own prose on the main site, whose blocks each carry an author-chosen `lang`. Mark Indonesian passages `lang="id"`.
-- Identifiers use the screen's word (`checkIn`, `announcement`; `panitia`, `kasir` as they are). The glossary names the term.
+- Indonesian only for proper names (PPIT Shenzhen, division names, GumamChan) and the organization's own prose on the main site, whose blocks each carry an author-chosen `lang`. Mark Indonesian passages `lang="id"`. No insider words: organizers, not panitia; Register, not Kasir; recruitment, not oprec (ADR 0012).
+- We are one organization: the UI speaks as "we" (PPIT Shenzhen) and never names a division as the one acting. "We check your transfer proof", not "Danus checks". Staff copy names the app's roles ("shop admin"). Divisions show only through their line color and badge (ADR 0012).
+- Identifiers use the screen's word (`checkIn`, `announcement`, `organizer`, `register`). The glossary names the term.
 - Dates via `lib/format.ts`: "Sat, Nov 14", "19:00 Shenzhen time (18:00 WIB)". 24-hour times.
 
 ## Styling
@@ -42,7 +43,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Every added component gets the restyle pass in `packages/ui/README.md` (mapping table). Also change `import { cn } from "cn"` to `import { cn } from "@ppitsz/ui/lib/utils"`.
 - Files without `"use client"` must import icons from `@phosphor-icons/react/ssr` and must not call Base UI hooks such as `useRender`.
 - The header's account slot is always `ProfileMenu`, fed by `menuAccount()` from `@ppitsz/accounts/avatar`. Avatars are only shown from our own `/avatars/…` routes, never from Google or another host (ADR 0009).
-- Org data (divisions, campuses, oprec stages, status labels) lives in `packages/ui/src/lib/network.ts`; date, time and number formatting in `lib/format.ts`. Don't hard-code them elsewhere.
+- Org data (divisions, campuses, recruitment stages, status labels) lives in `packages/ui/src/lib/network.ts`; date, time and number formatting in `lib/format.ts`. Don't hard-code them elsewhere.
 - Tailwind only sees class names written out in full. Never build them from template strings (`` `type-${x}` ``).
 
 ## Before finishing

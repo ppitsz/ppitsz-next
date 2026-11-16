@@ -121,6 +121,6 @@ function TimeCell({ campaign, phase }: { campaign: Campaign; phase: Phase }) {
 function platform(campaign: Campaign) {
   const { delivery, pickup, booth } = campaign.offers
   if (pickup && delivery) return `${campaign.pickupInfo || "Pickup"} · or delivered`
-  if (pickup || booth) return campaign.pickupInfo || "Danus booth"
+  if (pickup || booth) return campaign.pickupInfo || "Our booth"
   return "Delivered to you"
 }

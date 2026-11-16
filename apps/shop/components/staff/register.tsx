@@ -58,7 +58,7 @@ interface RecentSale extends SaleSummary {
   cancelled?: boolean
 }
 
-/** Other kasir phones and new online orders change the stock: fetch it again every 30 s. */
+/** Other register phones and new online orders change the stock: fetch it again every 30 s. */
 const stockDelay = () => 30_000
 
 /** "45", "45.5", "45,5" → fen; null when empty or not a number. */
@@ -71,13 +71,13 @@ function parseYuan(text: string) {
  * The walk-in sale screen. Stock is what is left after online orders
  * (`remaining`), less what this sale already takes, bundles included.
  */
-export function Kasir({
+export function Register({
   campaignId,
   products,
   bundles,
   accounts,
 }: {
-  /** The page keys the kasir by campaign: a switch starts an empty sale. */
+  /** The page keys the register by campaign: a switch starts an empty sale. */
   campaignId: string
   products: CatalogProduct[]
   bundles: CatalogBundle[]
@@ -157,8 +157,8 @@ export function Kasir({
     <div className="grid gap-10 pb-24 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:pb-0">
       <div className="flex flex-col gap-8">
         {bundles.length > 0 && (
-          <section aria-labelledby="kasir-bundles" className="flex flex-col gap-3">
-            <h2 id="kasir-bundles" className="type-heading-md text-text">
+          <section aria-labelledby="register-bundles" className="flex flex-col gap-3">
+            <h2 id="register-bundles" className="type-heading-md text-text">
               Bundles
             </h2>
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
@@ -183,8 +183,8 @@ export function Kasir({
           const inCategory = products.filter((p) => p.category === category)
           if (inCategory.length === 0) return null
           return (
-            <section key={category} aria-labelledby={`kasir-${category}`} className="flex flex-col gap-3">
-              <h2 id={`kasir-${category}`} className="type-heading-md text-text">
+            <section key={category} aria-labelledby={`register-${category}`} className="flex flex-col gap-3">
+              <h2 id={`register-${category}`} className="type-heading-md text-text">
                 {CATEGORY_LABELS[category]}
               </h2>
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
@@ -305,11 +305,11 @@ export function Kasir({
           />
         ) : methodAccounts.length > 1 ? (
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="kasir-account" className="type-ui text-text">
+            <label htmlFor="register-account" className="type-ui text-text">
               Paid into
             </label>
             <NativeSelect
-              id="kasir-account"
+              id="register-account"
               value={chosenAccount}
               onChange={(e) => setAccountId((current) => ({ ...current, [method]: e.target.value }))}
             >
@@ -429,7 +429,7 @@ function ProductTile({
 }
 
 /**
- * A bundle at the kasir. With options to pick (a size), a tap opens a dialog
+ * A bundle at the register. With options to pick (a size), a tap opens a dialog
  * to pick them; otherwise it adds one at once.
  */
 function BundleTile({
@@ -501,7 +501,7 @@ function BundleTile({
             </DialogHeader>
             <div className="flex flex-col gap-4">
               <BundlePicks
-                idPrefix={`kasir-${bundle.id}`}
+                idPrefix={`register-${bundle.id}`}
                 components={bundle.components}
                 picks={picks}
                 onChange={setPicks}

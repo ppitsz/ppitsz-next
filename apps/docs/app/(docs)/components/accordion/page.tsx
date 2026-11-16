@@ -19,7 +19,7 @@ const SECTIONS = [
 const FAQ = [
   ["Who can become a member of PPIT Shenzhen?", "Every Indonesian student studying in Shenzhen, at any campus and any level."],
   ["Is there a membership fee?", "No. Some events have a registration fee, and the amount is always on the event's page."],
-  ["How do I apply to join the committee?", "Oprec opens every September. Watch our Forms page and Instagram."],
+  ["How do I apply to join the committee?", "Recruitment opens every September. Watch our Forms page and Instagram."],
 ]
 
 export default function AccordionPage() {

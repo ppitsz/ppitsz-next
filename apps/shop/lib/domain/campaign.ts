@@ -43,12 +43,18 @@ export interface CampaignIssue {
 
 /**
  * Every problem with `edit`. `current` is the stored campaign (null for a
- * new one), `others` every other campaign, and `hasOrders` whether the
- * current one has any order, which fixes its slug and prefix.
+ * new one), `others` every other campaign, `hasOrders` whether the current
+ * one has any order, which fixes its slug and prefix, and `hasTestOrders`
+ * whether any of them are test orders, which keep it a draft.
  */
 export function checkCampaignEdit(
   edit: CampaignEdit,
-  { current, others, hasOrders }: { current: Campaign | null; others: Campaign[]; hasOrders: boolean }
+  {
+    current,
+    others,
+    hasOrders,
+    hasTestOrders = false,
+  }: { current: Campaign | null; others: Campaign[]; hasOrders: boolean; hasTestOrders?: boolean }
 ): CampaignIssue[] {
   const issues: CampaignIssue[] = []
   const add = (field: keyof CampaignEdit, message: string) => issues.push({ field, message })
@@ -76,6 +82,9 @@ export function checkCampaignEdit(
   if (current && hasOrders) {
     if (edit.slug !== current.slug) add("slug", "The URL name can't change once there are orders, so old links keep working.")
     if (edit.codePrefix !== current.codePrefix) add("codePrefix", "The code prefix can't change once there are orders.")
+  }
+  if (current?.status === "draft" && edit.status !== "draft" && hasTestOrders) {
+    add("status", "Delete the test orders first, at the bottom of this page. Then change the status.")
   }
 
   if (edit.tagline.trim().length > MAX_TAGLINE_LENGTH) add("tagline", `The tagline can be at most ${MAX_TAGLINE_LENGTH} characters.`)

@@ -151,6 +151,7 @@ function paymentFromDoc(d: DocumentData | undefined): Payment {
     method: d.method,
     accountId: d.accountId,
     proofPath: d.proofPath,
+    transactionDigits: d.transactionDigits,
     submittedAt: toDateOrUndefined(d.submittedAt),
     verifiedAt: toDateOrUndefined(d.verifiedAt),
     verifiedBy: d.verifiedBy,
@@ -158,7 +159,13 @@ function paymentFromDoc(d: DocumentData | undefined): Payment {
 }
 
 function rejectionsFromDoc(list: DocumentData[] | undefined): Rejection[] {
-  return (list ?? []).map((r) => ({ reason: r.reason, at: toDate(r.at), by: r.by, proofPath: r.proofPath }))
+  return (list ?? []).map((r) => ({
+    reason: r.reason,
+    at: toDate(r.at),
+    by: r.by,
+    proofPath: r.proofPath,
+    transactionDigits: r.transactionDigits,
+  }))
 }
 
 function paymentToDoc(p: Payment): DocumentData {
@@ -193,6 +200,7 @@ export function orderFromDoc(snap: DocumentSnapshot): Order {
     cancelledAt: toDateOrUndefined(d.cancelledAt),
     refund: d.refund && { ...(d.refund as Omit<Refund, "at">), at: toDate(d.refund.at) },
     deviceKey: d.deviceKey,
+    test: d.test === true || undefined,
   }
 }
 

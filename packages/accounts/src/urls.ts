@@ -16,7 +16,7 @@ export const APPS = {
     port: 3001,
     live: true,
     label: "PPITSZ Shop",
-    description: "Food and merchandise from Danus",
+    description: "Food and merchandise from our campaigns",
   },
   forms: {
     subdomain: "forms",

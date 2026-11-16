@@ -87,12 +87,12 @@ export function SiteChrome({
         line="danus"
         linkAs={Link}
         brand={<PpiMark className="h-12" />}
-        about={<>PPITSZ Shop is run by Danus of PPI Tiongkok Cabang Shenzhen.</>}
+        about={<>PPITSZ Shop is the shop of PPI Tiongkok Cabang Shenzhen.</>}
         transfers={transfers}
         help={
           <>
             <p>
-              A problem with an order? Contact Danus
+              A problem with an order? Contact us
               {CONTACT.wechatId ? ` on WeChat at ${CONTACT.wechatId}` : " on the PPITSZ socials"} and give your order
               code.
             </p>
@@ -119,7 +119,7 @@ export function SiteChrome({
         }
         bottom={
           <>
-            <p className="type-caption text-muted">© {new Date().getFullYear()} PPIT Shenzhen · Danus</p>
+            <p className="type-caption text-muted">© {new Date().getFullYear()} PPIT Shenzhen</p>
             <ThemeControl className="shrink-0" />
           </>
         }

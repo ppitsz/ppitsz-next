@@ -17,6 +17,7 @@ import { latestRoleChanges, rolesOf } from "@ppitsz/accounts/roles"
 import { appLive, formsOrigin, shopOrigin } from "@ppitsz/accounts/urls"
 import { requireSession } from "@/lib/server/auth"
 import { AddPasswordForm, ProfileForm, UnlinkGoogleForm } from "@/components/auth-forms"
+import { profileValues } from "@/lib/profile-values"
 import { AvatarForm } from "@/components/avatar-form"
 import { LinkGoogleButton } from "@/components/google-button"
 import { RoleChanges } from "@/components/role-changes"
@@ -83,7 +84,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
       href: shopOrigin(),
       title: "PPITSZ Shop",
       icon: <StorefrontIcon />,
-      description: "Order food and merchandise from Danus, and follow your orders.",
+      description: "Order food and merchandise, and follow your orders.",
     },
     ...(appLive("forms")
       ? [
@@ -111,16 +112,16 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           },
         ]
       : []),
-    ...(appLive("forms") && (roles.formsAdmin || roles.panitia.length > 0)
+    ...(appLive("forms") && (roles.formsAdmin || roles.organizing.length > 0)
       ? [
           {
             href: `${formsOrigin()}/staff`,
-            kicker: roles.formsAdmin ? "Form admin" : "Panitia",
+            kicker: roles.formsAdmin ? "Form admin" : "Organizer",
             title: "Forms dashboard",
             icon: <TicketIcon />,
             description: roles.formsAdmin
-              ? "Create forms, and pick each form's panitia."
-              : `Responses, check-in and announcements for ${roles.panitia.map((f) => f.title).join(", ")}.`,
+              ? "Create forms, and pick each form's organizers."
+              : `Responses, check-in and announcements for ${roles.organizing.map((f) => f.title).join(", ")}.`,
           },
         ]
       : []),
@@ -174,7 +175,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
           {!profile.wechatId && (
             <Alert variant="info">
               <AlertTitle>Add your WeChat ID</AlertTitle>
-              <AlertDescription>Danus needs it to reach you about an order. The shop asks for it at checkout.</AlertDescription>
+              <AlertDescription>We need it to reach you about an order. The shop asks for it at checkout.</AlertDescription>
             </Alert>
           )}
           <AvatarForm
@@ -182,7 +183,7 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
             avatarUrl={avatarUrl(shownAvatarPath(profile))}
             hasOwnPhoto={!!profile.avatarPath}
           />
-          <ProfileForm profile={{ name: profile.name, wechatId: profile.wechatId, phone: profile.phone }} />
+          <ProfileForm profile={profileValues(profile)} />
         </section>
 
         <section aria-labelledby="signing-in" className="flex flex-col gap-8">

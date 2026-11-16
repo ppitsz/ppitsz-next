@@ -1,5 +1,7 @@
 import { notFound, redirect } from "next/navigation"
 
+import { isProfileComplete } from "@ppitsz/accounts/fields"
+import { getProfile } from "@ppitsz/accounts/profile"
 import { isPortalAdmin } from "@ppitsz/accounts/roles"
 import { getSession, type Session } from "@ppitsz/accounts/session"
 
@@ -13,6 +15,17 @@ export async function requireSession(next = "/"): Promise<Session> {
   const session = await getSession()
   if (!session) redirect(next === "/" ? "/sign-in" : `/sign-in?next=${encodeURIComponent(next)}`)
   return session
+}
+
+/**
+ * Where to go once signed in: `next` (already checked by safeNext), or first
+ * /finish-profile when the account lacks what sign-up asks for, as a new
+ * Google sign-in or a staff account made by a script does.
+ */
+export async function afterSignIn(uid: string, next: string): Promise<string> {
+  const profile = await getProfile(uid)
+  if (profile && isProfileComplete(profile)) return next
+  return next === "/" ? "/finish-profile" : `/finish-profile?next=${encodeURIComponent(next)}`
 }
 
 /** A Portal admin, or not found: Accounts doesn't exist for anyone else. */

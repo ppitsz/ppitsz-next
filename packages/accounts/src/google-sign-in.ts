@@ -13,7 +13,7 @@ import {
   type GoogleResult,
   type PlanAccount,
 } from "./google"
-import { ensureProfile, getProfile } from "./profile"
+import { ensureProfile, getProfile, noteSignIn } from "./profile"
 
 /*
  * Google sign-in against our Firebase accounts (ADR 0011): exchanging
@@ -95,6 +95,7 @@ export async function completeGoogle(identity: GoogleIdentity, signedInUid: stri
   }
 
   await ensureProfile({ uid: user.uid, email: user.email ?? identity.email }, user.displayName || identity.name)
+  await noteSignIn(user.uid)
   const profile = await getProfile(user.uid)
   // On a new link always; on a sign-in only while we have no copy (ADR 0009).
   if (plan.kind !== "signIn" || !profile?.providerAvatarPath) await copyGooglePhoto(user.uid, identity.picture)

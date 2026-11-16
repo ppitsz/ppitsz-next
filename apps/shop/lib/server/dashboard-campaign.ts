@@ -3,7 +3,7 @@ import { cookies } from "next/headers"
 import type { Campaign } from "../domain/types"
 
 /*
- * The campaign this device works on in the dashboard: Kasir, Products, Recap
+ * The campaign this device works on in the dashboard: Register, Products, Recap
  * and Settings follow it. Verify, Scan, Orders and the pickup list
  * cover every campaign. Kept in a cookie so server pages know it.
  */

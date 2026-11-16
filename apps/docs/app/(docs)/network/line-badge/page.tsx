@@ -39,7 +39,7 @@ export default function LineBadgePage() {
         </Example>
       </DocSection>
 
-      <DocSection id="codes" title="Codes" intro={<p>The long codes are canonical for display. The old codebase&apos;s oprec codes (<code>DU</code>, <code>DO</code>, <code>HM</code>, <code>MK</code>, <code>SB</code>) map through <code>toLineCode()</code>.</p>}>
+      <DocSection id="codes" title="Codes" intro={<p>The long codes are canonical for display. The old codebase&apos;s recruitment codes (<code>DU</code>, <code>DO</code>, <code>HM</code>, <code>MK</code>, <code>SB</code>) map through <code>toLineCode()</code>.</p>}>
         <SpecTable
           head={["Badge", "data-line", "Division"]}
           rows={DIVISIONS.map((d) => [
@@ -53,7 +53,7 @@ export default function LineBadgePage() {
       <DocSection id="rules" title="Rules">
         <Prose>
           <ul>
-            <li>It appears on event rows and station pages, committee section headers, member cards (as a station marker), article kickers and the oprec “Accepted” result.</li>
+            <li>It appears on event rows and station pages, committee section headers, member cards (as a station marker), article kickers and the recruitment “Accepted” result.</li>
             <li>Its accessible name is the full Indonesian division name, marked <code>lang=&quot;id&quot;</code>: a proper name, never translated (ADR 0007). The visible code is wrapped in <code>&lt;abbr title&gt;</code> for pointer users.</li>
           </ul>
         </Prose>

@@ -1,5 +1,7 @@
+import NextLink from "next/link"
 import { connection } from "next/server"
 
+import { Alert, AlertDescription, AlertTitle } from "@ppitsz/ui/components/alert"
 import { Container } from "@ppitsz/ui/components/container"
 import { Route } from "@ppitsz/ui/components/network/route"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@ppitsz/ui/components/empty"
@@ -7,7 +9,7 @@ import { toCatalog } from "@/lib/catalog"
 import { splitOrders } from "@/lib/domain/account"
 import { bySlotTime } from "@/lib/domain/delivery"
 import { featuredOf, showcaseFilters, showcaseOf } from "@/lib/home"
-import { getBuyer } from "@/lib/server/auth"
+import { getBuyer, getStaff } from "@/lib/server/auth"
 import { listBundles, listBuyerOrders, listCampaigns, listProducts, slotPlaces } from "@/lib/store"
 import { Hero } from "@/components/home/hero"
 import { CampaignBoard } from "@/components/home/campaign-board"
@@ -26,8 +28,10 @@ const SLOTS_SHOWN = 3
 export default async function HomePage() {
   await connection()
   const now = new Date()
-  const [campaigns, buyer] = await Promise.all([listCampaigns(), getBuyer()])
+  const [campaigns, buyer, staff] = await Promise.all([listCampaigns(), getBuyer(), getStaff()])
   const open = campaigns.filter((c) => c.status === "open")
+  // Only staff can open a draft, to look at it and place test orders.
+  const drafts = staff ? campaigns.filter((c) => c.status === "draft") : []
 
   const [orders, sales] = await Promise.all([
     buyer ? listBuyerOrders(buyer.uid, now) : Promise.resolve([]),
@@ -60,7 +64,7 @@ export default async function HomePage() {
         <section className="tone-ink">
           <Container data-line="danus" className="flex flex-col gap-4 py-16 lg:py-24">
             <span aria-hidden className="route mb-6" />
-            <p className="type-kicker text-muted">Danus PPIT Shenzhen</p>
+            <p className="type-kicker text-muted">PPIT Shenzhen</p>
             <h1 className="type-display-2xl text-text">PPITSZ Shop</h1>
             <p className="type-heading-lg text-text">No departures scheduled.</p>
             <p className="max-w-[56ch] type-lede text-muted">
@@ -68,6 +72,24 @@ export default async function HomePage() {
             </p>
           </Container>
         </section>
+      )}
+
+      {drafts.length > 0 && (
+        <Container className="pt-10">
+          <Alert variant="warning">
+            <AlertTitle>Drafts</AlertTitle>
+            <AlertDescription>
+              Only staff see these. Open one to check it and place test orders:{" "}
+              {drafts.map((c, i) => (
+                <span key={c.id}>
+                  {i > 0 && ", "}
+                  <NextLink href={`/${c.slug}`}>{c.name}</NextLink>
+                </span>
+              ))}
+              .
+            </AlertDescription>
+          </Alert>
+        </Container>
       )}
 
       <YourOrders

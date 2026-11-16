@@ -9,7 +9,7 @@ import { pickCampaignAction } from "@/lib/actions/staff"
 import type { CampaignStatus } from "@/lib/domain/types"
 
 /**
- * Which campaign Kasir, Products, Recap and Settings work on, remembered on
+ * Which campaign Register, Products, Recap and Settings work on, remembered on
  * this device. With one campaign to choose from, just its name.
  */
 export function CampaignSwitcher({

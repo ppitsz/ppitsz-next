@@ -2,7 +2,7 @@
 
 import { ErrorMessage } from "@/components/error-message"
 
-/** A dashboard page that failed to render, under the Danus header. */
+/** A dashboard page that failed to render, under the staff header. */
 export default function DashboardError({ error, retry }: { error: unknown; retry: () => void }) {
   return (
     <ErrorMessage error={error} retry={retry}>

@@ -2,8 +2,8 @@ import { ShopError } from "./errors"
 import type { BundleLine, CartLine, ProductLine } from "./types"
 
 /*
- * What a buyer or the kasir asks for, as it arrives from the browser. The
- * shop, the kasir, both server actions and the store all go through
+ * What a buyer or the register asks for, as it arrives from the browser. The
+ * shop, the register, both server actions and the store all go through
  * parseCart, so the limits are the same everywhere. Safe to import from
  * client components.
  */

@@ -5,11 +5,20 @@
 import { beforeEach, describe, expect, test } from "bun:test"
 
 import { DEMO_PROJECT } from "@ppitsz/accounts/firebase"
-import { latestRoleChanges, RoleError, roleChangesOf, SCRIPT, setRole } from "@ppitsz/accounts/roles"
+import {
+  holdersOf,
+  latestRoleChanges,
+  listStaffAccounts,
+  RoleError,
+  roleChangesOf,
+  rolesOf,
+  SCRIPT,
+  setRole,
+} from "@ppitsz/accounts/roles"
 import { signIn, verifySession, type Session } from "@ppitsz/accounts/session"
 
 import { listStaff, removeStaff, setStaffPassword, staffOf, upsertStaff } from "./staff"
-import { adminAuth } from "../firebase/admin"
+import { adminAuth, db } from "../firebase/admin"
 
 if (!process.env.FIREBASE_AUTH_EMULATOR_HOST || !process.env.FIRESTORE_EMULATOR_HOST) {
   throw new Error("Run these tests with `bun run test:emulator`.")
@@ -36,7 +45,7 @@ async function sessionOf(email: string, password: string): Promise<{ cookie: str
   return result
 }
 
-/** The Danus staff member behind a cookie, as a Danus page sees it. */
+/** The shop staff member behind a cookie, as a staff page sees it. */
 async function staffBehind(cookie: string) {
   const session = await verifySession(cookie)
   return session ? staffOf(session) : null
@@ -70,7 +79,7 @@ describe("staff on a PPITSZ account", () => {
     expect((await staffBehind(cookie))?.role).toBe("admin")
   })
 
-  test("removing someone ends their Danus access at once, and leaves them signed in", async () => {
+  test("removing someone ends their staff access at once, and leaves them signed in", async () => {
     await upsertStaff({ ...admin, role: "booth" })
     const { cookie } = await sessionOf(admin.email, admin.password)
     expect((await staffBehind(cookie))?.role).toBe("booth")
@@ -141,5 +150,56 @@ describe("role changes", () => {
     const sari = { uid: "u-sari", email: "sari@ppitsz.test", name: "Sari" }
     expect(setRole(SCRIPT, sari, "shop", "owner")).rejects.toBeInstanceOf(RoleError)
     expect(setRole(SCRIPT, sari, "forms", "booth")).rejects.toBeInstanceOf(RoleError)
+    expect(setRole(SCRIPT, sari, "site", "booth")).rejects.toBeInstanceOf(RoleError)
+  })
+})
+
+describe("roles on the person's record (ADR 0014)", () => {
+  const person = (uid: string) => db().collection("users").doc(uid).get()
+
+  test("a role for someone with no record makes one in the old website's shape", async () => {
+    const sari = { uid: "u-sari", email: "sari@ppitsz.test", name: "Sari" }
+    await setRole(SCRIPT, sari, "shop", "booth")
+    const snap = await person(sari.uid)
+    expect(snap.data()).toMatchObject({
+      email: sari.email,
+      name: "Sari",
+      admin: false,
+      status: "active",
+      graduated: false,
+      birthday: null,
+      cohortYear: null,
+      submittedForms: [],
+      attendedForms: [],
+      roles: { shop: "booth" },
+    })
+  })
+
+  test("website admin is the old website's own admin flag, and roles leave the rest of the record alone", async () => {
+    const sari = { uid: "u-sari", email: "sari@ppitsz.test", name: "Sari" }
+    await db().collection("users").doc(sari.uid).set({ email: sari.email, name: "Sari", admin: false, birthday: "2004-08-17", cohortYear: 2023 })
+    await setRole(SCRIPT, sari, "site", "admin")
+    await setRole(SCRIPT, sari, "forms", "admin")
+    expect((await person(sari.uid)).data()).toMatchObject({ admin: true, birthday: "2004-08-17", cohortYear: 2023, roles: { forms: "admin" } })
+    expect(await rolesOf(sari.uid)).toMatchObject({ siteAdmin: true, formsAdmin: true, shop: null, portalAdmin: false })
+    expect((await holdersOf("site")).map((h) => h.uid)).toEqual([sari.uid])
+
+    await setRole(SCRIPT, sari, "forms", null)
+    await setRole(SCRIPT, sari, "site", null)
+    const data = (await person(sari.uid)).data()!
+    expect(data.admin).toBe(false)
+    expect(data.roles).toEqual({})
+    expect((await roleChangesOf(sari.uid)).map((c) => [c.app, c.to])).toEqual([
+      ["site", null],
+      ["forms", null],
+      ["forms", "admin"],
+      ["site", "admin"],
+    ])
+  })
+
+  test("someone the old website made an admin shows as a website admin", async () => {
+    await db().collection("users").doc("u-lama").set({ email: "lama@ppitsz.test", name: "Lama", admin: true })
+    const accounts = await listStaffAccounts()
+    expect(accounts.find((a) => a.uid === "u-lama")).toMatchObject({ siteAdmin: true, shop: null })
   })
 })

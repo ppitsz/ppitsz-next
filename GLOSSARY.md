@@ -1,8 +1,10 @@
 # PPIT Shenzhen
 
-The apps and design system of PPIT Shenzhen, the Indonesian students' association in Shenzhen. PPITSZ Shop (the shop, `apps/shop`) is the sales site of its Danus division. GumamChan is the name of its food campaign. PPITSZ Forms (`apps/forms`) takes registrations and form responses, with tickets for events. PPITSZ Account (`apps/account`) is where everyone signs in, and where Portal admins manage roles.
+The apps and design system of PPIT Shenzhen, the Indonesian students' association in Shenzhen. PPITSZ Shop (the shop, `apps/shop`) is its sales site, run by its fundraising division, Danus. GumamChan is the name of its food campaign. PPITSZ Forms (`apps/forms`) takes registrations and form responses, with tickets for events. PPITSZ Account (`apps/account`) is where everyone signs in, and where Portal admins manage roles.
 
-Every term below is the word the UI shows, in English (ADR 0007). Only Danus, Kasir, Panitia and Oprec stay Indonesian.
+Every term below is the word the UI shows, in English (ADR 0007), with no Indonesian insider words (ADR 0012).
+
+The UI speaks as "we", one organization, and never names a division as the one acting: buyers read "we check your proof", staff read "shop admin" (ADR 0012).
 
 ## Accounts
 
@@ -11,11 +13,11 @@ The app at `account.ppitshenzhen.org`: the only place to sign in, sign up and re
 _Avoid_: SSO, login portal, admin site
 
 **Staff app**:
-Where staff work, each opened from PPITSZ Account: the **Shop dashboard** (Danus, at the shop's `/staff`), the **Forms dashboard** (form admins and panitia, at Forms' `/staff`) and **Accounts** (Portal admins). The launcher names each one this way, with your role in it.
+Where staff work, each opened from PPITSZ Account: the **Shop dashboard** (shop staff, at the shop's `/staff`), the **Forms dashboard** (form admins and organizers, at Forms' `/staff`) and **Accounts** (Portal admins). The launcher names each one this way, with your role in it.
 _Avoid_: Danus dashboard, Forms staff, admin panel
 
 **Account**:
-One person's email and password, with a profile holding their name and, optionally, WeChat ID and phone. The same account buys in the shop, may sign in to Forms, and carries any staff roles. Signing in goes through our server, so it works without a VPN. An account with no role is an ordinary account; nothing is stored for that.
+One person's email and password, with a profile holding their name, birthday and intake year and, optionally, WeChat ID and phone. The profile is the old website's record of them too (`users/{uid}`, ADR 0014). The same account buys in the shop, may sign in to Forms, and carries any staff roles. Signing in goes through our server, so it works without a VPN. An account with no role is an ordinary account; nothing is stored for that.
 _Avoid_: user, member, login (that is the act)
 
 **Avatar**:
@@ -27,12 +29,20 @@ The header's account control in every app: "Sign in" when signed out; otherwise 
 _Avoid_: user menu, account dropdown
 
 **Role**:
-What an account may do in one app: Admin or Booth staff in the shop, Form admin in Forms, Portal admin in PPITSZ Account. Each app keeps its own (ADR 0004). Panitia isn't a role: it is per form.
+What an account may do in one app: Admin or Booth staff in the shop, Form admin in Forms, Portal admin in PPITSZ Account, Website admin on ppitshenzhen.org. All are kept on the person's record and granted by Portal admins (ADR 0014); a role in one app grants nothing in another. Organizer isn't a role: it is per form.
 _Avoid_: permission, claim
 
 **Portal admin**:
-Someone who manages accounts in PPITSZ Account: adds people, gives and removes every app's roles, and resets passwords. Can't remove their own Portal admin role, and the last one can't be removed. Listed in Firestore (`portalStaff`).
+Someone who manages accounts in PPITSZ Account: adds people, gives and removes every app's roles, and resets passwords. Can't remove their own Portal admin role, and the last one can't be removed. Stored as `roles.portal` on the person's record (`users/{uid}`, ADR 0014).
 _Avoid_: superadmin, superuser, admin (that is the shop's role)
+
+**Website admin**:
+Someone who may use the control panel on ppitshenzhen.org: its forms and responses, recruitment applications, emails and tickets. The old website's own `admin` flag on the person's record, which its rules and pages read; granted by a Portal admin, or by another website admin there.
+_Avoid_: admin (on its own), superadmin
+
+**Intake year**:
+The year someone started their studies, asked at sign-up with their birthday, as the old website always has. Stored as `cohortYear`.
+_Avoid_: cohort, angkatan, batch
 
 **Role change**:
 One entry in the log of who gave or removed which role, or reset whose password, and when. Shown on the person's page in Accounts.
@@ -40,23 +50,23 @@ _Avoid_: audit, history (that is the list)
 
 ## Shop: people
 
-**Danus**:
-The association's fundraising division. Its members are the staff who run the shop. Kept in Indonesian.
-_Avoid_: sellers, the team, Fundraising
+**Shop staff**:
+The people who run the shop, from the association's fundraising division, each with a shop role. Copy never names their division: buyers read "we".
+_Avoid_: Danus (in copy), sellers, the team
 
 **Admin**:
-A Danus staff role that may do everything, including verifying proofs, canceling any open order and managing products and the campaign.
+A shop staff role that may do everything, including verifying proofs, canceling any open order and managing products and the campaign.
 
 **Booth staff**:
-A Danus staff role at the booth: hands over orders, records walk-in sales and may undo their own sale within the undo window.
-_Avoid_: kasir (that is the screen, not the person), cashier
+A shop staff role at the booth: hands over orders, records walk-in sales and may undo their own sale within the undo window.
+_Avoid_: register (that is the screen, not the person), cashier
 
 **Buyer**:
 Whoever places an online order or buys at the booth. An online order needs an account; a walk-in sale needs none.
 _Avoid_: customer, user
 
 **Your orders**:
-The shop's list of an account's orders with their progress, Active and Done. Every online order belongs to one account (see Accounts). A Danus member who buys is signed in as themselves.
+The shop's list of an account's orders with their progress, Active and Done. Every online order belongs to one account (see Accounts). A staff member who buys is signed in as themselves.
 
 ## Shop: selling
 
@@ -69,7 +79,7 @@ One sale period, such as GumamChan at SZ Cup 2027, with its own products, bundle
 _Avoid_: event, sale, store
 
 **Campaign status**:
-What an admin sets: **Draft** (hidden from buyers, staff can preview it), **Open** (listed and selling) or **Ended** (off the list, no checkout, its orders still work). An open campaign shows buyers its phase: Opening soon, Ordering online, At the booth, or Orders closed for one without a booth.
+What an admin sets: **Draft** (hidden from buyers; staff can open it and place test orders), **Open** (listed and selling) or **Ended** (off the list, no checkout, its orders still work). An open campaign shows buyers its phase: Opening soon, Ordering online, At the booth, or Orders closed for one without a booth.
 
 **URL name** (slug in code):
 A campaign's address on the shop, such as `/gumamchan`. Held by one draft or open campaign at a time; an ended campaign's name can be reused. Fixed once the campaign has an order.
@@ -78,13 +88,13 @@ A campaign's address on the shop, such as `/gumamchan`. Held by one draft or ope
 The two or three capitals that start a campaign's order codes, such as GC in GC-7K3P. Unique among all campaigns, fixed once the campaign has an order.
 
 **Picked campaign**:
-The campaign a dashboard device works on in Kasir, Products, Recap and Settings, chosen in the switcher at the top. Verify, Scan, Orders and the pickup list cover every campaign.
+The campaign a dashboard device works on in Register, Products, Recap and Settings, chosen in the switcher at the top. Verify, Scan, Orders and the pickup list cover every campaign.
 
 **Featured product**:
 The one product a campaign shows in the main page's hero, picked by an admin; optional. Shown only while the campaign leads the main page and the catalog still shows the product; otherwise the cover photo stands in.
 
 **Sale dates**:
-A product's optional start and end, in Shenzhen time, for a seasonal item inside a longer campaign. Before the start it shows in the catalog as coming but can't be ordered; from the end it leaves the catalog and the kasir. A product is on sale when it is ticked For sale and inside its dates. Bundles that hold it keep their own switch.
+A product's optional start and end, in Shenzhen time, for a seasonal item inside a longer campaign. Before the start it shows in the catalog as coming but can't be ordered; from the end it leaves the catalog and the register. A product is on sale when it is ticked For sale and inside its dates. Bundles that hold it keep their own switch.
 _Avoid_: temporary product, permanent product
 
 **Label**:
@@ -130,15 +140,15 @@ One flat amount per campaign, added once to every delivery order's total. 0 is f
 The courier's number for a delivery order sent by courier (SF Express, 闪送…), entered by staff and shown to the buyer.
 
 **Booth**:
-Where a campaign sells on the spot, through the kasir. Optional: a campaign without one sells online only, and its online cap holds nothing back.
+Where a campaign sells on the spot, through the register. Optional: a campaign without one sells online only, and its online cap holds nothing back.
 
 **Walk-in sale**:
-An order recorded at the kasir for a buyer standing at the booth. It is paid and handed over the moment it is made.
-_Avoid_: kasir order, offline order
+An order recorded at the register for a buyer standing at the booth. It is paid and handed over the moment it is made.
+_Avoid_: register order, offline order
 
-**Kasir**:
-The booth screen where Danus records walk-in sales. Kept in Indonesian.
-_Avoid_: POS, till, cashier
+**Register**:
+The booth screen where staff record walk-in sales, at `/staff/register`.
+_Avoid_: kasir, POS, till, cashier
 
 **Order code**:
 The short code of an order, such as GC-7K3P, written in transfer notes and read aloud at the booth.
@@ -165,8 +175,16 @@ _Avoid_: sweeping, cleanup
 When an unpaid online order expires, set by the campaign's payment window from when the order was made or its proof was rejected.
 
 **Proof**:
-The transfer screenshot a buyer uploads for Danus to check.
+The transfer screenshot a buyer uploads for us to check, with the transaction number's last 6 digits when paid by WeChat Pay or Alipay. The digits are how we find the transfer; the screenshot is the backup.
 _Avoid_: receipt, evidence
+
+**Test order**:
+An order staff place in a draft campaign to try it out. It takes stock and runs like a real order (proof, verification, pickup or delivery), is labeled Test everywhere, and skips the unpaid-orders limit. An admin deletes the campaign's test orders in Settings, which gives their stock back, before the campaign can leave Draft.
+_Avoid_: dummy order, fake order
+
+**Transaction number**:
+The number WeChat Pay (交易单号 or 转账单号) or Alipay (订单号) gives a payment. The buyer types its last 6 digits when sending proof (a pasted whole number is cut to them), and we find the transfer in the receiving account's bills by them. The verify queue warns when two orders carry the same digits. A bank transfer needs none.
+_Avoid_: payment code, reference, transaction ID
 
 **Verification**:
 An admin checking a proof, ending in approval or rejection.
@@ -183,11 +201,11 @@ The automatic end of an unpaid online order at its payment deadline. Its hold is
 _Avoid_: timeout, auto-cancel
 
 **Cancellation**:
-Danus ending an open order, or undoing a walk-in sale. Units not yet handed over go back to stock. Money goes back as a refund.
+Staff ending an open order, or undoing a walk-in sale. Units not yet handed over go back to stock. Money goes back as a refund.
 _Avoid_: void, refund
 
 **Refund**:
-Money Danus sends back for a canceled or expired online order, outside the app, then records on the order once: amount, method and a note. A canceled online order whose money came in waits for one; it is owed the price of the items not handed over, plus the delivery fee of a delivery order not delivered. An undone walk-in sale is settled at the booth and gets none.
+Money we send back for a canceled or expired online order, outside the app, then records on the order once: amount, method and a note. A canceled online order whose money came in waits for one; it is owed the price of the items not handed over, plus the delivery fee of a delivery order not delivered. An undone walk-in sale is settled at the booth and gets none.
 _Avoid_: reimbursement, chargeback
 
 **Buyer message**:
@@ -211,12 +229,12 @@ The 30 minutes after a walk-in sale in which the booth staff who made it may can
 ## Forms: people
 
 **Form admin**:
-Someone who creates forms, builds them, sets their status and picks each form's panitia. Listed in Firestore (`formsStaff`), granted by a Portal admin. Not a shop role: the same person may also be Danus staff, with one account for both.
+Someone who creates forms, builds them, sets their status and picks each form's organizers. Stored as `roles.forms` on the person's record (`users/{uid}`, ADR 0014), granted by a Portal admin. Not a shop role: the same person may also be shop staff, with one account for both.
 _Avoid_: owner, superuser
 
-**Panitia**:
-The people who run one form: they read its responses and files, scan its tickets, register people at the door and send announcements to ticket holders. Added by a form admin in the app, by email. Their access ends when the form is ended. Kept in Indonesian.
-_Avoid_: committee members, form team, staff (staff is the shop's word), organizers
+**Organizer**:
+One of the people who run one form: they read its responses and files, scan its tickets, register people at the door and send announcements to ticket holders. Added by a form admin in the app, by email. Their access ends when the form is ended.
+_Avoid_: panitia, committee members, form team, staff (staff is the shop's word)
 
 **Responder**:
 Whoever fills in a form. No account needed: the secret link of their response is their key, and a 6-digit code sent to their email gets them back to it. Signed in, their name, email and WeChat ID start filled in and the response is linked to their account, except on an anonymous form.
@@ -225,11 +243,11 @@ _Avoid_: user, registrant, attendee, participant
 ## Forms: forms and responses
 
 **Form**:
-One form at its own address (`forms.ppitshenzhen.org/<slug>`): sections, questions, response rules and, optionally, tickets. A survey, a sign-up and an event registration are all a form. Oprec will be one too, with stages.
+One form at its own address (`forms.ppitshenzhen.org/<slug>`): sections, questions, response rules and, optionally, tickets. A survey, a sign-up and an event registration are all a form. Recruitment will be one too, with stages.
 _Avoid_: event (the event is what a ticket form registers for, and lives on the main site), registration, survey
 
 **Form status**:
-What a form admin sets: **Draft** (only staff see it, as a preview), **Open** (takes responses, within its optional open and close dates), **Closed** (no new responses; tickets still scan) or **Ended** (archived: panitia lose access, and the purge clock starts). An open form shows responders its phase: Opening soon, Open, Fully booked or Registration closed.
+What a form admin sets: **Draft** (only staff see it, as a preview), **Open** (takes responses, within its optional open and close dates), **Closed** (no new responses; tickets still scan) or **Ended** (archived: organizers lose access, and the purge clock starts). An open form shows responders its phase: Opening soon, Open, Fully booked or Registration closed.
 
 **Response**:
 One submission of a form. With tickets, one response is one person's ticket. Live until canceled; never deleted.
@@ -262,18 +280,18 @@ A ticket made at the scanner for someone who came without one. Created checked i
 _Avoid_: door registration, on-site registration
 
 **Announcement**:
-An email panitia write to every live ticket: a change, or the cancellation of the event. Canceling the event closes the form and voids every ticket. There are no automatic reminders.
+An email organizers write to every live ticket: a change, or the cancellation of the event. Canceling the event closes the form and voids every ticket. There are no automatic reminders.
 _Avoid_: message, blast, reminder
 
-## Oprec
+## Recruitment
 
-**Oprec**:
-Open recruitment: how students apply to join a division. An applicant moves through four stages: online form, written test, interview, results.
-_Avoid_: recruitment, hiring, registration
+**Recruitment**:
+How students apply to join a division. An applicant moves through four stages: online form, written test, interview, results.
+_Avoid_: oprec, hiring, registration
 
 **Results**:
-The last oprec stage, when each applicant learns whether they are accepted onto a division or not selected.
-_Avoid_: announcement (that is panitia's email to ticket holders), decision
+The last recruitment stage, when each applicant learns whether they are accepted onto a division or not selected.
+_Avoid_: announcement (that is organizers' email to ticket holders), decision
 
 ## Design system
 
@@ -290,7 +308,7 @@ A division's short code (BPH, HUMAS…) on its line color, like a metro line bul
 _Avoid_: division tag, division pill
 
 **Station**:
-A stop on a line: a campus, an event, or a step in a process such as oprec. It is upcoming, passed, or "you are here".
+A stop on a line: a campus, an event, or a step in a process such as recruitment. It is upcoming, passed, or "you are here".
 _Avoid_: node, dot, step marker
 
 **Interchange**:

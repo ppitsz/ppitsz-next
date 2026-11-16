@@ -216,6 +216,16 @@ function replaceVariant(product: Product, index: number, variant: Variant): Prod
   return { ...product, variants }
 }
 
+/**
+ * The items whose units a test order still takes from stock, to give back
+ * when it is deleted: all of them, or after a cancellation or expiry (which
+ * gave back the rest) the ones already handed over.
+ */
+export function heldByTestOrder(order: Pick<Order, "status" | "items">): OrderItem[] {
+  const settled = order.status === "cancelled" || order.status === "expired"
+  return settled ? order.items.filter((item) => item.pickedUp) : order.items
+}
+
 /* -------------------------------------------------------------------------
    Deadlines and limits. Status changes are in lifecycle.ts.
    ------------------------------------------------------------------------- */
@@ -230,14 +240,16 @@ export function isPastDeadline(order: Pick<Order, "status" | "expiresAt">, now: 
 }
 
 /**
- * Whether online orders are taken now. A draft campaign isn't open yet; a
+ * Whether online orders are taken now. A draft campaign isn't open yet,
+ * except to `staff`, who place test orders in it whatever its dates; a
  * closed one, or one offering neither Delivery nor Pickup, is closed
  * whatever its dates. A missing date is no limit on that side.
  */
-export function onlineWindowState(campaign: Campaign, now: Date) {
-  if (campaign.status === "draft") return "not_open" as const
+export function onlineWindowState(campaign: Campaign, now: Date, { staff = false } = {}) {
+  if (campaign.status === "draft" && !staff) return "not_open" as const
   if (campaign.status === "closed") return "closed" as const
   if (!campaign.offers.delivery && !campaign.offers.pickup) return "closed" as const
+  if (campaign.status === "draft") return "open" as const
   if (campaign.onlineOpensAt && now < campaign.onlineOpensAt) return "not_open" as const
   if (campaign.onlineClosesAt && now >= campaign.onlineClosesAt) return "closed" as const
   return "open" as const
@@ -274,7 +286,7 @@ export function orderVersion(order: Order) {
   ].join(".")
 }
 
-/** Statuses that can still change on their own or by Danus. */
+/** Statuses that can still change on their own or by staff. */
 export function isOpenStatus(status: OrderStatus) {
   return status === "pending_payment" || status === "awaiting_verification" || status === "paid"
 }
@@ -299,9 +311,9 @@ export function refundDue(order: Order) {
 }
 
 /**
- * A canceled online order whose money Danus has, or whose proof was still
+ * A canceled online order whose money we have, or whose proof was still
  * waiting to be checked, and whose refund is not recorded yet. An expired
- * order never had a proof accepted; a buyer who paid late contacts Danus.
+ * order never had a proof accepted; a buyer who paid late contacts us.
  */
 export function awaitsRefund(order: Order) {
   if (order.channel !== "online" || order.status !== "cancelled" || order.refund) return false

@@ -68,7 +68,7 @@ const orders: Order[] = [
   }),
   // Paid, canceled, money not sent back yet.
   make("E", { status: "cancelled", items: [stickerItem(1)], payment: paidBy("wechat", "wx") }),
-  // A kasir mistake, undone: counts for nothing.
+  // A register mistake, undone: counts for nothing.
   make("F", { channel: "walkin", buyer: null, status: "cancelled", items: [stickerItem(1, true)], payment: paidBy("cash") }),
   make("G", { status: "pending_payment", items: [stickerItem(1)], expiresAt: NOW }),
   make("H", { status: "expired", items: [stickerItem(3)] }),

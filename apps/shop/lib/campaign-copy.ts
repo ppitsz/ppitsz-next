@@ -15,6 +15,8 @@ export function orderingNote(campaign: Campaign, now: Date) {
   const phase = campaignPhase(campaign, now)
   const opens = campaign.onlineOpensAt
   const closes = campaign.onlineClosesAt
+  // Only staff see a draft.
+  if (phase === "draft") return "Not open to buyers yet. Staff can place test orders now"
   if (phase === "upcoming" && opens) return `Online ordering opens ${at(opens)}`
   if (phase === "online") return closes ? `Order online until ${at(closes)}` : "Order online any time"
   if (phase === "booth") {
@@ -24,7 +26,7 @@ export function orderingNote(campaign: Campaign, now: Date) {
   return "Online ordering has closed"
 }
 
-/** "Delivered (¥5 delivery) or pick up at the Danus booth." Empty when nothing is sold online. */
+/** "Delivered (¥5 delivery) or pick up at our booth." Empty when nothing is sold online. */
 export function fulfillmentNote(campaign: Campaign) {
   const { delivery, pickup } = campaign.offers
   const fee = campaign.deliveryFeeFen === 0 ? "free delivery" : `${formatYuan(campaign.deliveryFeeFen)} delivery`

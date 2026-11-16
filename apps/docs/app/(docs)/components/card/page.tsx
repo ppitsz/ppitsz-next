@@ -134,7 +134,7 @@ export default function CardPage() {
 </Alert>`}
         >
           <Alert>
-            <AlertTitle>Oprec 2026/2027 is open until September 30.</AlertTitle>
+            <AlertTitle>Recruitment 2026/2027 is open until September 30.</AlertTitle>
           </Alert>
           <Alert variant="success">
             <AlertTitle>We've received your written test</AlertTitle>

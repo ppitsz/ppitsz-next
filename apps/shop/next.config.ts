@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
     "/opengraph-image*": ["./assets/fonts/*.woff"],
     "/**/opengraph-image*": ["./assets/fonts/*.woff"],
   },
+  // The booth screen was "Kasir" until Nov 2026; keep booth phones' bookmarks working.
+  async redirects() {
+    return [{ source: "/staff/kasir", destination: "/staff/register", permanent: true }]
+  },
   experimental: {
     serverActions: {
       // Payment proof screenshots (lib/store/media.ts PROOF_MAX_BYTES) plus form fields.

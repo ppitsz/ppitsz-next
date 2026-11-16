@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, test } from "bun:test"
 import { ShopError } from "../domain/errors"
 import type { ProductEdit } from "../domain/product"
 import type { Buyer, Product } from "../domain/types"
-import { bucket } from "../firebase/admin"
+import { bucket, db } from "../firebase/admin"
 import {
   approvePayment,
   cancelOrder,
@@ -44,7 +44,11 @@ import {
   saveProduct,
   sendByCourier,
   slotPlaces,
+  ordersByTransactionDigits,
   submitPaymentProof,
+  countTestOrders,
+  deleteTestOrders,
+  campaignHasOrders,
 } from "./index"
 import { allowRequest } from "./rate-limit"
 import type { CampaignSave } from "./index"
@@ -77,6 +81,8 @@ const buyerAs = (uid: string, patch: Partial<Buyer> = {}): Buyer => ({
 })
 const NOW = new Date("2027-03-05T12:00:00+08:00")
 const png = { bytes: new Uint8Array([137, 80, 78, 71, 1, 2, 3]), contentType: "image/png" }
+/** The last 6 digits of a WeChat Pay transaction number. */
+const TXN = "567890"
 const admin = { uid: "admin-1", role: "admin" as const }
 const booth = (uid: string) => ({ uid, role: "booth" as const })
 
@@ -217,7 +223,7 @@ describe("online orders", () => {
     const later = new Date(created.expiresAt!.getTime() + 1)
     expect((await getOrderByToken(created.token, later))!.status).toBe("expired")
     expect((await variantOf("risoles")).onlineOrdered).toBe(0)
-    await expectCode(submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1" }, later), "ORDER_EXPIRED")
+    await expectCode(submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, later), "ORDER_EXPIRED")
   })
 
   test("overdue holds never block a new online order or a walk-in sale", async () => {
@@ -226,7 +232,7 @@ describe("online orders", () => {
     const later = new Date(held.expiresAt!.getTime() + 1)
     const sale = createWalkInSale(
       { campaignId: SAMPLE_CAMPAIGN_ID, lines: [{ productId: "kaos-szcup", variantId: "m", qty: 15 }], method: "cash" },
-      booth("kasir-1"),
+      booth("register-1"),
       later
     )
     expect((await sale).status).toBe("picked_up")
@@ -265,7 +271,7 @@ describe("payment and pickup", () => {
     const created = await order([{ productId: "nasi-kuning", qty: 1 }, { productId: "gantungan", qty: 2 }])
     await expectCode(redeemOrder(created.id, booth("staff-1"), undefined, NOW), "NOT_PAID")
 
-    const submitted = await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1" }, NOW)
+    const submitted = await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, NOW)
     expect(submitted.status).toBe("awaiting_verification")
     expect(submitted.expiresAt).toBeNull()
     expect(submitted.payment.proofPath).toStartWith(`proofs/${created.id}/`)
@@ -284,7 +290,7 @@ describe("payment and pickup", () => {
 
   test("two scanners on the same QR: exactly one hands it over", async () => {
     const created = await order([{ productId: "risoles", qty: 1 }])
-    await submitPaymentProof({ token: created.token, file: png, accountId: "alipay-1" }, NOW)
+    await submitPaymentProof({ token: created.token, file: png, accountId: "alipay-1", transactionDigits: TXN }, NOW)
     await approvePayment(created.id, admin, NOW)
     const scans = await Promise.allSettled([
       redeemOrder(created.id, booth("phone-a"), undefined, NOW),
@@ -295,7 +301,7 @@ describe("payment and pickup", () => {
 
   test("two scanners handing over different items each report their own", async () => {
     const created = await order([{ productId: "nasi-kuning", qty: 1 }, { productId: "gantungan", qty: 2 }])
-    await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1" }, NOW)
+    await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, NOW)
     await approvePayment(created.id, admin, NOW)
     const [food, merch] = await Promise.all([
       redeemOrder(created.id, booth("phone-a"), [0], NOW),
@@ -308,7 +314,7 @@ describe("payment and pickup", () => {
 
   test("booth staff can't verify, whatever page they call it from", async () => {
     const created = await order([{ productId: "risoles", qty: 1 }])
-    await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1" }, NOW)
+    await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, NOW)
     await expectCode(approvePayment(created.id, booth("booth-1"), NOW), "NOT_ALLOWED")
     await expectCode(rejectPayment(created.id, booth("booth-1"), "Buram", NOW), "NOT_ALLOWED")
   })
@@ -320,11 +326,44 @@ describe("payment and pickup", () => {
     expect(files).toHaveLength(0)
   })
 
+  test("a WeChat Pay proof needs its transaction digits, and nothing is uploaded without one", async () => {
+    const created = await order([{ productId: "risoles", qty: 1 }])
+    await expectCode(
+      submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1" }, NOW),
+      "INVALID_TRANSACTION_DIGITS"
+    )
+    const [files] = await bucket().getFiles({ prefix: `proofs/${created.id}/` })
+    expect(files).toHaveLength(0)
+
+    const sent = await submitPaymentProof(
+      { token: created.token, file: png, accountId: "wechat-1", transactionDigits: "4200 0012 3420 2611 1312 3456 7890" },
+      NOW
+    )
+    expect(sent.payment.transactionDigits).toBe(TXN)
+    expect((await getOrderByToken(created.token, NOW))!.payment.transactionDigits).toBe(TXN)
+  })
+
+  test("orders are found by the transaction digits on their proof", async () => {
+    const a = await order([{ productId: "risoles", qty: 1 }])
+    const b = await order([{ productId: "risoles", qty: 1 }])
+    const c = await order([{ productId: "risoles", qty: 1 }])
+    await submitPaymentProof({ token: a.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, NOW)
+    await submitPaymentProof({ token: b.token, file: png, accountId: "alipay-1", transactionDigits: TXN }, NOW)
+    await submitPaymentProof(
+      { token: c.token, file: png, accountId: "wechat-1", transactionDigits: "111111" },
+      NOW
+    )
+    const found = await ordersByTransactionDigits([TXN, TXN, "222222"])
+    expect(found.get(TXN)!.map((o) => o.id).sort()).toEqual([a.id, b.id].sort())
+    expect(found.has("222222")).toBe(false)
+    expect(await ordersByTransactionDigits([])).toEqual(new Map())
+  })
+
   test("two proofs racing: one wins, the loser's file is removed", async () => {
     const created = await order([{ productId: "risoles", qty: 1 }])
     const results = await Promise.allSettled([
-      submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1" }, NOW),
-      submitPaymentProof({ token: created.token, file: png, accountId: "alipay-1" }, NOW),
+      submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, NOW),
+      submitPaymentProof({ token: created.token, file: png, accountId: "alipay-1", transactionDigits: TXN }, NOW),
     ])
     const won = results.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []))
     expect(won).toHaveLength(1)
@@ -334,18 +373,19 @@ describe("payment and pickup", () => {
 
   test("a rejected proof goes back to the buyer with a new deadline", async () => {
     const created = await order([{ productId: "risoles", qty: 1 }])
-    await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1" }, NOW)
+    await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, NOW)
     const later = new Date(NOW.getTime() + 5 * 60 * 60_000)
     const rejected = await rejectPayment(created.id, admin, "Nominal kurang ¥5", later)
     expect(rejected.status).toBe("pending_payment")
     expect(rejected.rejections.map((r) => r.reason)).toEqual(["Nominal kurang ¥5"])
     expect(rejected.expiresAt!.getTime()).toBe(later.getTime() + 120 * 60_000)
-    const again = await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1" }, later)
+    const again = await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, later)
     expect(again.status).toBe("awaiting_verification")
     // The rejected proof stays on record, file and all.
     const stored = (await getOrderByToken(created.token, later))!
     expect(stored.rejections).toHaveLength(1)
     expect(stored.rejections[0]!.at).toEqual(later)
+    expect(stored.rejections[0]!.transactionDigits).toBe(TXN)
     expect(await readMedia(stored.rejections[0]!.proofPath!)).not.toBeNull()
     expect(stored.payment.proofPath).not.toBe(stored.rejections[0]!.proofPath)
   })
@@ -353,7 +393,7 @@ describe("payment and pickup", () => {
   test("rejects files that aren't images", async () => {
     const created = await order([{ productId: "risoles", qty: 1 }])
     await expectCode(
-      submitPaymentProof({ token: created.token, file: { bytes: new Uint8Array([1]), contentType: "application/pdf" }, accountId: "wechat-1" }, NOW),
+      submitPaymentProof({ token: created.token, file: { bytes: new Uint8Array([1]), contentType: "application/pdf" }, accountId: "wechat-1", transactionDigits: TXN }, NOW),
       "INVALID_FILE"
     )
   })
@@ -364,8 +404,8 @@ describe("dashboard queries", () => {
     const a = await order([{ productId: "risoles", qty: 1 }])
     const b = await order([{ productId: "risoles", qty: 1 }])
     await order([{ productId: "risoles", qty: 1 }]) // never pays
-    await submitPaymentProof({ token: b.token, file: png, accountId: "wechat-1" }, new Date(NOW.getTime() + 60_000))
-    await submitPaymentProof({ token: a.token, file: png, accountId: "wechat-1" }, new Date(NOW.getTime() + 120_000))
+    await submitPaymentProof({ token: b.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, new Date(NOW.getTime() + 60_000))
+    await submitPaymentProof({ token: a.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, new Date(NOW.getTime() + 120_000))
     expect((await listAwaitingVerification(SAMPLE_CAMPAIGN_ID)).map((o) => o.id)).toEqual([b.id, a.id])
   })
 
@@ -382,7 +422,7 @@ describe("booth", () => {
     // Es teh: 80 units, all for walk-ins.
     const sale = await createWalkInSale(
       { campaignId: SAMPLE_CAMPAIGN_ID, lines: [{ productId: "es-teh", variantId: "default", qty: 3 }], method: "cash" },
-      booth("kasir-1"),
+      booth("register-1"),
       NOW
     )
     expect(sale.status).toBe("picked_up")
@@ -391,7 +431,7 @@ describe("booth", () => {
     const sell = (qty: number) =>
       createWalkInSale(
         { campaignId: SAMPLE_CAMPAIGN_ID, lines: [{ productId: "es-teh", variantId: "default", qty }], method: "cash" },
-        booth("kasir-1"),
+        booth("register-1"),
         NOW
       )
     for (let i = 0; i < 3; i++) await sell(20)
@@ -403,7 +443,7 @@ describe("booth", () => {
     await expectCode(
       createWalkInSale(
         { campaignId: SAMPLE_CAMPAIGN_ID, lines: [{ productId: "es-teh", variantId: "default", qty: 21 }], method: "cash" },
-        booth("kasir-1"),
+        booth("register-1"),
         NOW
       ),
       "QTY_LIMIT"
@@ -414,7 +454,7 @@ describe("booth", () => {
     await expectCode(
       createWalkInSale(
         { campaignId: SAMPLE_CAMPAIGN_ID, lines: [{ productId: "es-teh", variantId: "default", qty: 1 }], method: "wechat", accountId: "alipay-1" },
-        booth("kasir-1"),
+        booth("register-1"),
         NOW
       ),
       "INVALID_ACCOUNT"
@@ -424,27 +464,27 @@ describe("booth", () => {
   test("booth staff undo only their own sale", async () => {
     const sale = await createWalkInSale(
       { campaignId: SAMPLE_CAMPAIGN_ID, lines: [{ productId: "es-teh", variantId: "default", qty: 1 }], method: "cash" },
-      booth("kasir-1"),
+      booth("register-1"),
       NOW
     )
-    await expectCode(cancelOrder(sale.id, booth("kasir-2"), "Salah input", NOW), "SALE_LOCKED")
-    await expectCode(cancelOrder(sale.id, booth("kasir-1"), "Salah input", new Date(NOW.getTime() + 31 * 60_000)), "SALE_LOCKED")
+    await expectCode(cancelOrder(sale.id, booth("register-2"), "Salah input", NOW), "SALE_LOCKED")
+    await expectCode(cancelOrder(sale.id, booth("register-1"), "Salah input", new Date(NOW.getTime() + 31 * 60_000)), "SALE_LOCKED")
     expect((await cancelOrder(sale.id, admin, "Salah input", NOW)).status).toBe("cancelled")
   })
 
-  test("undoing a kasir mistake returns the stock", async () => {
+  test("undoing a register mistake returns the stock", async () => {
     const sale = await createWalkInSale(
       { campaignId: SAMPLE_CAMPAIGN_ID, lines: [{ productId: "seblak", variantId: "pedas", qty: 2 }], method: "wechat", accountId: "wechat-1" },
-      booth("kasir-1"),
+      booth("register-1"),
       NOW
     )
-    await cancelOrder(sale.id, booth("kasir-1"), "Salah input", NOW)
+    await cancelOrder(sale.id, booth("register-1"), "Salah input", NOW)
     expect((await variantOf("seblak", "pedas")).walkIn).toBe(0)
   })
 
   test("canceling a paid online order releases only what wasn't handed over", async () => {
     const created = await order([{ productId: "nasi-kuning", qty: 2 }, { productId: "risoles", qty: 1 }])
-    await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1" }, NOW)
+    await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, NOW)
     await approvePayment(created.id, admin, NOW)
     await redeemOrder(created.id, booth("booth-1"), [0], NOW)
     const cancelled = await cancelOrder(created.id, admin, "Risoles habis, refund ¥10", NOW)
@@ -471,7 +511,7 @@ describe("spam limits", () => {
     await order([{ productId: "risoles", qty: 1 }], NOW, { ...who, wechatId: "someone_else" })
     await expectCode(order([{ productId: "risoles", qty: 1 }], NOW, who), "TOO_MANY_UNPAID")
 
-    await submitPaymentProof({ token: first.token, file: png, accountId: "wechat-1" }, NOW)
+    await submitPaymentProof({ token: first.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, NOW)
     const third = await order([{ productId: "risoles", qty: 1 }], NOW, who)
     await expectCode(order([{ productId: "risoles", qty: 1 }], NOW, who), "TOO_MANY_UNPAID")
 
@@ -508,13 +548,13 @@ describe("spam limits", () => {
   })
 })
 
-describe("kasir", () => {
+describe("register", () => {
   test("a repeated sale id sells once", async () => {
     const saleId = crypto.randomUUID()
     const sell = () =>
       createWalkInSale(
         { campaignId: SAMPLE_CAMPAIGN_ID, lines: [{ productId: "es-teh", variantId: "default", qty: 2 }], method: "cash", saleId },
-        booth("kasir-1"),
+        booth("register-1"),
         NOW
       )
     const [a, b] = await Promise.all([sell(), sell()])
@@ -592,7 +632,7 @@ describe("campaign settings", () => {
     tagline: "Kaos dan gantungan kunci.",
     sortOrder: 2,
     status: "draft",
-    pickupInfo: "Booth Danus, SZ Cup",
+    pickupInfo: "Booth PPIT, SZ Cup",
     onlineOpensAt: OPENED,
     onlineClosesAt: new Date("2027-03-15T23:59:00+08:00"),
     offers: { delivery: false, pickup: true, booth: true },
@@ -615,10 +655,10 @@ describe("campaign settings", () => {
 
     const updated = await saveCampaign(created.id, {
       ...created,
-      accounts: [{ ...wx, holder: "Nadia (Danus)", removeQr: true }],
+      accounts: [{ ...wx, holder: "Nadia (Treasurer)", removeQr: true }],
       cover: null,
     })
-    expect(updated.paymentAccounts[0]).toEqual({ ...wx, holder: "Nadia (Danus)" })
+    expect(updated.paymentAccounts[0]).toEqual({ ...wx, holder: "Nadia (Treasurer)" })
     expect(updated.coverImagePath).toBeUndefined()
     expect(await readMedia(qr)).toBeNull()
     expect(await readMedia(created.coverImagePath!)).toBeNull()
@@ -635,6 +675,78 @@ describe("campaign settings", () => {
     await saveCampaign(source.id, { ...source, accounts: [{ ...wx, removeQr: true }] })
     expect(await readMedia(from)).toBeNull()
     expect(await readMedia(to)).not.toBeNull()
+  })
+})
+
+describe("test orders", () => {
+  const CHECKOUT = "0b6f1c1e-3c3a-4c2e-9a51-6f0d7c1a2b3c"
+  const testOrder = (lines: { productId: string; qty: number }[], who: Buyer, extra: { checkoutId?: string } = {}) =>
+    createOnlineOrder(
+      {
+        campaignId: SAMPLE_CAMPAIGN_ID,
+        buyer: who,
+        lines: lines.map((l) => ({ variantId: "default", ...l })),
+        staff: true,
+        ...extra,
+      },
+      NOW
+    )
+
+  beforeEach(async () => {
+    await clearFirestore()
+    // Its ordering window hasn't started: staff can still try it.
+    const opensLater = { onlineOpensAt: new Date("2027-04-01T00:00:00+08:00"), onlineClosesAt: null }
+    await seedOne({ campaign: { ...sampleCampaign(OPENED), status: "draft", ...opensLater } })
+  })
+
+  test("only staff can order in a draft, whatever its dates, and their orders are tests", async () => {
+    await expectCode(order([{ productId: "risoles", qty: 1 }]), "ORDERING_NOT_OPEN")
+    const created = await testOrder([{ productId: "risoles", qty: 2 }], buyerAs("staff_nadia"))
+    expect(created.test).toBe(true)
+    expect((await getOrderByToken(created.token, NOW))!.test).toBe(true)
+    expect((await variantOf("risoles")).onlineOrdered).toBe(2)
+  })
+
+  test("staff can leave any number of test orders unpaid", async () => {
+    const who = buyerAs("staff_nadia")
+    for (let i = 0; i < 4; i++) await testOrder([{ productId: "risoles", qty: 1 }], who)
+    expect(await countTestOrders(SAMPLE_CAMPAIGN_ID)).toBe(4)
+  })
+
+  test("an open campaign's orders are real, staff or not", async () => {
+    await clearFirestore()
+    await seedOne()
+    const created = await testOrder([{ productId: "risoles", qty: 1 }], buyerAs("staff_nadia"))
+    expect(created.test).toBeUndefined()
+    expect(await countTestOrders(SAMPLE_CAMPAIGN_ID)).toBe(0)
+  })
+
+  test("a draft can't leave Draft until its test orders are deleted, which gives back their stock", async () => {
+    const who = buyerAs("staff_nadia")
+    const unpaid = await testOrder([{ productId: "risoles", qty: 2 }], who, { checkoutId: CHECKOUT })
+    const collected = await testOrder([{ productId: "risoles", qty: 1 }], who)
+    await submitPaymentProof({ token: collected.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, NOW)
+    await approvePayment(collected.id, admin, NOW)
+    await redeemOrder(collected.id, booth("booth-1"), undefined, NOW)
+    const cancelled = await testOrder([{ productId: "risoles", qty: 4 }], who)
+    await cancelOrder(cancelled.id, admin, "Coba batal", NOW)
+    expect((await variantOf("risoles")).onlineOrdered).toBe(3)
+    const proof = (await getOrderByToken(collected.token, NOW))!.payment.proofPath!
+
+    const draft = (await getCampaign(SAMPLE_CAMPAIGN_ID))!
+    const opening = { ...draft, accounts: draft.paymentAccounts, status: "open" as const }
+    await expectCode(saveCampaign(draft.id, opening), "INVALID_CAMPAIGN")
+
+    expect(await deleteTestOrders(SAMPLE_CAMPAIGN_ID)).toBe(3)
+    expect((await variantOf("risoles")).onlineOrdered).toBe(0)
+    expect(await countTestOrders(SAMPLE_CAMPAIGN_ID)).toBe(0)
+    expect(await campaignHasOrders(SAMPLE_CAMPAIGN_ID)).toBe(false)
+    expect(await getOrderByToken(unpaid.token, NOW)).toBeNull()
+    expect(await findOrderByCode(collected.code)).toBeNull()
+    expect(await findOrderByCheckout(CHECKOUT)).toBeNull()
+    expect(await readMedia(proof)).toBeNull()
+
+    expect((await saveCampaign(draft.id, opening)).status).toBe("open")
   })
 })
 
@@ -663,7 +775,7 @@ describe("several campaigns at once", () => {
   test("the queues cover every campaign", async () => {
     const merch = await createOnlineOrder({ campaignId: SAMPLE_MERCH_ID, buyer, lines: kaos }, NOW)
     const food = await order([{ productId: "nasi-kuning", qty: 1 }])
-    for (const o of [merch, food]) await submitPaymentProof({ token: o.token, file: png, accountId: "wechat-1" }, NOW)
+    for (const o of [merch, food]) await submitPaymentProof({ token: o.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, NOW)
     expect(await countAwaitingVerification()).toBe(2)
     expect(await countAwaitingVerification(SAMPLE_MERCH_ID)).toBe(1)
     expect((await listAwaitingVerification()).map((o) => o.id).sort()).toEqual([merch.id, food.id].sort())
@@ -687,7 +799,7 @@ describe("several campaigns at once", () => {
     await expectCode(save({ slug: "merch-baru" }), "INVALID_CAMPAIGN")
 
     await save({ status: "closed" })
-    await expectCode(createWalkInSale({ campaignId: merch.id, lines: kaos, method: "cash" }, booth("kasir-1"), NOW), "CAMPAIGN_CLOSED")
+    await expectCode(createWalkInSale({ campaignId: merch.id, lines: kaos, method: "cash" }, booth("register-1"), NOW), "CAMPAIGN_CLOSED")
     await expectCode(
       createOnlineOrder({ campaignId: merch.id, buyer: buyerAs("lain"), lines: kaos }, NOW),
       "ORDERING_CLOSED"
@@ -731,7 +843,7 @@ describe("bundles", () => {
     // Kaos XL: 15 units, no cap.
     await createWalkInSale(
       { campaignId: SAMPLE_CAMPAIGN_ID, lines: [{ productId: "kaos-szcup", variantId: "xl", qty: 14 }], method: "cash" },
-      booth("kasir-1"),
+      booth("register-1"),
       NOW
     )
     const results = await Promise.allSettled([
@@ -746,15 +858,15 @@ describe("bundles", () => {
     expect(xl.onlineOrdered + xl.walkIn).toBe(15)
   })
 
-  test("undoing a kasir bundle sale returns every unit", async () => {
+  test("undoing a register bundle sale returns every unit", async () => {
     const sale = await createWalkInSale(
       { campaignId: SAMPLE_CAMPAIGN_ID, lines: [bundleLine("l")], method: "cash" },
-      booth("kasir-1"),
+      booth("register-1"),
       NOW
     )
     expect(sale.items[0]!.pickedUp).toBe(true)
     expect((await variantOf("kaos-szcup", "l")).walkIn).toBe(1)
-    await cancelOrder(sale.id, booth("kasir-1"), "Salah input", NOW)
+    await cancelOrder(sale.id, booth("register-1"), "Salah input", NOW)
     expect((await variantOf("kaos-szcup", "l")).walkIn).toBe(0)
     expect((await variantOf("gantungan")).walkIn).toBe(0)
   })
@@ -824,11 +936,11 @@ describe("refunds", () => {
       { campaignId: SAMPLE_CAMPAIGN_ID, buyer, lines: [{ productId: "kaos-szcup", variantId: "m", qty: 1 }] },
       NOW
     )
-    await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1" }, NOW)
+    await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, NOW)
     await approvePayment(created.id, admin, NOW)
     const later = new Date(NOW.getTime() + 60_000)
     await cancelOrder(created.id, admin, "Ukuran habis", later)
-    await expectCode(recordRefund(created.id, booth("kasir-1"), { amountFen: 8000, method: "wechat", note: "" }), "NOT_ALLOWED")
+    await expectCode(recordRefund(created.id, booth("register-1"), { amountFen: 8000, method: "wechat", note: "" }), "NOT_ALLOWED")
 
     await recordRefund(created.id, admin, { amountFen: 8000, method: "wechat", note: "ke wxid budi" }, later)
     const stored = (await getOrderByToken(created.token, later))!
@@ -877,7 +989,7 @@ describe("delivery", () => {
       now
     )
   const pay = async (id: string, token: string, now = NOW) => {
-    await submitPaymentProof({ token, file: png, accountId: "wechat-1" }, now)
+    await submitPaymentProof({ token, file: png, accountId: "wechat-1", transactionDigits: TXN }, now)
     await approvePayment(id, admin, now)
   }
 
@@ -954,7 +1066,7 @@ describe("delivery", () => {
     expect((await getOrderByToken(created.token, NOW))!.refund?.amountFen).toBe(2500)
   })
 
-  test("without a booth: no kasir sales, and the online cap no longer holds stock back", async () => {
+  test("without a booth: no register sales, and the online cap no longer holds stock back", async () => {
     await seedOne({ campaign: { ...sampleCampaign(OPENED), offers: { delivery: true, pickup: true, booth: false } } })
     await expectCode(
       createWalkInSale({ campaignId: SAMPLE_CAMPAIGN_ID, lines: [{ productId: "risoles", variantId: "default", qty: 1 }], method: "cash" }, admin, NOW),
@@ -1003,6 +1115,8 @@ describe("buyer profiles", () => {
       name: "Sari W",
       wechatId: "sari_w",
       phone: "123",
+      birthday: "",
+      cohortYear: null,
       avatarPath: "",
       providerAvatarPath: "",
       createdAt: NOW,
@@ -1017,6 +1131,30 @@ describe("buyer profiles", () => {
     await saveBuyerProfile(account, { name: "Sari", wechatId: "sari", phone: "" }, NOW)
     await ensureBuyerProfile({ ...account, email: "baru@test.test" }, "Lain")
     expect(await getBuyerProfile(account.uid)).toMatchObject({ name: "Sari", wechatId: "sari", email: "baru@test.test" })
+  })
+
+  test("share the old website's record, with WeChat ID and phone kept out of it (ADR 0014)", async () => {
+    // As the old website leaves it after its own sign-up.
+    await db().collection("users").doc(account.uid).set({
+      email: account.email,
+      name: "Sari",
+      admin: false,
+      status: "active",
+      birthday: "2004-08-17",
+      cohortYear: 2023,
+      submittedForms: ["f1"],
+    })
+    expect(await getBuyerProfile(account.uid)).toMatchObject({ name: "Sari", birthday: "2004-08-17", cohortYear: 2023, phone: "" })
+
+    // Checkout saves name and contact only: the rest of the record stays.
+    await saveBuyerProfile(account, { name: "Sari W", wechatId: "sari_w", phone: "123" }, NOW)
+    const shared = (await db().collection("users").doc(account.uid).get()).data()!
+    expect(shared).toMatchObject({ name: "Sari W", birthday: "2004-08-17", cohortYear: 2023, submittedForms: ["f1"], status: "active" })
+    expect(shared).not.toHaveProperty("phone")
+    expect(shared).not.toHaveProperty("wechatId")
+    const contact = (await db().collection("users").doc(account.uid).collection("private").doc("contact").get()).data()
+    expect(contact).toMatchObject({ wechatId: "sari_w", phone: "123" })
+    expect(await getBuyerProfile(account.uid)).toMatchObject({ name: "Sari W", wechatId: "sari_w", phone: "123", birthday: "2004-08-17" })
   })
 })
 

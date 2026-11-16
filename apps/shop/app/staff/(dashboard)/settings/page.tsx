@@ -10,10 +10,11 @@ import { siteOrigin } from "@/lib/server/site-url"
 import { pickedCampaign } from "@/lib/server/dashboard-campaign"
 import { mediaUrl } from "@/lib/catalog"
 import { toShenzhenInput } from "@/lib/shenzhen-time"
-import { campaignHasOrders, listCampaigns, listProducts } from "@/lib/store"
+import { campaignHasOrders, countTestOrders, listCampaigns, listProducts } from "@/lib/store"
 import { CampaignForm, type CampaignFormValues } from "@/components/staff/campaign-form"
 import { CampaignSwitcher } from "@/components/staff/campaign-switcher"
 import { DeleteCampaignButton } from "@/components/staff/delete-campaign-button"
+import { DeleteTestOrdersButton } from "@/components/staff/delete-test-orders-button"
 import { TestAlertButton } from "@/components/staff/test-alert-button"
 
 export const metadata: Metadata = { title: "Settings" }
@@ -24,10 +25,12 @@ export default async function SettingsPage() {
   const campaigns = await listCampaigns()
   const campaign = await pickedCampaign(campaigns)
   if (!campaign) redirect("/staff/settings/new")
-  const [locked, products] = await Promise.all([
+  const [locked, products, testOrders] = await Promise.all([
     campaignHasOrders(campaign.id),
     listProducts(campaign.id, { includeInactive: true }),
+    countTestOrders(campaign.id),
   ])
+  const draft = campaign.status === "draft"
 
   const values: CampaignFormValues = {
     name: campaign.name,
@@ -69,9 +72,14 @@ export default async function SettingsPage() {
         <CampaignSwitcher campaigns={campaigns} currentId={campaign.id} />
         <div className="flex flex-wrap items-end justify-between gap-4">
           <h1 className="type-display-xl text-text">Settings</h1>
-          <NextLink href="/staff/settings/new" className={buttonVariants()}>
-            Create new campaign
-          </NextLink>
+          <div className="flex flex-wrap gap-2">
+            <NextLink href={`/${campaign.slug}`} className={buttonVariants()}>
+              {draft ? "Open draft" : "Open catalog"}
+            </NextLink>
+            <NextLink href="/staff/settings/new" className={buttonVariants()}>
+              Create new campaign
+            </NextLink>
+          </div>
         </div>
         <p className="max-w-[66ch] type-lede text-muted">
           URL name, status, ways of selling, delivery slots, pickup place and payment accounts. Changes show
@@ -94,11 +102,37 @@ export default async function SettingsPage() {
         products={products.map(({ id, name }) => ({ id, name }))}
       />
 
+      {(draft || testOrders > 0) && (
+        <section aria-labelledby="test-orders" className="flex flex-col items-start gap-3 border-t pt-8">
+          <h2 id="test-orders" className="type-heading-lg text-text">
+            Test orders
+          </h2>
+          <p className="max-w-[66ch] type-body-sm text-muted">
+            While a campaign is a draft, staff can <NextLink href={`/${campaign.slug}`}>open it</NextLink> and order
+            as a buyer would. Those orders are test orders: they take stock and can be paid, verified, scanned and
+            delivered. Delete them before you change the status from Draft.
+          </p>
+          <p className="type-body-sm text-text">
+            {testOrders === 0
+              ? "No test orders."
+              : testOrders === 1
+                ? "1 test order."
+                : `${testOrders} test orders.`}{" "}
+            <NextLink href={`/staff/orders?campaign=${campaign.id}`}>See orders</NextLink>
+          </p>
+          <DeleteTestOrdersButton campaignId={campaign.id} count={testOrders} />
+        </section>
+      )}
+
       <section aria-labelledby="delete-campaign" className="flex flex-col items-start gap-3 border-t pt-8">
         <h2 id="delete-campaign" className="type-heading-lg text-text">
           Delete campaign
         </h2>
-        {locked ? (
+        {locked && testOrders > 0 ? (
+          <p className="max-w-[66ch] type-body-sm text-muted">
+            This campaign has test orders. Delete them above first.
+          </p>
+        ) : locked ? (
           <p className="max-w-[66ch] type-body-sm text-muted">
             This campaign has orders, so it can't be deleted. Set its status to Ended to take it off the
             main page.

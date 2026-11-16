@@ -4,7 +4,7 @@ import { HOLDING_STATUSES, type Campaign, type DeliverySlot, type Order, type Or
 
 /*
  * Delivery and Pickup. An online order with a
- * `delivery` is delivered whole, by a Danus member or a courier; one without
+ * `delivery` is delivered whole, by a staff member or a courier; one without
  * is collected at the campaign's pickup, as before.
  */
 

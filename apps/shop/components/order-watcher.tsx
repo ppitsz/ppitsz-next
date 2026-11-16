@@ -15,7 +15,7 @@ function delay(elapsed: number) {
 }
 
 /**
- * Refreshes the buyer's order page when Danus approves, rejects or hands
+ * Refreshes the buyer's order page when staff approve, reject or hand
  * over, so the QR appears without a reload. Polls a one-read endpoint and
  * re-renders the page only when the order changed.
  */

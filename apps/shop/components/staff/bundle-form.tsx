@@ -288,7 +288,7 @@ export function BundleForm({
           <FieldContent>
             <FieldLabel htmlFor="bundle-for-sale">For sale</FieldLabel>
             <FieldDescription id="bundle-for-sale-helper">
-              Shown in the catalog and the kasir. Untick to hide the bundle without deleting it.
+              Shown in the catalog and the register. Untick to hide the bundle without deleting it.
             </FieldDescription>
           </FieldContent>
         </Field>
@@ -360,7 +360,7 @@ export function DeleteBundleButton({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete {name}?</AlertDialogTitle>
           <AlertDialogDescription>
-            The bundle leaves the catalog and the kasir. Its products and existing orders don't change.
+            The bundle leaves the catalog and the register. Its products and existing orders don't change.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

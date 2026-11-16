@@ -65,9 +65,9 @@ export interface SlotRow {
 }
 
 const OFFER_LABELS: Record<keyof CampaignOffers, { label: string; help: string }> = {
-  delivery: { label: "Delivery", help: "Online orders are delivered to the buyer's address, by Danus or a courier." },
+  delivery: { label: "Delivery", help: "Online orders are delivered to the buyer's address, by us or a courier." },
   pickup: { label: "Pickup", help: "Online orders are picked up at the pickup place, with a QR code." },
-  booth: { label: "Booth", help: "Sell in person at the kasir. Without a booth, all stock can be ordered online." },
+  booth: { label: "Booth", help: "Sell in person at the register. Without a booth, all stock can be ordered online." },
 }
 
 const DETAIL_LABELS: Record<AccountMethod, string> = {
@@ -352,7 +352,7 @@ export function CampaignForm({
               id="pickup"
               value={pickupInfo}
               maxLength={120}
-              placeholder="Danus booth at SZ Cup · Wed, Mar 17, 2027, 09:00–17:00"
+              placeholder="PPIT booth at SZ Cup · Wed, Mar 17, 2027, 09:00–17:00"
               onChange={(e) => setPickupInfo(e.target.value)}
               aria-describedby="pickup-helper"
             />
@@ -556,7 +556,7 @@ export function CampaignForm({
                     id={`holder-${account.id}`}
                     value={account.holder}
                     maxLength={60}
-                    placeholder="Nadia (Bendahara Danus)"
+                    placeholder="Nadia (Treasurer)"
                     onChange={(e) => update(account.id, { holder: e.target.value })}
                   />
                 </Field>

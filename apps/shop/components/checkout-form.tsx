@@ -96,6 +96,14 @@ export function CheckoutForm({ catalog, profile }: { catalog: Catalog; profile: 
 
   return (
     <div className="flex flex-col gap-10">
+      {catalog.testOrdering && (
+        <Alert variant="warning">
+          <AlertTitle>Test order</AlertTitle>
+          <AlertDescription>
+            This campaign is a draft, so this order is a test. It takes stock until it's deleted in Settings.
+          </AlertDescription>
+        </Alert>
+      )}
       <section aria-labelledby="summary" className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-4">
           <h2 id="summary" className="type-heading-lg text-text">
@@ -166,7 +174,7 @@ export function CheckoutForm({ catalog, profile }: { catalog: Catalog; profile: 
           <TextField
             name="wechatId"
             label="WeChat ID"
-            helper="Danus contacts you here if there's a problem with an order."
+            helper="We contact you here if there's a problem with an order."
             autoComplete="off"
             error={state.fieldErrors?.wechatId}
             {...field("wechatId")}
@@ -175,7 +183,7 @@ export function CheckoutForm({ catalog, profile }: { catalog: Catalog; profile: 
             name="phone"
             label="Phone number"
             optional={!delivering}
-            helper={delivering ? "For the courier or the Danus member delivering." : undefined}
+            helper={delivering ? "For whoever delivers your order." : undefined}
             type="tel"
             autoComplete="tel"
             error={state.fieldErrors?.phone}

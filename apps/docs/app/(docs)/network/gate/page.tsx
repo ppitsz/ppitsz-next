@@ -37,7 +37,7 @@ export default function GatePage() {
         intro={
           <p>
             It replaces the camera until the next scan. The symbol, the title and the color always
-            agree, and the title says it in words, so it works for color-blind panitia and in sunlight.
+            agree, and the title says it in words, so it works for color-blind organizers and in sunlight.
           </p>
         }
       >

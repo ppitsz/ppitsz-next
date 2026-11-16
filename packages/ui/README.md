@@ -11,7 +11,7 @@ The PPIT Shenzhen design system, documented in `apps/docs` with one page per fou
 | `@ppitsz/ui/components/network/<name>` | `route` (Route, Station, Interchange, RouteList, RouteStop), `line-badge`, `station-label`, `route-tracker`, `strip-map`, `route-strip`, `sign` (SignBoard, Sign, SignPictogram, ExitBadge), `station-code`, `station-nameplate`, `network-map`, `campus-line` |
 | `@ppitsz/ui/components/og/<name>` | `station-sign` (OgStationSign): the share image, for next/og |
 | `@ppitsz/ui/components/blocks/<name>` | `departure-board`, `timetable`, `ticket`, `gate`, `service-notice`, `profile-menu`, `member-card`, `article-card`, `site-header`, `site-footer`, `theme-control`, `wechat-dialog`, `brand` (PpiMark, SkipLink, LanguageSwitcher) |
-| `@ppitsz/ui/lib/<name>` | `utils` (`cn`), `network` (divisions, campuses, oprec stages, status labels), `format` (dates, times with WIB, numbers, bylines), `nav` (`NavLink`, `TransferLink`), `raw-colors` (the palette as hex, for emails and share images only), `shrink-image` (browser-side image shrinking before upload) |
+| `@ppitsz/ui/lib/<name>` | `utils` (`cn`), `network` (divisions, campuses, recruitment stages, status labels), `format` (dates, times with WIB, numbers, bylines), `nav` (`NavLink`, `TransferLink`), `raw-colors` (the palette as hex, for emails and share images only), `shrink-image` (browser-side image shrinking before upload) |
 | `@ppitsz/ui/hooks/<name>` | `use-navigation-pending` (the header's loading train) |
 
 Blocks take images through a `media` slot and links through `linkAs`, so apps pass `next/image` and `next/link` without the package depending on them.

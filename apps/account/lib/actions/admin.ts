@@ -45,6 +45,7 @@ function wantedRoles(formData: FormData) {
     shop: isShopRole(shop) ? shop : null,
     forms: formData.get("formsAdmin") === "on" ? "admin" : null,
     portal: formData.get("portalAdmin") === "on" ? "admin" : null,
+    site: formData.get("siteAdmin") === "on" ? "admin" : null,
   }
 }
 
@@ -66,7 +67,7 @@ export async function addPersonAction(_prev: ActionState, formData: FormData): P
     const account = await ensureAccount(email, name, password)
     const target = { uid: account.uid, email, name: account.name }
     const wanted = wantedRoles(formData)
-    for (const app of ["shop", "forms", "portal"] as const) {
+    for (const app of ["shop", "forms", "portal", "site"] as const) {
       if (wanted[app]) await setRole(actorOf(session), target, app, wanted[app])
     }
     revalidatePath("/accounts")
@@ -90,6 +91,7 @@ export async function saveRolesAction(uid: string, _prev: ActionState, formData:
     if (wanted.shop !== current.shop) await setRole(actorOf(session), target, "shop", wanted.shop, now)
     if (!!wanted.forms !== current.formsAdmin) await setRole(actorOf(session), target, "forms", wanted.forms, now)
     if (!!wanted.portal !== current.portalAdmin) await setRole(actorOf(session), target, "portal", wanted.portal, now)
+    if (!!wanted.site !== current.siteAdmin) await setRole(actorOf(session), target, "site", wanted.site, now)
     revalidatePath(`/accounts/${uid}`)
     revalidatePath("/accounts")
     return { done: Date.now(), message: "Saved. It works on their next page." }
