@@ -80,6 +80,19 @@ export const accountOrigin = () => appOrigin("account")
 export const shopOrigin = () => appOrigin("shop")
 export const formsOrigin = () => appOrigin("forms")
 
+/** The old website's dev port: apps/docs already has Next's default, 3000. */
+const SITE_PORT = 3004
+
+/**
+ * The old main website (www.ppitshenzhen.org, its own repo). It signs in
+ * through PPITSZ Account (ADR 0015), so sign-in may send people back to it.
+ * It isn't one of our apps: it has no entry in APPS and no Transfer link.
+ */
+export function siteOrigin() {
+  const root = rootDomain()
+  return root ? `https://www.${root}` : `http://localhost:${SITE_PORT}`
+}
+
 /** Another app, as the header's Transfer menu and the footer list it. */
 export interface TransferApp {
   href: string
@@ -101,14 +114,14 @@ export function signInUrl(next: string) {
   return `${accountOrigin()}/sign-in?next=${encodeURIComponent(next)}`
 }
 
-/** The account app first, then every other live app: safeNext's default. */
+/** The account app first, then every other live app and the old website: safeNext's default. */
 function ownOrigins() {
-  return [accountOrigin(), ...APP_IDS.filter((id) => id !== "account" && appLive(id)).map(appOrigin)]
+  return [accountOrigin(), ...APP_IDS.filter((id) => id !== "account" && appLive(id)).map(appOrigin), siteOrigin()]
 }
 
 /**
  * Where to go after signing in: a path on the account app, or a full URL on
- * one of our own apps, so a crafted `?next=` can't send anyone elsewhere.
+ * one of our own apps or the old website, so a crafted `?next=` can't send anyone elsewhere.
  * The apps are listed one by one, never as "any subdomain": a forgotten DNS
  * record pointing at someone else's host must not become a redirect target.
  *

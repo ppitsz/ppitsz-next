@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test"
 
 import { cleanMember, cleanProfile, cohortYears, generatePassword, isProfileComplete, passwordIssue } from "./fields"
 import { roleLabel } from "./role-labels"
-import { appOrigin, rootDomain, safeNext, sessionCookieDomain, transferApps } from "./urls"
+import { appOrigin, rootDomain, safeNext, sessionCookieDomain, siteOrigin, transferApps } from "./urls"
 
 const ORIGINS = ["https://account.ppitshenzhen.org", "https://shop.ppitshenzhen.org", "https://forms.ppitshenzhen.org"]
 
@@ -141,6 +141,24 @@ describe("app origins", () => {
     expect(sessionCookieDomain()).toBe(".preview.ppitshenzhen.org")
     expect(safeNext("https://shop.preview.ppitshenzhen.org/x")).toBe("https://shop.preview.ppitshenzhen.org/x")
     expect(safeNext("https://shop.ppitshenzhen.org/x")).toBe("/")
+  })
+
+  test("sign-in may return to the old website at www, nowhere that only looks like it", () => {
+    delete process.env.ROOT_DOMAIN
+    process.env.VERCEL = "1"
+    expect(siteOrigin()).toBe("https://www.ppitshenzhen.org")
+    const back = "https://www.ppitshenzhen.org/login?from=account&next=%2Fform"
+    expect(safeNext(back)).toBe(back)
+    for (const next of ["https://ppitshenzhen.org/login", "https://www.ppitshenzhen.org.evil.example/login", "http://www.ppitshenzhen.org/login"]) {
+      expect(safeNext(next)).toBe("/")
+    }
+    expect(transferApps("shop").map((app) => app.href)).not.toContain(siteOrigin())
+  })
+
+  test("locally, the old website is on port 3004", () => {
+    delete process.env.ROOT_DOMAIN
+    delete process.env.VERCEL
+    expect(safeNext("http://localhost:3004/login?next=%2F")).toBe("http://localhost:3004/login?next=%2F")
   })
 
   test("the Transfer menu leaves out the current app", () => {

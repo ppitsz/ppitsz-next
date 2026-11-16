@@ -8,9 +8,10 @@ import { Card, CardContent } from "@ppitsz/ui/components/card"
 import { Container } from "@ppitsz/ui/components/container"
 import { googleConfigured, googleError } from "@ppitsz/accounts/google"
 import { getSession } from "@ppitsz/accounts/session"
-import { formsOrigin, safeNext, shopOrigin } from "@ppitsz/accounts/urls"
+import { formsOrigin, safeNext, shopOrigin, siteOrigin } from "@ppitsz/accounts/urls"
 import { SignInForm } from "@/components/auth-forms"
 import { ContinueWithGoogle } from "@/components/google-button"
+import { afterSignIn } from "@/lib/server/auth"
 
 export const metadata: Metadata = { title: "Sign in" }
 
@@ -23,6 +24,7 @@ function purpose(next: string) {
   if (next.startsWith(shopOrigin())) return "Sign in to order and follow your orders."
   if (next.startsWith(`${formsOrigin()}/staff`)) return "Sign in to the Forms dashboard."
   if (next.startsWith(formsOrigin())) return "Sign in, and your name and email are filled in for you."
+  if (next.startsWith(siteOrigin())) return "Sign in to fill in our forms and sign up for our events."
   return "One account for the PPIT Shenzhen shop, forms and every other PPIT Shenzhen app."
 }
 
@@ -30,7 +32,8 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
   await connection()
   const params = await searchParams
   const next = safeNext(first(params.next))
-  if (await getSession()) redirect(next)
+  const session = await getSession()
+  if (session) redirect(await afterSignIn(session.uid, next))
   const googleProblem = googleError(first(params.google))
 
   return (

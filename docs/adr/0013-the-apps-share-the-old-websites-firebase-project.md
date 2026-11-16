@@ -26,7 +26,7 @@ Every app uses `ppitsz`, in production and in development. The old site keeps it
 
 ## Consequences
 
-- One Auth pool. The old site signs in with Google only, so its accounts have no password: they get into PPITSZ Account through our Google sign-in (ADR 0011), which finds the same account by its Google account, not by the OAuth client, and can then add a password. Profiles and roles moved onto the old `users/{uid}` too (ADR 0014). Disabling an account affects the old site too.
+- One Auth pool. The old site signs in with Google only, so its accounts have no password: they get into PPITSZ Account through our Google sign-in (ADR 0011), which finds the same account by its Google account, not by the OAuth client, and can then add a password. Profiles and roles moved onto the old `users/{uid}` too (ADR 0014). The old site now signs in through PPITSZ Account as well (ADR 0015). Disabling an account affects the old site too.
 - Development reads and writes the live old site's data. Local runs need the same care as production; the automated tests still use only the throwaway emulator.
 - The project-wide Auth settings (authorized domains, email templates, password policy) are shared with the old site. Change them knowing both sites use them.
 - A Firestore rules deploy replaces whatever is live. Anyone with an old copy of the rules must not deploy it; change `firebase/firestore.rules` instead.
