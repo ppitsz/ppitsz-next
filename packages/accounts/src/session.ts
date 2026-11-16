@@ -24,7 +24,7 @@ import { sessionCookieDomain } from "./urls"
 
 export const SESSION_COOKIE = "ppitsz_session"
 
-/** The longest session Firebase allows. */
+/** The longest session Firebase allows: 14 days. */
 export const SESSION_MAX_AGE_SECONDS = 14 * 24 * 60 * 60
 
 export interface Session {
