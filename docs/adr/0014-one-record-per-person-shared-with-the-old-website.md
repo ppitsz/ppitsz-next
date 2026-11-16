@@ -25,7 +25,7 @@ The old website reads and writes `users/{uid}` from the browser, and its rules l
 - One name, birthday and intake year for both websites, and one place to manage every role, the old website's admins included. Nothing moved: the old records were already the right ones.
 - Our apps depend on the old website's field names until it is retired. Renaming one breaks both.
 - Reading a profile takes two documents (the record and its contact). Role checks still take one.
-- Everyone with a role can be seen by any signed-in browser through the old rules, as the old `admin` flag always could. WeChat ID and phone can't.
-- Once the old website's email jobs stop reading `users` while signed out and its rules let people read only their own record, WeChat ID and phone can move onto the record itself.
+- Everyone with a role can be seen by any signed-in browser through the old rules, as the old `admin` flag always could. WeChat ID and phone can't. (Since ADR 0016, members read only their own record.)
+- Once the old website's email jobs stop reading `users` while signed out and its rules let people read only their own record, WeChat ID and phone can move onto the record itself. (Possible since ADR 0016.)
 - The old website's own admin page still turns `admin` on and off, logged in its `adminHistory`, not in `roleChanges`.
 - Shop buyers are asked for a birthday and intake year like everyone else.

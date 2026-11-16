@@ -22,10 +22,9 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Server requests
-    function isServerRequest() {
-      return request.auth == null;
-    }
+    // Nothing is open to signed-out requests on the grounds that they might be
+    // the old website's server: since 2026-11-16 its email routes and crons use
+    // the Admin SDK, which bypasses these rules (ADR 0016).
 
     match /adminHistory/{document} {
       allow read: if isAdmin();
@@ -39,7 +38,7 @@ service cloud.firestore {
 
       match /responses/{responseId} {
           allow read: if isAdmin();
-          allow create: if isAuthenticated() || isServerRequest();
+          allow create: if isAuthenticated();
           allow update, delete: if false;
       }
     }
@@ -61,7 +60,8 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isAuthenticated() || isServerRequest();
+      // Your own record; admins read everyone's (the admin status page).
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       // Your own document, once, and never as an admin or with roles: only
       // admins grant `admin`, and `roles` are granted on the server (2026-11-16).
       allow create: if isAuthenticated() && request.auth.uid == userId
@@ -75,10 +75,7 @@ service cloud.firestore {
     }
 
     match /emailSends/{document} {
-      allow read: if isAdmin() || isServerRequest();
-      allow create: if isAdmin() || isServerRequest();
-      allow update: if isAdmin() || isServerRequest();
-      allow delete: if isAdmin() || isServerRequest();
+      allow read, create, update, delete: if isAdmin();
     }
 
     match /birthdayTemplates/{document} {
