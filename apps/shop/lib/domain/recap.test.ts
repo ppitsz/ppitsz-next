@@ -154,6 +154,6 @@ describe("the pickup list", () => {
         { productId: "kaos", variantId: "m", name: "Kaos", variantLabel: "M", priceFen: 8000, qty: 2, pickedUp: false, nicknames: ["Budi", "Ani"] },
       ],
     })
-    expect(pickupList([named])[0]!.items).toEqual(["2× Kaos · M – nickname: Budi, Ani"])
+    expect(pickupList([named])[0]!.items).toEqual(["2× Kaos · M – Names: Budi, Ani"])
   })
 })

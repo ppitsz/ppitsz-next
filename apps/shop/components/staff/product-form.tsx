@@ -365,9 +365,9 @@ export function ProductForm({
               aria-describedby="allow-nickname-helper"
             />
             <FieldContent>
-              <FieldLabel htmlFor="allow-nickname">Custom nickname</FieldLabel>
+              <FieldLabel htmlFor="allow-nickname">Custom name</FieldLabel>
               <FieldDescription id="allow-nickname-helper">
-                At checkout, buyers write a nickname for every unit. Staff see it on the order. Online orders only;
+                At checkout, buyers write a custom name for every unit. Staff see it on the order. Online orders only;
                 the register doesn't ask for it.
               </FieldDescription>
             </FieldContent>

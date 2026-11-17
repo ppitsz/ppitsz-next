@@ -54,7 +54,7 @@ export function ordersCsv(
       "Email",
       "Item",
       "Variant or bundle contents",
-      "Nicknames",
+      "Custom names",
       "Qty",
       "Unit price (¥)",
       "Subtotal (¥)",

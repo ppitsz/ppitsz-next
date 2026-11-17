@@ -1,5 +1,5 @@
 import { fulfillmentOf, type Fulfillment } from "./delivery"
-import { awaitsRefund, isBundleItem, itemNicknames, refundDue } from "./order"
+import { awaitsRefund, customNamesLabel, isBundleItem, refundDue } from "./order"
 import { availability } from "./stock"
 import type { Bundle, Campaign, Channel, Order, OrderItem, PaymentMethod, Product } from "./types"
 
@@ -277,7 +277,7 @@ export interface PickupEntry {
   code: string
   name: string
   wechatId: string
-  /** "2× Kaos SZ Cup 2027 · M – nickname: Budi, Ani" per item still to hand over. */
+  /** "2× Kaos SZ Cup 2027 · M – Names: Budi, Ani" per item still to hand over. */
   items: string[]
 }
 
@@ -297,8 +297,8 @@ export function pickupList(orders: Order[]): PickupEntry[] {
       items: o.items
         .filter((i) => !i.pickedUp)
         .map((i) => {
-          const nicknames = itemNicknames(i)
-          return `${i.qty}× ${i.name}${i.variantLabel ? ` · ${i.variantLabel}` : ""}${nicknames.length ? ` – nickname: ${nicknames.join(", ")}` : ""}`
+          const names = customNamesLabel(i)
+          return `${i.qty}× ${i.name}${i.variantLabel ? ` · ${i.variantLabel}` : ""}${names ? ` – ${names}` : ""}`
         }),
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "id", { sensitivity: "base" }) || a.code.localeCompare(b.code))

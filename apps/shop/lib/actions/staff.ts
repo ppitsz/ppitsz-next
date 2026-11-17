@@ -17,7 +17,7 @@ import { requireStaff } from "../server/auth"
 import { parseCart } from "../domain/cart"
 import { ERROR_MESSAGES } from "../domain/errors"
 import { can, type StaffActor } from "../domain/lifecycle"
-import { parseScan } from "../domain/order"
+import { itemNicknames, parseScan } from "../domain/order"
 import { PAYMENT_METHODS, type Order, type OrderStatus, type PaymentMethod } from "../domain/types"
 import { orderPath } from "../order-path"
 import { reportError } from "../server/alerts"
@@ -272,7 +272,8 @@ export interface ScannedOrder {
   status: OrderStatus
   buyerName: string | null
   wechatId: string | null
-  items: { name: string; variantLabel: string; qty: number; pickedUp: boolean }[]
+  /** `nicknames`: the custom name of each unit, for products that take one. */
+  items: { name: string; variantLabel: string; qty: number; pickedUp: boolean; nicknames?: string[] }[]
   totalFen: number
   pickedUpAt: Date | null
   handledByName: string | null
@@ -344,11 +345,12 @@ async function toScanned(order: Order, staff: StaffActor): Promise<ScannedOrder>
     status: order.status,
     buyerName: order.buyer?.name ?? null,
     wechatId: order.buyer?.wechatId ?? null,
-    items: order.items.map(({ name, variantLabel, qty, pickedUp }) => ({
-      name,
-      variantLabel,
-      qty,
-      pickedUp,
+    items: order.items.map((item) => ({
+      name: item.name,
+      variantLabel: item.variantLabel,
+      qty: item.qty,
+      pickedUp: item.pickedUp,
+      ...(itemNicknames(item).length > 0 && { nicknames: itemNicknames(item) }),
     })),
     totalFen: order.totalFen,
     pickedUpAt: order.pickedUpAt,

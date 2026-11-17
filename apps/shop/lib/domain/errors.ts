@@ -30,7 +30,7 @@ export const ERROR_MESSAGES = {
   INVALID_TRANSACTION_DIGITS: "Type the last 6 digits of your payment's transaction number.",
   INVALID_CART: "Your cart couldn't be read. Reload the page.",
   QTY_LIMIT: "That quantity is too high.",
-  NICKNAME_REQUIRED: "Write a nickname for every item with a custom name.",
+  NICKNAME_REQUIRED: "Write a custom name for every item that takes one.",
   CAMPAIGN_CLOSED: "This campaign isn't open right now.",
   INVALID_CAMPAIGN: "The campaign settings aren't right yet.",
   CAMPAIGN_IN_USE: "A campaign with orders can't be deleted. Set its status to Ended instead.",

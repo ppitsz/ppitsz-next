@@ -19,6 +19,7 @@ import { notify } from "@ppitsz/ui/components/sonner"
 import { useGateSignal } from "@ppitsz/ui/hooks/use-gate-signal"
 import { formatTime } from "@ppitsz/ui/lib/format"
 import { handOverAction, lookupScanAction, type ScanResult, type ScannedOrder } from "@/lib/actions/staff"
+import { customNamesLabel } from "@/lib/domain/order"
 import { OrderStatusBadge, when } from "./order-bits"
 import { TestBadge } from "../test-badge"
 import { decodeImageFile, useQrCamera, type CameraState } from "./qr-camera"
@@ -294,7 +295,7 @@ function ScanResultCard({
           <AlertTitle>Delivery order · {order.delivery.slot}</AlertTitle>
           <AlertDescription>
             Meant to be delivered to {order.delivery.address}. If the buyer is picking it up, hand over everything
-            sekaligus.
+            at once.
           </AlertDescription>
         </Alert>
       )}
@@ -304,7 +305,8 @@ function ScanResultCard({
           {canHandOver && <p className="mb-3 type-ui text-text">Tick the items you hand over</p>}
           <ul className="flex flex-col">
             {order.items.map((item, i) => {
-              const label = `${item.qty}× ${item.name}${item.variantLabel ? ` · ${item.variantLabel}` : ""}`
+              const names = customNamesLabel(item)
+              const label = `${item.qty}× ${item.name}${item.variantLabel ? ` · ${item.variantLabel}` : ""}${names ? ` – ${names}` : ""}`
               return (
                 <li key={i} className="border-t first:border-t-0">
                   {canHandOver && !item.pickedUp ? (

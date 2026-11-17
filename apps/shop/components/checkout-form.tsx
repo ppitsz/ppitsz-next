@@ -343,9 +343,21 @@ export function CheckoutForm({ catalog, profile }: { catalog: Catalog; profile: 
           </Alert>
         )}
 
-        <Button type="submit" variant="primary" size="lg" loading={pending} disabled={hasShortage || noSlot || missingNickname}>
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          loading={pending}
+          disabled={hasShortage || noSlot || missingNickname}
+          aria-describedby={missingNickname ? "missing-custom-name" : undefined}
+        >
           {pending ? "Placing order…" : "Place order"}
         </Button>
+        {missingNickname && (
+          <p id="missing-custom-name" className="type-body-sm text-muted">
+            Write a custom name for every item under Custom names to place your order.
+          </p>
+        )}
       </form>
     </div>
   )

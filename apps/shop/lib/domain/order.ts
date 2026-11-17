@@ -200,6 +200,16 @@ export function itemNicknames(item: OrderItem): string[] {
   return isBundleItem(item) ? [] : (item.nicknames ?? [])
 }
 
+/**
+ * How an item's custom names read wherever the item is listed: "Name: Budi"
+ * or "Names: Budi, Ani". Undefined when the item has none.
+ */
+export function customNamesLabel(item: OrderItem | { nicknames?: string[] }): string | undefined {
+  const names = "nicknames" in item ? (item.nicknames ?? []) : []
+  if (names.length === 0) return undefined
+  return `${names.length === 1 ? "Name" : "Names"}: ${names.join(", ")}`
+}
+
 /** The variant units `items` took from stock: a bundle's contents, times how many bundles. */
 export function stockUnits(items: OrderItem[]) {
   return items.flatMap((item) =>
