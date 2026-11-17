@@ -22,7 +22,7 @@ const PRINCIPLES = [
     name: "Satu jaringan",
     en: "One network",
     body: "Show how things connect: who runs an event, where it happens, how far along a process is.",
-    does: "Every event row shows its division's line badge and its campus station; oprec status is a route with the applicant's stop marked.",
+    does: "Every event row shows its division's line badge and its campus station; a recruitment application is a route with the applicant's stop marked.",
     doesnt: "Decorative metro maps, or lines and dots that connect nothing.",
   },
   {
@@ -103,8 +103,8 @@ export default function OverviewPage() {
             ],
             [<strong key="l">Station</strong>, "A campus or an event venue."],
             [<strong key="l">Interchange</strong>, "Where lines meet: a joint event, or a campus served by many divisions."],
-            [<strong key="l">Route</strong>, "Any sequence: the oprec stages, the year's events, the sections of a long page."],
-            [<strong key="l">“You are here”</strong>, "Today's position on a timeline, or the applicant's current oprec stage."],
+            [<strong key="l">Route</strong>, "Any sequence: the recruitment stages, the year's events, the sections of a long page."],
+            [<strong key="l">“You are here”</strong>, "Today's position on a timeline, or the applicant's current recruitment stage."],
             [<strong key="l">Departure board</strong>, "The list of upcoming events."],
           ]}
         />

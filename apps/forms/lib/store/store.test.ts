@@ -23,7 +23,7 @@ import { toDraft } from "../domain/definition"
 
 /*
  * Against the Firestore emulator (bun run test:emulator): the transactions
- * that guard quotas, one-ticket-per-email, absen and cancellation.
+ * that guard quotas, one-ticket-per-email, check-in and cancellation.
  */
 
 const now = new Date()

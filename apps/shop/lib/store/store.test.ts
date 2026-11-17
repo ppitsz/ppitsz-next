@@ -253,7 +253,7 @@ describe("online orders", () => {
   test("an overdue order refuses staff commands and is expired by the attempt", async () => {
     const held = await order([{ productId: "risoles", qty: 2 }])
     const later = new Date(held.expiresAt!.getTime() + 1)
-    await expectCode(cancelOrder(held.id, admin, "Batal", later), "ORDER_EXPIRED")
+    await expectCode(cancelOrder(held.id, admin, "The buyer asked", later), "ORDER_EXPIRED")
     expect((await variantOf("risoles")).onlineOrdered).toBe(0)
   })
 

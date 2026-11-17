@@ -66,7 +66,7 @@ export function ReviewActions({
         title={`Reject the proof for ${code}?`}
         description="The order goes back to payment, and the buyer gets a new deadline to send the right proof."
         confirmLabel="Reject proof"
-        pendingLabel="Menolak…"
+        pendingLabel="Rejecting…"
         successMessage={`Proof for ${code} rejected. The buyer can send it again.`}
         presets={[
           "The amount doesn't match",
@@ -88,7 +88,7 @@ export function CancelOrderButton({ orderId, code }: { orderId: string; code: st
       title={`Cancel ${code}?`}
       description="Stock not handed over becomes available again. If the buyer paid, refund them by WeChat, Alipay or bank, then record it on this page."
       confirmLabel="Cancel order"
-      pendingLabel="Membatalkan…"
+      pendingLabel="Canceling…"
       successMessage={`${code} canceled.`}
       presets={["The buyer asked", "Sold out", "Duplicate order"]}
       action={cancelAction.bind(null, orderId)}
