@@ -145,4 +145,15 @@ describe("the pickup list", () => {
       { orderId: "A", campaignId: "c1", code: "GC-A", name: "Budi", wechatId: "budi", items: ["1× Paket Merch · Kaos M + 2× Stiker"] },
     ])
   })
+
+  test("a custom nickname is listed next to its item", () => {
+    const named = order({
+      id: "N",
+      code: "GC-N",
+      items: [
+        { productId: "kaos", variantId: "m", name: "Kaos", variantLabel: "M", priceFen: 8000, qty: 2, pickedUp: false, nicknames: ["Budi", "Ani"] },
+      ],
+    })
+    expect(pickupList([named])[0]!.items).toEqual(["2× Kaos · M – nickname: Budi, Ani"])
+  })
 })

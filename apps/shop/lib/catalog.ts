@@ -26,6 +26,8 @@ export interface CatalogProduct {
   category: Category
   imageUrl?: string
   sizeChart?: CatalogSizeChart
+  /** Checkout asks for a custom nickname for every unit. */
+  allowNickname?: boolean
   /** Short labels: "New", "Spicy". */
   tags: string[]
   allergens: string[]
@@ -152,6 +154,7 @@ export function toCatalog(
         category: p.category,
         imageUrl: p.imagePath ? mediaUrl(p.imagePath) : undefined,
         sizeChart: sizeChartOf(p),
+        allowNickname: p.allowNickname || undefined,
         tags: p.tags,
         allergens: p.allergens,
         onSaleFrom: saleWindow(p, now) === "upcoming" ? p.onSaleFrom!.toISOString() : undefined,

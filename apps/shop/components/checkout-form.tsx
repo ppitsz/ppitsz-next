@@ -25,6 +25,7 @@ import type { ActionState } from "@/lib/actions/state"
 import { createOrderAction, lookupCheckoutAction } from "@/lib/actions/buyer"
 import { slotLabel } from "@/lib/campaign-copy"
 import type { Catalog, CatalogSlot } from "@/lib/catalog"
+import { isBundleLine, MAX_NICKNAME_LENGTH } from "@/lib/domain/cart"
 import { MAX_ADDRESS_LENGTH } from "@/lib/domain/delivery"
 import { cartSummary } from "@/lib/client/cart-summary"
 import type { ProfileFields } from "@/lib/domain/account"
@@ -43,6 +44,12 @@ export function CheckoutForm({ catalog, profile }: { catalog: Catalog; profile: 
   const [contact, setContact] = useState(profile)
   const router = useRouter()
   const hasShortage = summary.lines.some((l) => l.short)
+  // Merch that takes a custom nickname: one name per unit, kept in the cart line.
+  const nicknameLines = summary.lines.map((line) => ({
+    line,
+    names: Array.from({ length: line.qty }, (_, i) => (isBundleLine(line.line) ? undefined : line.line.nicknames?.[i]) ?? ""),
+  })).filter(({ line }) => line.allowNickname)
+  const missingNickname = nicknameLines.some(({ names }) => names.some((name) => !name.trim()))
   const hours = catalog.paymentWindowMinutes / 60
   const { offers } = catalog
   const [fulfillment, setFulfillment] = useState<"delivery" | "pickup">(offers.delivery ? "delivery" : "pickup")
@@ -152,6 +159,45 @@ export function CheckoutForm({ catalog, profile }: { catalog: Catalog; profile: 
       </section>
 
       <form action={submit} className="flex flex-col gap-6" noValidate>
+        {nicknameLines.length > 0 && (
+          <FieldSet>
+            <FieldLegend>Custom names</FieldLegend>
+            <FieldDescription>
+              Write the name for each item, up to {MAX_NICKNAME_LENGTH} characters. Check the spelling before you place
+              your order.
+            </FieldDescription>
+            <FieldGroup>
+              {nicknameLines.flatMap(({ line, names }) =>
+                names.map((name, i) => {
+                  const id = `nickname-${line.key}-${i}`
+                  return (
+                    <Field key={id}>
+                      <FieldLabel htmlFor={id}>
+                        {line.name}
+                        {line.detail && ` · ${line.detail}`}
+                        {line.qty > 1 && ` · ${i + 1} of ${line.qty}`}
+                      </FieldLabel>
+                      <Input
+                        id={id}
+                        value={name}
+                        maxLength={MAX_NICKNAME_LENGTH}
+                        autoComplete="off"
+                        onChange={(e) =>
+                          cart.setNicknames(
+                            line.line,
+                            names.map((n, j) => (j === i ? e.target.value : n))
+                          )
+                        }
+                        required
+                      />
+                    </Field>
+                  )
+                })
+              )}
+            </FieldGroup>
+          </FieldSet>
+        )}
+
         <h2 className="type-heading-lg text-text">Your details</h2>
         <input type="hidden" name="campaignId" value={catalog.campaignId} />
         <input type="hidden" name="fulfillment" value={fulfillment} />
@@ -297,7 +343,7 @@ export function CheckoutForm({ catalog, profile }: { catalog: Catalog; profile: 
           </Alert>
         )}
 
-        <Button type="submit" variant="primary" size="lg" loading={pending} disabled={hasShortage || noSlot}>
+        <Button type="submit" variant="primary" size="lg" loading={pending} disabled={hasShortage || noSlot || missingNickname}>
           {pending ? "Placing order…" : "Place order"}
         </Button>
       </form>

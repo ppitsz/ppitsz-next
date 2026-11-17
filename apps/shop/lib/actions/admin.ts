@@ -37,6 +37,7 @@ const productSchema = z.object({
   description: z.string().max(2000),
   category: z.enum(CATEGORIES),
   active: z.boolean(),
+  allowNickname: z.boolean().optional(),
   /** ISO dates from the form (it converts from Shenzhen time); null for no limit. */
   onSaleFrom: z.iso.datetime().nullable().optional(),
   onSaleUntil: z.iso.datetime().nullable().optional(),

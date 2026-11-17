@@ -2,6 +2,7 @@ import { StatusBadge } from "@ppitsz/ui/components/status-badge"
 import { formatDate, formatTime, formatYuan } from "@ppitsz/ui/lib/format"
 import { PAYMENT_METHOD_LABELS } from "@/lib/catalog"
 import type { ShownStatus } from "@/lib/domain/delivery"
+import { itemNicknames } from "@/lib/domain/order"
 import type { Campaign, Order } from "@/lib/domain/types"
 
 /* Small pieces shared by the staff pages. */
@@ -25,7 +26,10 @@ export function paymentDestination(order: Order, campaign: Campaign) {
 
 export function itemsSummary(order: Order) {
   return order.items
-    .map((i) => `${i.qty}× ${i.name}${i.variantLabel ? ` (${i.variantLabel})` : ""}`)
+    .map((i) => {
+      const nicknames = itemNicknames(i)
+      return `${i.qty}× ${i.name}${i.variantLabel ? ` (${i.variantLabel})` : ""}${nicknames.length ? ` – nickname: ${nicknames.join(", ")}` : ""}`
+    })
     .join(", ")
 }
 
@@ -39,6 +43,11 @@ export function ItemList({ order, showPickup = false }: { order: Order; showPick
               {item.qty}× {item.name}
               {item.variantLabel && ` · ${item.variantLabel}`}
             </span>
+            {itemNicknames(item).length > 0 && (
+              <span className="type-caption text-muted">
+                {itemNicknames(item).length === 1 ? "Nickname" : "Nicknames"}: {itemNicknames(item).join(", ")}
+              </span>
+            )}
             {showPickup && !order.delivery && (
               <span className="type-caption text-muted">
                 {item.pickedUp ? "Handed over" : "Not handed over"}

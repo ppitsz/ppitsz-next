@@ -27,6 +27,7 @@ import { displayStatus } from "@/lib/domain/delivery"
 import {
   DELIVERY_ROUTE,
   isOpenStatus,
+  itemNicknames,
   openRejection,
   ORDER_ROUTE,
   orderVersion,
@@ -358,6 +359,11 @@ function Items({ order }: { order: Order }) {
                 {item.qty} × {formatYuan(item.priceFen)}
                 {showPickup && (item.pickedUp ? " · picked up" : " · not picked up")}
               </span>
+              {itemNicknames(item).length > 0 && (
+                <span className="type-caption text-muted">
+                  {itemNicknames(item).length === 1 ? "Nickname" : "Nicknames"}: {itemNicknames(item).join(", ")}
+                </span>
+              )}
             </span>
             <span className="type-ui text-text">{formatYuan(item.qty * item.priceFen)}</span>
           </li>

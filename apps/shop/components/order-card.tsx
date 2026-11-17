@@ -8,7 +8,7 @@ import { StatusBadge } from "@ppitsz/ui/components/status-badge"
 import { formatDate, formatYuan } from "@ppitsz/ui/lib/format"
 import { slotLabel } from "@/lib/campaign-copy"
 import { displayStatus } from "@/lib/domain/delivery"
-import { DELIVERY_ROUTE, ORDER_ROUTE, routeStage } from "@/lib/domain/order"
+import { DELIVERY_ROUTE, itemNicknames, ORDER_ROUTE, routeStage } from "@/lib/domain/order"
 import type { Campaign, Order } from "@/lib/domain/types"
 import { orderPath } from "@/lib/order-path"
 import { TestBadge } from "./test-badge"
@@ -49,6 +49,12 @@ export function OrderCard({ order, campaign }: { order: Order; campaign: Pick<Ca
           <li key={i} className="type-body-sm text-text">
             {item.qty} × {item.name}
             {item.variantLabel && <span className="text-muted"> · {item.variantLabel}</span>}
+            {itemNicknames(item).length > 0 && (
+              <span className="text-muted">
+                {" "}
+                · {itemNicknames(item).length === 1 ? "Nickname" : "Nicknames"}: {itemNicknames(item).join(", ")}
+              </span>
+            )}
           </li>
         ))}
         {more > 0 && <li className="type-caption text-muted">and {more} more {more === 1 ? "item" : "items"}</li>}

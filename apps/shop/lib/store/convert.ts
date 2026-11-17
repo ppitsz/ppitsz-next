@@ -109,6 +109,7 @@ export function productFromDoc(snap: DocumentSnapshot): Product {
     sizeChart: d.sizeChart,
     sizeChartPath: d.sizeChartPath,
     active: d.active,
+    allowNickname: d.allowNickname === true || undefined,
     tags: d.tags ?? [],
     allergens: d.allergens ?? [],
     onSaleFrom: toDateOrUndefined(d.onSaleFrom),

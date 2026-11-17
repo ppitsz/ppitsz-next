@@ -173,6 +173,7 @@ export function ProductForm({
   const [description, setDescription] = useState(product?.description ?? "")
   const [category, setCategory] = useState<Category>(product?.category ?? "food")
   const [active, setActive] = useState(product?.active ?? true)
+  const [allowNickname, setAllowNickname] = useState(product?.allowNickname ?? false)
   const [sortOrder, setSortOrder] = useState(String(defaultSortOrder))
   /** "2027-03-01T00:00", Shenzhen time; empty for no limit. */
   const [saleFrom, setSaleFrom] = useState(product?.onSaleFrom ? toShenzhenInput(product.onSaleFrom) : "")
@@ -234,6 +235,7 @@ export function ProductForm({
         description: description.trim(),
         category,
         active,
+        allowNickname: category === "merch" && allowNickname,
         onSaleFrom: from,
         onSaleUntil: until,
         tags: splitList(tags),
@@ -353,6 +355,24 @@ export function ProductForm({
             </FieldDescription>
           </FieldContent>
         </Field>
+
+        {category === "merch" && (
+          <Field orientation="horizontal">
+            <Checkbox
+              id="allow-nickname"
+              checked={allowNickname}
+              onCheckedChange={setAllowNickname}
+              aria-describedby="allow-nickname-helper"
+            />
+            <FieldContent>
+              <FieldLabel htmlFor="allow-nickname">Custom nickname</FieldLabel>
+              <FieldDescription id="allow-nickname-helper">
+                At checkout, buyers write a nickname for every unit. Staff see it on the order. Online orders only;
+                the register doesn't ask for it.
+              </FieldDescription>
+            </FieldContent>
+          </Field>
+        )}
 
         <FieldSet data-invalid={!!saleError || undefined}>
           <FieldLegend variant="label">Sale dates</FieldLegend>
