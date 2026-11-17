@@ -1,5 +1,8 @@
 rules_version = '2';
 
+// Emulator only (firebase.test.json). The deployed copy is firebase/storage.rules
+// (ADR 0013): change and deploy that one.
+
 // Files (product photos, payment QRs, transfer proofs) are uploaded and
 // served by the server only, through the app's own /media route.
 service firebase.storage {

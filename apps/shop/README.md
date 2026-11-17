@@ -175,13 +175,13 @@ Set these on Vercel:
 
 Create Firestore and the Storage bucket in **Hong Kong (`asia-east2`)**. The location can't be changed later, and the functions run in Vercel's Hong Kong region (`hkg1`, set in `vercel.json`), so every request stays close to China.
 
-Then deploy the rules and indexes once: `firebase deploy --only firestore,storage --project <id>`.
+The project's rules and indexes live in the repo's `firebase/` folder, the only copy for the whole project, the old website's rules included (ADR 0013). Deploy them from there: `cd firebase && firebase deploy --only firestore,storage --project ppitsz`. A rules deploy replaces whatever is live, so change `firebase/firestore.rules` and never deploy an older copy. This app's own `firestore.rules` and `storage.rules` are for the test emulator only (`firebase.test.json`): never deploy them.
 
 Password resets are sent by PPITSZ Account, through Firebase's reset email with its action URL set to Account's own page (see its README). An old reset link to the shop's `/reset-password?oobCode=…` still works: it is passed on to PPITSZ Account.
 
 Fill in our WeChat ID, Instagram handle and email in `lib/contact.ts`; the footer shows each once it is set.
 
-Old rate-limit counters and Forms' access codes delete themselves through TTL policies on `expiresAt` (`rateLimits`, `formRateLimits`, `formAccessCodes`). They are `fieldOverrides` in `firestore.indexes.json`, so the deploy above sets them. If a deploy asks to delete field overrides, answer **no**: those are the TTL policies.
+Old rate-limit counters and Forms' access codes delete themselves through TTL policies on `expiresAt` (`rateLimits`, `formRateLimits`, `formAccessCodes`). They are `fieldOverrides` in `firebase/firestore.indexes.json`, so the deploy above sets them. If a deploy asks to delete field overrides, answer **no**: those are the TTL policies.
 
 To start the real sale, sign in as an admin, create each campaign under **Settings → Create new campaign**, add its products under **Products**, and set it to **Open**.
 

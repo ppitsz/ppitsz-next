@@ -33,10 +33,10 @@ Later: a public read API for the main site (open or closed, places left, close d
 ## Before going live
 
 - [x] Firebase project `ppitsz-next` (ADR 0006): Firestore and Storage in `asia-east2`, Email/Password on, service account in `.env.local` (2026-10-30).
-- [ ] Deploy the rules: `firebase deploy --only firestore,storage --project ppitsz-next` from `apps/shop` (rules and the shop's indexes).
+- [ ] Deploy the rules: `firebase deploy --only firestore,storage --project ppitsz` from `firebase/`, the project's only copy of its rules and indexes (ADR 0013).
 - [ ] The same five `FIREBASE_*` variables on Vercel. `FIREBASE_API_KEY` is the web config's `apiKey`.
 - [ ] Resend: verify `ppitshenzhen.org` (SPF, DKIM, optionally DMARC); `RESEND_API_KEY`; the webhook to `/api/resend` with its `RESEND_WEBHOOK_SECRET`; the paid tier before a big event.
 - [ ] Vercel project for `apps/forms` at `forms.ppitshenzhen.org`, `CRON_SECRET`; then `live: true` for Forms in `packages/accounts/src/urls.ts`.
-- [x] Firestore TTL policy on `formRateLimits.expiresAt` and `formAccessCodes.expiresAt` (2026-10-30; kept in `apps/shop/firestore.indexes.json`).
+- [x] Firestore TTL policy on `formRateLimits.expiresAt` and `formAccessCodes.expiresAt` (2026-10-30; kept in `firebase/firestore.indexes.json`).
 - [ ] First form admin: `bun scripts/admins.ts add <email> "<name>"` with the production variables set.
 - [ ] Try a real ticket on an iPhone and an Android phone, and the scanner at the door, before the first event.
