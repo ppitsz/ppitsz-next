@@ -125,6 +125,8 @@ export interface Product {
   sizeChart?: SizeChart
   /** Storage path of a size chart image (from the maker, or how to measure), served through /media. */
   sizeChartPath?: string
+  /** Merch only: each unit bought online carries a custom nickname the buyer types at checkout. */
+  allowNickname?: boolean
   /** Short labels buyers see on the product: "New", "Spicy", "Weekly". */
   tags: string[]
   /** What it contains or may contain, one per entry: "Coconut", "May contain shrimp paste". */
@@ -234,6 +236,8 @@ interface ItemBase {
 export interface ProductItem extends ItemBase {
   productId: string
   variantId: string
+  /** One custom nickname per unit, in order, when the product takes nicknames. */
+  nicknames?: string[]
 }
 
 export interface BundleItem extends ItemBase {
@@ -352,6 +356,8 @@ export interface ProductLine {
   productId: string
   variantId: string
   qty: number
+  /** One custom nickname per unit, in order. Only kept for products that take nicknames. */
+  nicknames?: string[]
 }
 
 export interface BundleLine {

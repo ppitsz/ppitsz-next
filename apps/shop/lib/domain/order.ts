@@ -14,6 +14,7 @@ import type {
   OrderItem,
   OrderStatus,
   Product,
+  ProductLine,
   Variant,
 } from "./types"
 
@@ -131,6 +132,7 @@ export function priceAndReserve(
   for (const line of parseCart(lines)) {
     if (!isBundleLine(line)) {
       const { product, variant } = take(line.productId, line.variantId, line.qty, true)
+      const nicknames = nicknamesFor(line, product, channel)
       items.push({
         productId: product.id,
         variantId: variant.id,
@@ -139,6 +141,7 @@ export function priceAndReserve(
         priceFen: variant.priceFen,
         qty: line.qty,
         pickedUp: channel === "walkin",
+        ...(nicknames && { nicknames }),
       })
       continue
     }
@@ -178,6 +181,23 @@ export function priceAndReserve(
 
 export function isBundleItem(item: OrderItem): item is BundleItem {
   return "bundleId" in item
+}
+
+/**
+ * The custom nicknames an online order must carry for a product that takes
+ * them: one per unit, none empty. The product's own flag decides, never the
+ * client's. The register doesn't ask for nicknames, so walk-in sales skip this.
+ */
+function nicknamesFor(line: ProductLine, product: Product, channel: Channel) {
+  if (!product.allowNickname || channel !== "online") return undefined
+  const names = Array.from({ length: line.qty }, (_, i) => line.nicknames?.[i] ?? "")
+  if (names.some((name) => !name)) throw new ShopError("NICKNAME_REQUIRED")
+  return names
+}
+
+/** The nickname of each unit of an item, in order; empty for a bundle or an item without nicknames. */
+export function itemNicknames(item: OrderItem): string[] {
+  return isBundleItem(item) ? [] : (item.nicknames ?? [])
 }
 
 /** The variant units `items` took from stock: a bundle's contents, times how many bundles. */

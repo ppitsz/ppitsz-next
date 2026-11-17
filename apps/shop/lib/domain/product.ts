@@ -43,6 +43,8 @@ export interface ProductEdit {
   description: string
   category: Category
   active: boolean
+  /** Merch only; ignored for other categories. Missing: off. */
+  allowNickname?: boolean
   /** Null or missing: no limit on that side. */
   onSaleFrom?: Date | null
   onSaleUntil?: Date | null
@@ -231,6 +233,7 @@ export function applyProductEdit(
     tags: cleanList(edit.tags),
     allergens: cleanList(edit.allergens),
     active: edit.active,
+    allowNickname: edit.allowNickname && edit.category === "merch" ? true : undefined,
     onSaleFrom: edit.onSaleFrom ?? undefined,
     onSaleUntil: edit.onSaleUntil ?? undefined,
     sortOrder: edit.sortOrder,

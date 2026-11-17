@@ -13,6 +13,8 @@ export const MAX_QTY_PER_LINE = 20
 export const MAX_CART_LINES = 50
 /** The most components one bundle may have. */
 export const MAX_BUNDLE_COMPONENTS = 8
+/** The longest custom nickname for one unit of a product that takes nicknames. */
+export const MAX_NICKNAME_LENGTH = 20
 
 const MAX_ID_LENGTH = 100
 
@@ -43,7 +45,13 @@ export function parseCart(input: unknown): CartLine[] {
     if (line.qty === 0) continue
     const key = lineKey(line)
     const existing = merged.get(key)
-    merged.set(key, { ...line, qty: (existing?.qty ?? 0) + line.qty })
+    const qty = (existing?.qty ?? 0) + line.qty
+    if (isBundleLine(line)) {
+      merged.set(key, { ...line, qty })
+      continue
+    }
+    const nicknames = joinNicknames(existing && !isBundleLine(existing) ? existing : undefined, line)
+    merged.set(key, { ...line, qty, ...(nicknames && { nicknames }) })
   }
 
   const lines = [...merged.values()]
@@ -54,9 +62,22 @@ export function parseCart(input: unknown): CartLine[] {
   return lines
 }
 
+/** One nickname as stored: spaces trimmed and collapsed, cut to the limit. */
+export function cleanNickname(text: string) {
+  return text.trim().replace(/\s+/g, " ").slice(0, MAX_NICKNAME_LENGTH)
+}
+
+/** The nicknames of two lines for the same variant, one entry per unit, joined in order. */
+function joinNicknames(first: ProductLine | undefined, next: ProductLine) {
+  if (!first?.nicknames && !next.nicknames) return undefined
+  const perUnit = (line: ProductLine | undefined) =>
+    Array.from({ length: line?.qty ?? 0 }, (_, i) => line?.nicknames?.[i] ?? "")
+  return [...perUnit(first), ...perUnit(next)]
+}
+
 function asLine(raw: unknown): CartLine | null {
   if (typeof raw !== "object" || raw === null) return null
-  const { productId, variantId, bundleId, picks, qty } = raw as Record<string, unknown>
+  const { productId, variantId, bundleId, picks, qty, nicknames } = raw as Record<string, unknown>
   if (typeof qty !== "number" || !Number.isInteger(qty) || qty < 0) return null
   if (bundleId !== undefined) {
     if (!isId(bundleId) || !Array.isArray(picks)) return null
@@ -64,7 +85,11 @@ function asLine(raw: unknown): CartLine | null {
     return { bundleId, picks: picks.slice(), qty }
   }
   if (!isId(productId) || !isId(variantId)) return null
-  return { productId, variantId, qty }
+  if (nicknames === undefined) return { productId, variantId, qty }
+  if (!Array.isArray(nicknames) || nicknames.length > MAX_QTY_PER_LINE || !nicknames.every((n) => typeof n === "string")) {
+    return null
+  }
+  return { productId, variantId, qty, nicknames: nicknames.slice(0, qty).map(cleanNickname) }
 }
 
 function isId(value: unknown): value is string {

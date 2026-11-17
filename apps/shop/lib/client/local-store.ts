@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react"
 
-import { lineKey, type CartChoice } from "../domain/cart"
+import { isBundleLine, lineKey, type CartChoice } from "../domain/cart"
 import type { CartLine } from "../domain/types"
 
 /*
@@ -82,7 +82,10 @@ export function useCart(campaignId: string) {
     const wanted = lineKey(choice)
     const index = current.findIndex((l) => lineKey(l) === wanted)
     if (qty <= 0) return write(key, current.filter((_, i) => i !== index))
-    const line = { ...choice, qty } as CartLine
+    // Nicknames already typed stay, cut to the new quantity.
+    const previous = index === -1 ? undefined : current[index]
+    const kept = previous && !isBundleLine(previous) ? previous.nicknames?.slice(0, qty) : undefined
+    const line = { ...choice, qty, ...(kept && { nicknames: kept }) } as CartLine
     // Keep the line where it was, so the cart doesn't reorder as you tap.
     const next = current.slice()
     if (index === -1) next.push(line)
@@ -95,7 +98,14 @@ export function useCart(campaignId: string) {
     return lines.find((l) => lineKey(l) === wanted)?.qty ?? 0
   }
 
-  return { lines, setQty, qtyOf }
+  /** Sets the custom nickname of each unit of a product line, as typed. */
+  function setNicknames(choice: CartChoice, nicknames: string[]) {
+    const wanted = lineKey(choice)
+    const current = read(key, EMPTY_CART)
+    write(key, current.map((l) => (lineKey(l) === wanted && !isBundleLine(l) ? { ...l, nicknames } : l)))
+  }
+
+  return { lines, setQty, qtyOf, setNicknames }
 }
 
 export function clearCart(campaignId: string) {

@@ -2,7 +2,7 @@ import { STATUSES } from "@ppitsz/ui/lib/network"
 
 import { toShenzhenInput } from "../shenzhen-time"
 import { displayStatus, FULFILLMENT_LABELS, fulfillmentOf } from "./delivery"
-import { isBundleItem } from "./order"
+import { isBundleItem, itemNicknames } from "./order"
 import type { Recap } from "./recap"
 import type { Campaign, Order, PaymentMethod } from "./types"
 
@@ -54,6 +54,7 @@ export function ordersCsv(
       "Email",
       "Item",
       "Variant or bundle contents",
+      "Nicknames",
       "Qty",
       "Unit price (¥)",
       "Subtotal (¥)",
@@ -89,6 +90,7 @@ export function ordersCsv(
         order.buyer?.email,
         isBundleItem(item) ? `Bundle: ${item.name}` : item.name,
         item.variantLabel,
+        itemNicknames(item).join(", "),
         item.qty,
         yuan(item.priceFen),
         yuan(item.priceFen * item.qty),

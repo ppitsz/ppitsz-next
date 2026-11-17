@@ -88,6 +88,30 @@ describe("pricing", () => {
     expect(result.updatedProducts[0]!.variants[0]!.walkIn).toBe(1)
   })
 
+  test("a product with custom nicknames needs one per unit online, and keeps them on the item", () => {
+    const shirt = product({ id: "p2", category: "merch", allowNickname: true })
+    const line = { productId: "p2", variantId: "v1", qty: 2 }
+    const price = (l: typeof line & { nicknames?: string[] }, channel: "online" | "walkin" = "online") =>
+      priceAndReserve([l], byId(shirt), new Map(), channel, "c1")
+    expect(() => price(line)).toThrow(ShopError)
+    expect(() => price({ ...line, nicknames: ["Budi"] })).toThrow(ShopError)
+    expect(() => price({ ...line, nicknames: ["Budi", ""] })).toThrow(ShopError)
+    expect(price({ ...line, nicknames: ["Budi", "Ani"] }).items[0]).toMatchObject({ nicknames: ["Budi", "Ani"] })
+    // The register doesn't ask for nicknames.
+    expect(price(line, "walkin").items[0]).not.toHaveProperty("nicknames")
+  })
+
+  test("nicknames sent for a product that doesn't take them are dropped", () => {
+    const result = priceAndReserve(
+      [{ productId: "p1", variantId: "v1", qty: 1, nicknames: ["Budi"] }],
+      byId(product()),
+      new Map(),
+      "online",
+      "c1"
+    )
+    expect(result.items[0]).not.toHaveProperty("nicknames")
+  })
+
   test("inactive, unknown and other campaigns' products are rejected", () => {
     const line = { productId: "p1", variantId: "v1", qty: 1 }
     for (const run of [

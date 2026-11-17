@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 
-import { MAX_QTY_PER_LINE, parseCart } from "./cart"
+import { MAX_NICKNAME_LENGTH, MAX_QTY_PER_LINE, parseCart } from "./cart"
 import { ShopError, type ErrorCode } from "./errors"
 import { campaign } from "./fixtures"
 import { proofAccount, proofTransactionDigits, saleAccount } from "./payment"
@@ -26,6 +26,22 @@ describe("cart", () => {
         { productId: "p2", variantId: "v1", qty: 0 },
       ])
     ).toEqual([{ productId: "p1", variantId: "v1", qty: 3 }])
+  })
+
+  test("keeps one cleaned nickname per unit and joins them when lines merge", () => {
+    expect(
+      parseCart([
+        { productId: "p1", variantId: "v1", qty: 2, nicknames: ["  Budi  Santoso ", "Ani"] },
+        { productId: "p1", variantId: "v1", qty: 1, nicknames: ["Citra"] },
+      ])
+    ).toEqual([{ productId: "p1", variantId: "v1", qty: 3, nicknames: ["Budi Santoso", "Ani", "Citra"] }])
+    expect(parseCart([{ productId: "p1", variantId: "v1", qty: 1, nicknames: ["A".repeat(50)] }])[0]).toEqual({
+      productId: "p1",
+      variantId: "v1",
+      qty: 1,
+      nicknames: ["A".repeat(MAX_NICKNAME_LENGTH)],
+    })
+    expect(code(() => parseCart([{ productId: "p1", variantId: "v1", qty: 1, nicknames: "Budi" }]))).toBe("INVALID_CART")
   })
 
   test("an empty cart is an error", () => {

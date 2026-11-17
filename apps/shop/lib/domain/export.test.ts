@@ -24,8 +24,8 @@ describe("the orders file", () => {
     })
     const rows = rowsOf(ordersCsv(campaign(), [o], PAYMENT_METHOD_LABELS, () => "Nadia"))
     expect(rows).toHaveLength(3)
-    expect(rows[1]).toStartWith(`"GC-AAAA","2027-03-10 09:05","Pickup","Paid","A","a","","a@test.test","Nasi","","2","15.00","30.00","No","110.00","WeChat Pay","Nadia","2027-03-10 10:00","Nadia"`)
-    expect(rows[2]).toContain(`"Kaos","M","1","80.00","80.00","No","",""`)
+    expect(rows[1]).toStartWith(`"GC-AAAA","2027-03-10 09:05","Pickup","Paid","A","a","","a@test.test","Nasi","","","2","15.00","30.00","No","110.00","WeChat Pay","Nadia","2027-03-10 10:00","Nadia"`)
+    expect(rows[2]).toContain(`"Kaos","M","","1","80.00","80.00","No","",""`)
   })
 
   test("a delivery order adds its fee, address, slot and courier once", () => {

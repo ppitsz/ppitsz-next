@@ -18,6 +18,8 @@ export interface SummaryLine {
   short: boolean
   /** The variant units one of this line takes. */
   units: SummaryUnit[]
+  /** True when checkout asks for a custom nickname for every unit of this line. */
+  allowNickname: boolean
 }
 
 export interface SummaryUnit {
@@ -66,6 +68,7 @@ export function cartSummary(
         available: bundlesLeft(units.map((u) => ({ key: u.key, qty: u.qty, available: u.variant[stock] }))),
         short: false,
         units,
+        allowNickname: false,
       })
       continue
     }
@@ -84,6 +87,7 @@ export function cartSummary(
       available: variant[stock],
       short: false,
       units: [{ key: variantKey(product.id, variant.id), qty: 1, name: product.name, variant }],
+      allowNickname: product.allowNickname === true,
     })
   }
 
