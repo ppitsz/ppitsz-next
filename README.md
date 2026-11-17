@@ -2,6 +2,8 @@
 
 The PPIT Shenzhen monorepo. It starts with **Jaringan**, the design system for every PPIT Shenzhen website, and a site that previews it. The organization's website and other sites join later as apps.
 
+**New here?** Start with [CONTRIBUTING.md](CONTRIBUTING.md) to get set up and learn the house rules, then [docs/tour.md](docs/tour.md) to see how the code fits together.
+
 | Path | Package | What it is |
 |---|---|---|
 | `packages/ui` | `@ppitsz/ui` | The design system: tokens, shadcn/ui components restyled to Jaringan, network components and page blocks |
@@ -9,7 +11,9 @@ The PPIT Shenzhen monorepo. It starts with **Jaringan**, the design system for e
 | `apps/shop` | `shop` | Toko PPIT Shenzhen, the sales site: online orders delivered or collected by QR, payment proof, and walk-in sales ([README](apps/shop/README.md)) |
 | `apps/forms` | `forms` | PPITSZ Forms: forms, registrations and tickets with check-in ([README](apps/forms/README.md)) |
 | `apps/account` | `account` | PPITSZ Account: the one sign-in for every app, profiles, and Accounts for Portal admins (ADR 0008) |
+| `packages/accounts` | `@ppitsz/accounts` | Shared by every app: Firebase, the session, profiles, roles, passwords and Google sign-in |
 | `packages/typescript-config`, `packages/eslint-config` | | Shared config |
+| `firebase/` | | The Firebase project's security rules and indexes |
 | `scripts/guardrails.ts` | | Design-rule checks |
 
 The design system documents itself: each page in [`apps/docs/app/(docs)/`](apps/docs/app/(docs)/) states the rules for its foundation or component.
@@ -30,6 +34,7 @@ bun run dev          # docs on http://localhost:3000, shop :3001, forms :3002, a
 | `bun run typecheck` | TypeScript across the workspace |
 | `bun run lint` | ESLint across the workspace |
 | `bun run guardrails` | Check the design rules; prints nothing when clean |
+| `bun run check` | All of the above but `dev`, in order: run it before opening a pull request |
 
 ## Using the design system in an app
 

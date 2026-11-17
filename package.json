@@ -8,7 +8,8 @@
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
-    "guardrails": "bun scripts/guardrails.ts"
+    "guardrails": "bun scripts/guardrails.ts",
+    "check": "bun run guardrails && bun run typecheck && bun run lint && bun run build"
   },
   "devDependencies": {
     "@ppitsz/eslint-config": "workspace:*",
