@@ -1,4 +1,4 @@
-import type { Bundle, Campaign, DeliverySlot, Product } from "../domain/types"
+import type { Bundle, Campaign, DeliverySlot, PickupPoint, Product } from "../domain/types"
 import { db } from "../firebase/admin"
 import { bundleToDoc, campaignToDoc, productToDoc } from "./convert"
 
@@ -40,7 +40,13 @@ export function sampleCampaign(now = new Date()): Campaign {
     onlineOpensAt: new Date(now.getTime() - 86_400_000),
     onlineClosesAt: new Date("2027-03-15T23:59:00+08:00"),
     offers: { delivery: true, pickup: true, booth: true },
-    pickupInfo: "Booth PPIT di SZ Cup · Rab, 17 Mar 2027, 09.00–17.00",
+    boothInfo: "PPIT booth at SZ Cup · Wed, Mar 17, 2027, 09:00–17:00",
+    // Two places on one day, and a third the day after.
+    pickupPoints: [
+      point("booth", now, 10, 10, 16, "PPIT booth at SZ Cup"),
+      point("gate", now, 10, 18, 20, "SZU south gate"),
+      point("dorm", now, 11, 12, 14, "SZU dorms, Building 5"),
+    ],
     deliveryFeeFen: 5_00,
     // Slots in the coming days, so they can be picked locally.
     deliverySlots: [slot("sabtu", now, 2, 15, 18, 20), slot("minggu", now, 3, 11, 14, null)],
@@ -58,6 +64,12 @@ function slot(id: string, now: Date, days: number, from: number, to: number, max
   const today = Math.floor((now.getTime() + 8 * hour) / (24 * hour)) * 24 * hour - 8 * hour
   const day = today + days * 24 * hour
   return { id, startsAt: new Date(day + from * hour), endsAt: new Date(day + to * hour), maxOrders }
+}
+
+/** A pickup point `days` after today in Shenzhen, from `from` to `to` o'clock. */
+function point(id: string, now: Date, days: number, from: number, to: number, place: string): PickupPoint {
+  const { startsAt, endsAt } = slot(id, now, days, from, to, null)
+  return { id, place, startsAt, endsAt }
 }
 
 function v(id: string, label: string, yuan: number, stock: number, onlineCap: number | null) {

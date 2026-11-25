@@ -75,6 +75,7 @@ export function ordersCsv(
       "Courier",
       "Tracking number",
       "Delivered",
+      "Pickup point",
     ],
   ]
   for (const order of [...orders].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())) {
@@ -112,6 +113,9 @@ export function ordersCsv(
         i === 0 ? order.delivery?.courier : "",
         i === 0 ? order.delivery?.trackingNumber : "",
         i === 0 && order.delivery && order.status === "picked_up" ? time(order.pickedUpAt) : "",
+        i === 0 && order.pickupPoint
+          ? `${order.pickupPoint.place}, ${time(order.pickupPoint.startsAt)}–${time(order.pickupPoint.endsAt).slice(11)}`
+          : "",
       ])
     })
   }

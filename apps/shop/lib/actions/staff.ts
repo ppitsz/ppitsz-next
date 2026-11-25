@@ -10,7 +10,7 @@ import { endSession } from "@ppitsz/accounts/session"
 import { signInUrl } from "@ppitsz/accounts/urls"
 
 import { failure, messageOf, type ActionState } from "./state"
-import { slotLabel } from "../campaign-copy"
+import { orderPickupNote, slotLabel } from "../campaign-copy"
 import { displayStatus, type ShownStatus } from "../domain/delivery"
 import { courierMessage, rejectionMessage } from "../buyer-message"
 import { requireStaff } from "../server/auth"
@@ -37,6 +37,7 @@ import {
   redeemOrder,
   rejectPayment,
   sendByCourier,
+  setPickupPoint,
 } from "../store"
 import { allowRequest, LIMITS } from "../store/rate-limit"
 
@@ -143,6 +144,22 @@ export async function sendByCourierAction(
   revalidatePath("/staff", "layout")
   const buyerMessage = courierMessage(order, `${await siteOrigin()}${orderPath(order.token)}`)
   return { done: Date.now(), buyerMessage: buyerMessage ?? undefined }
+}
+
+/* -------------------------------------------------------------------------
+   Pickup points (every staff role)
+   ------------------------------------------------------------------------- */
+
+/** Moves a pickup order to another of its campaign's pickup points. */
+export async function setPickupPointAction(orderId: string, pointId: string): Promise<ActionState> {
+  await requireStaff()
+  try {
+    await setPickupPoint(String(orderId), String(pointId))
+  } catch (error) {
+    return failure(error)
+  }
+  revalidatePath("/staff", "layout")
+  return { done: Date.now() }
 }
 
 /** A delivery order reached the buyer: every item handed over at once. */
@@ -284,6 +301,8 @@ export interface ScannedOrder {
   test: boolean
   /** A delivery order is handed over whole; its slot and address, for the booth to see. */
   delivery: { slot: string; address: string } | null
+  /** Where and when a pickup order is meant to be collected; null for other orders. */
+  pickupPoint: string | null
   /** This staff member may hand over its items now. */
   canHandOver: boolean
   /** This staff member may approve or reject its proof. */
@@ -359,6 +378,8 @@ async function toScanned(order: Order, staff: StaffActor): Promise<ScannedOrder>
     shownStatus: displayStatus(order),
     test: !!order.test,
     delivery: order.delivery ? { slot: slotLabel(order.delivery.slot), address: order.delivery.address } : null,
+    pickupPoint:
+      order.channel === "online" && !order.delivery ? orderPickupNote(order, campaign ?? undefined) : null,
     canHandOver: can(order, "hand_over", staff, now),
     canVerify: can(order, "approve", staff, now),
   }

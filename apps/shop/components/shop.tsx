@@ -13,11 +13,13 @@ import { Route } from "@ppitsz/ui/components/network/route"
 import { RouteStrip } from "@ppitsz/ui/components/network/route-strip"
 import { formatDate, formatTime, formatYuan } from "@ppitsz/ui/lib/format"
 import { cn } from "@ppitsz/ui/lib/utils"
+import { pickupOnlyNote } from "@/lib/campaign-copy"
 import { CATEGORY_LABELS, type Catalog, type CatalogBundle, type CatalogProduct } from "@/lib/catalog"
 import { bundlesLeft, contentsLabel } from "@/lib/domain/bundle"
 import { MAX_QTY_PER_LINE, type CartChoice } from "@/lib/domain/cart"
 import { campaignRoute } from "@/lib/domain/order"
-import { CATEGORIES } from "@/lib/domain/types"
+import { sharedPickupPoints } from "@/lib/domain/pickup"
+import { CATEGORIES, type PickupPoint } from "@/lib/domain/types"
 import { useCart } from "@/lib/client/local-store"
 import { cartSummary } from "@/lib/client/cart-summary"
 import { BundlePicks, defaultPicks } from "./bundle-picks"
@@ -42,6 +44,8 @@ export function Shop({ catalog, signedIn }: { catalog: Catalog; signedIn: boolea
   ]
   const withRail = sections.length >= 2
   const lastStop = campaignRoute(catalog.offers).at(-1)
+  // For the note on products only picked up at some points.
+  const pickupPoints = catalog.pickupPoints.map((p) => ({ ...p, startsAt: new Date(p.startsAt), endsAt: new Date(p.endsAt) }))
 
   return (
     <>
@@ -72,7 +76,7 @@ export function Shop({ catalog, signedIn }: { catalog: Catalog; signedIn: boolea
                 </h2>
                 <ul className="@container flex flex-col">
                   {catalog.bundles.map((bundle) => (
-                    <BundleRow key={bundle.id} bundle={bundle} cart={cart} canOrder={canOrder} />
+                    <BundleRow key={bundle.id} bundle={bundle} cart={cart} canOrder={canOrder} pickupPoints={pickupPoints} />
                   ))}
                 </ul>
               </section>
@@ -97,7 +101,13 @@ export function Shop({ catalog, signedIn }: { catalog: Catalog; signedIn: boolea
                   )}
                   <ul className="@container flex flex-col">
                     {products.map((product) => (
-                      <ProductRow key={product.id} product={product} cart={cart} canOrder={canOrder} />
+                      <ProductRow
+                        key={product.id}
+                        product={product}
+                        cart={cart}
+                        canOrder={canOrder}
+                        pickupPoints={pickupPoints}
+                      />
                     ))}
                   </ul>
                 </section>
@@ -159,7 +169,7 @@ function WindowNotice({ catalog }: { catalog: Catalog }) {
       <Alert>
         <AlertTitle>Sold at the booth only</AlertTitle>
         <AlertDescription>
-          See the products and prices here, then buy in person at {catalog.pickupInfo}.
+          See the products and prices here, then buy in person at {catalog.boothInfo}.
         </AlertDescription>
       </Alert>
     )
@@ -181,14 +191,24 @@ function WindowNotice({ catalog }: { catalog: Catalog }) {
       <AlertTitle>Online ordering has closed</AlertTitle>
       <AlertDescription>
         {catalog.offers.booth
-          ? `What's left can be bought in person at ${catalog.pickupInfo}.`
+          ? `What's left can be bought in person at ${catalog.boothInfo}.`
           : "Thank you. Watch the PPITSZ socials for the next campaign."}
       </AlertDescription>
     </Alert>
   )
 }
 
-function ProductRow({ product, cart, canOrder }: { product: CatalogProduct; cart: Cart; canOrder: boolean }) {
+function ProductRow({
+  product,
+  cart,
+  canOrder,
+  pickupPoints,
+}: {
+  product: CatalogProduct
+  cart: Cart
+  canOrder: boolean
+  pickupPoints: PickupPoint[]
+}) {
   const selectId = useId()
   const hasOptions = product.variants.length > 1
   const [variantId, setVariantId] = useState(
@@ -224,6 +244,9 @@ function ProductRow({ product, cart, canOrder }: { product: CatalogProduct; cart
             <p className="type-caption text-muted">
               On sale until {formatDate(endsAt)}, {formatTime(endsAt)}
             </p>
+          )}
+          {product.pickupPointIds && (
+            <p className="type-caption text-muted">{pickupOnlyNote(product.pickupPointIds, pickupPoints)}</p>
           )}
           {product.sizeChart && <SizeChartButton chart={product.sizeChart} productName={product.name} />}
         </>
@@ -264,7 +287,17 @@ function ProductRow({ product, cart, canOrder }: { product: CatalogProduct; cart
   )
 }
 
-function BundleRow({ bundle, cart, canOrder }: { bundle: CatalogBundle; cart: Cart; canOrder: boolean }) {
+function BundleRow({
+  bundle,
+  cart,
+  canOrder,
+  pickupPoints,
+}: {
+  bundle: CatalogBundle
+  cart: Cart
+  canOrder: boolean
+  pickupPoints: PickupPoint[]
+}) {
   const idPrefix = useId()
   const [picks, setPicks] = useState(() => defaultPicks(bundle.components, (v) => v.available))
   const picked = bundle.components.map((c, i) => ({
@@ -280,6 +313,7 @@ function BundleRow({ bundle, cart, canOrder }: { bundle: CatalogBundle; cart: Ca
   const available = bundlesLeft(units("available"))
   const separately = picked.reduce((sum, { component, variant }) => sum + component.qty * variant.priceFen, 0)
   const contents = contentsLabel(bundle.components.map((c) => ({ name: c.name, variantLabel: "", qty: c.qty })))
+  const pickupPointIds = sharedPickupPoints(bundle.components)
   const pickedLabel = contentsLabel(
     picked.map(({ component, variant }) => ({ name: component.name, variantLabel: variant.label, qty: component.qty }))
   )
@@ -292,6 +326,9 @@ function BundleRow({ bundle, cart, canOrder }: { bundle: CatalogBundle; cart: Ca
         <>
           <h3 className="type-heading-md text-text">{bundle.name}</h3>
           <p className="type-body-sm text-text">Contains: {contents}</p>
+          {pickupPointIds && (
+            <p className="type-caption text-muted">{pickupOnlyNote(pickupPointIds, pickupPoints)}</p>
+          )}
           {bundle.description && (
             <p className="max-w-[66ch] type-body-sm text-muted">{bundle.description}</p>
           )}

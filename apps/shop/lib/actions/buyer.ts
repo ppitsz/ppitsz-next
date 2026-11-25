@@ -39,6 +39,7 @@ const checkoutSchema = z.object({
   fulfillment: z.enum(["delivery", "pickup"]),
   address: z.string().max(1000),
   slotId: z.string().max(100),
+  pointId: z.string().max(100),
 })
 
 export async function createOrderAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -58,15 +59,18 @@ export async function createOrderAction(_prev: ActionState, formData: FormData):
     fulfillment: text("fulfillment") || "pickup",
     address: text("address"),
     slotId: text("slotId"),
+    pointId: text("pointId"),
   })
   if (!parsed.success) return { error: "The order details aren't complete. Reload the page." }
   const { profile, issues } = cleanProfile(parsed.data)
   const fieldErrors: ActionState["fieldErrors"] = { ...issues }
-  const { fulfillment, address, slotId } = parsed.data
+  const { fulfillment, address, slotId, pointId } = parsed.data
   if (fulfillment === "delivery") {
     if (address.trim().length < 5) fieldErrors.address = "Write the full address, with building and room number."
     if (!profile.phone) fieldErrors.phone ??= "Write a phone number for the person delivering."
     if (!slotId) fieldErrors.slotId = "Choose a delivery slot."
+  } else if (!pointId) {
+    fieldErrors.pointId = "Choose a pickup point."
   }
   if (Object.keys(fieldErrors).length > 0) return { fieldErrors }
 
@@ -83,14 +87,19 @@ export async function createOrderAction(_prev: ActionState, formData: FormData):
       campaignId: parsed.data.campaignId,
       buyer: { uid: account.uid, email: account.email, ...profile },
       lines: parseCart(parseJson(parsed.data.cart)),
-      fulfillment: fulfillment === "delivery" ? { type: "delivery", address, slotId } : { type: "pickup" },
+      fulfillment: fulfillment === "delivery" ? { type: "delivery", address, slotId } : { type: "pickup", pointId },
       checkoutId: parsed.data.checkoutId,
       deviceKey: deviceKeyOf(device),
       staff: !!(await getStaff()),
     })
     token = order.token
   } catch (error) {
-    return failure(error, { SLOT_UNAVAILABLE: "slotId", INVALID_DELIVERY: "address" })
+    return failure(error, {
+      SLOT_UNAVAILABLE: "slotId",
+      INVALID_DELIVERY: "address",
+      PICKUP_POINT_UNAVAILABLE: "pointId",
+      NOT_AT_PICKUP_POINT: "pointId",
+    })
   }
   // The next checkout starts from what was typed here. The order is made either way.
   await saveBuyerProfile(account, profile).catch((error: unknown) => reportError(error, "save buyer profile"))

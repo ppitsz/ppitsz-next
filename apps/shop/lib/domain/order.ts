@@ -302,7 +302,7 @@ export function countUnpaid(orders: Order[], campaignId: string, now: Date) {
 
 /**
  * Changes whenever the buyer's page would look different: status, pickup
- * progress, a verdict on the proof. The page polls it to refresh itself.
+ * progress, a verdict on the proof, a new pickup point. The page polls it to refresh itself.
  */
 export function orderVersion(order: Order) {
   const picked = order.items.filter((i) => i.pickedUp).length
@@ -313,6 +313,7 @@ export function orderVersion(order: Order) {
     order.payment.verifiedAt?.getTime() ?? 0,
     order.rejections.length,
     order.delivery?.sentAt?.getTime() ?? 0,
+    order.pickupPoint?.id ?? "",
   ].join(".")
 }
 

@@ -75,7 +75,7 @@ The whole sales site, PPITSZ Shop, holding every campaign. Its main page leads w
 _Avoid_: store, marketplace, toko
 
 **Campaign**:
-One sale period, such as GumamChan at SZ Cup 2027, with its own products, bundles, online order dates, ways of selling, delivery slots and fee, payment window, payment accounts and pickup info. Several can be open at once, and any campaign may mix food and merchandise. Next year's sale of the same kind is a new campaign.
+One sale period, such as GumamChan at SZ Cup 2027, with its own products, bundles, online order dates, ways of selling, delivery slots and fee, pickup points, booth place, payment window and payment accounts. Several can be open at once, and any campaign may mix food and merchandise. Next year's sale of the same kind is a new campaign.
 _Avoid_: event, sale, store
 
 **Campaign status**:
@@ -100,6 +100,9 @@ _Avoid_: temporary product, permanent product
 **Label**:
 A short word an admin puts on a product for buyers, such as New, Spicy or Weekly; at most three. It says nothing about stock or dates, which the shop shows itself (Coming soon, Almost gone, Sold out).
 _Avoid_: tag, badge (that is how it is drawn)
+
+**Pickup limit** (`pickupPointIds` in code):
+The pickup points a product can be collected at, when only some have it, such as food made fresh for one day. None ticked means any point. At checkout the buyer only sees the points that have every item in the cart, bundles included. Delivery and the booth ignore it.
 
 **Allergen**:
 What a product contains or may contain that some buyers must avoid, such as Coconut or May contain shellfish (shrimp paste), listed with the product.
@@ -128,10 +131,17 @@ An order a buyer places on the shop's website and pays by transfer with a proof.
 _Avoid_: pre-order
 
 **Fulfillment**:
-How an order reaches its buyer: **Delivery**, **Pickup** (collected with its QR at the pickup place) or **Booth** (a walk-in sale). A campaign chooses which of the three it offers; the buyer of an online order picks Delivery or Pickup at checkout.
+How an order reaches its buyer: **Delivery**, **Pickup** (collected with its QR at a pickup point) or **Booth** (a walk-in sale). A campaign chooses which of the three it offers; the buyer of an online order picks Delivery or Pickup at checkout.
 
 **Delivery slot**:
 A date and time range a delivery order is delivered in, with an optional maximum number of orders. A slot is full when its live orders reach the maximum, and can't be picked once it has started. An order keeps a copy of its slot.
+
+**Pickup point**:
+A place, a date and a time range where pickup orders are collected, such as PPIT booth, Sat Mar 13, 10:00–16:00. A campaign offering Pickup lists one or more, and one day can have several at separate places. The buyer picks one at checkout, and it can't be picked once it has started. An order keeps a copy of its point; staff can move it to another. Pickup orders from before pickup points have none and may be collected at any.
+_Avoid_: pickup place, pickup info, pickup slot
+
+**Booth place**:
+Where and when a campaign's booth sells in person, as one line of text, such as PPIT booth at SZ Cup, Wed Mar 17, 09:00–17:00. Shown while the booth is on.
 
 **Delivery fee**:
 One flat amount per campaign, added once to every delivery order's total. 0 is free delivery.
@@ -218,7 +228,7 @@ The campaign counted from its orders: what was sold, money in and refunded per p
 _Avoid_: report, dashboard
 
 **Pickup list**:
-The printed backup for the booth: paid pickup orders still to collect, by buyer name, made just before the event in case the internet fails.
+The printed backup for the booth: paid pickup orders still to collect, one table per pickup point, by buyer name, made just before the event in case the internet fails.
 
 **Delivery list**:
 Paid delivery orders not delivered yet, of every campaign, grouped by slot: the dashboard's Delivery page, and its printed copy for a delivery run.

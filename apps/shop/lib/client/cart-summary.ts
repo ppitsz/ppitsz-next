@@ -20,6 +20,14 @@ export interface SummaryLine {
   units: SummaryUnit[]
   /** True when checkout asks for a custom nickname for every unit of this line. */
   allowNickname: boolean
+  /** The products in this line that can only be picked up at some pickup points. */
+  pickupLimits: PickupLimit[]
+}
+
+/** A product that can only be picked up at the points in `pointIds`. */
+export interface PickupLimit {
+  name: string
+  pointIds: string[]
 }
 
 export interface SummaryUnit {
@@ -69,6 +77,9 @@ export function cartSummary(
         short: false,
         units,
         allowNickname: false,
+        pickupLimits: bundle.components.flatMap((c) =>
+          c.pickupPointIds?.length ? [{ name: c.name, pointIds: c.pickupPointIds }] : []
+        ),
       })
       continue
     }
@@ -88,6 +99,7 @@ export function cartSummary(
       short: false,
       units: [{ key: variantKey(product.id, variant.id), qty: 1, name: product.name, variant }],
       allowNickname: product.allowNickname === true,
+      pickupLimits: product.pickupPointIds?.length ? [{ name: product.name, pointIds: product.pickupPointIds }] : [],
     })
   }
 

@@ -51,7 +51,12 @@ export default async function HomePage() {
   const { active, done } = splitOrders(orders)
   const items = sales.flatMap((s) => s.items)
   const [lead, ...others] = sales
-  const collecting = open.filter((c) => c.offers.pickup && c.pickupInfo)
+  // The places of pickup points still to come, each once.
+  const pickupPlaces = [
+    ...new Set(
+      open.filter((c) => c.offers.pickup).flatMap((c) => c.pickupPoints.filter((p) => p.endsAt > now).map((p) => p.place))
+    ),
+  ]
   const slots = bySlotTime(open.filter((c) => c.offers.delivery).flatMap((c) => c.deliverySlots))
     .filter((s) => s.startsAt > now)
     .slice(0, SLOTS_SHOWN)
@@ -136,7 +141,7 @@ export default async function HomePage() {
           delivery: open.some((c) => c.offers.delivery),
           pickup: open.length === 0 || open.some((c) => c.offers.pickup),
         }}
-        pickupPlaces={[...new Set(collecting.map((c) => c.pickupInfo))]}
+        pickupPlaces={pickupPlaces}
         slots={slots}
       />
     </>

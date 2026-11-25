@@ -1,5 +1,6 @@
 import { slotState, type SlotState } from "./domain/delivery"
 import { onlineWindowState } from "./domain/order"
+import { pickupPointState, type PickupPointState } from "./domain/pickup"
 import { saleWindow } from "./domain/product"
 import { availability } from "./domain/stock"
 import type { Bundle, Campaign, CampaignOffers, Category, PaymentMethod, Product, Variant } from "./domain/types"
@@ -35,6 +36,8 @@ export interface CatalogProduct {
   onSaleFrom?: string
   /** ISO date its sale ends, if it has one. Past it, the product leaves the catalog. */
   onSaleUntil?: string
+  /** The pickup points it can be picked up at; missing: any. */
+  pickupPointIds?: string[]
   variants: CatalogVariant[]
 }
 
@@ -55,6 +58,8 @@ export interface CatalogComponent {
   /** Units of the picked variant in one bundle. */
   qty: number
   sizeChart?: CatalogSizeChart
+  /** As on the product. */
+  pickupPointIds?: string[]
   variants: CatalogVariant[]
 }
 
@@ -76,6 +81,16 @@ export interface CatalogSlot {
   state: SlotState
 }
 
+/** A pickup point as checkout shows it. */
+export interface CatalogPickupPoint {
+  id: string
+  place: string
+  /** ISO dates, for the client. */
+  startsAt: string
+  endsAt: string
+  state: PickupPointState
+}
+
 export interface Catalog {
   campaignId: string
   campaignName: string
@@ -83,7 +98,8 @@ export interface Catalog {
   slug: string
   tagline: string
   coverImageUrl?: string
-  pickupInfo: string
+  /** Where and when the booth sells. */
+  boothInfo: string
   /** ISO dates, for the client; null for no limit. */
   onlineOpensAt: string | null
   onlineClosesAt: string | null
@@ -93,6 +109,7 @@ export interface Catalog {
   offers: CampaignOffers
   deliveryFeeFen: number
   deliverySlots: CatalogSlot[]
+  pickupPoints: CatalogPickupPoint[]
   paymentWindowMinutes: number
   /** Products sold on their own. */
   products: CatalogProduct[]
@@ -129,7 +146,7 @@ export function toCatalog(
     slug: campaign.slug,
     tagline: campaign.tagline,
     coverImageUrl: campaign.coverImagePath ? mediaUrl(campaign.coverImagePath) : undefined,
-    pickupInfo: campaign.pickupInfo,
+    boothInfo: campaign.boothInfo,
     onlineOpensAt: campaign.onlineOpensAt?.toISOString() ?? null,
     onlineClosesAt: campaign.onlineClosesAt?.toISOString() ?? null,
     window: onlineWindowState(campaign, now, { staff }),
@@ -142,6 +159,15 @@ export function toCatalog(
           startsAt: s.startsAt.toISOString(),
           endsAt: s.endsAt.toISOString(),
           state: slotState(s, slotPlaces.get(s.id) ?? 0, now),
+        }))
+      : [],
+    pickupPoints: campaign.offers.pickup
+      ? campaign.pickupPoints.map((p) => ({
+          id: p.id,
+          place: p.place,
+          startsAt: p.startsAt.toISOString(),
+          endsAt: p.endsAt.toISOString(),
+          state: pickupPointState(p, now),
         }))
       : [],
     paymentWindowMinutes: campaign.paymentWindowMinutes,
@@ -159,6 +185,7 @@ export function toCatalog(
         allergens: p.allergens,
         onSaleFrom: saleWindow(p, now) === "upcoming" ? p.onSaleFrom!.toISOString() : undefined,
         onSaleUntil: p.onSaleUntil?.toISOString(),
+        pickupPointIds: campaign.offers.pickup ? p.pickupPointIds : undefined,
         variants: p.variants.map(toCatalogVariant),
       })),
     bundles: bundles.flatMap((b) => {
@@ -176,6 +203,7 @@ export function toCatalog(
             name: product!.name,
             qty: component.qty,
             sizeChart: sizeChartOf(product!),
+            pickupPointIds: campaign.offers.pickup ? product!.pickupPointIds : undefined,
             variants: product!.variants.map(toCatalogVariant),
           })),
         },

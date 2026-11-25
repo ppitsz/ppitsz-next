@@ -1,4 +1,5 @@
 import { ShopError } from "./errors"
+import { MAX_PICKUP_POINTS, POINT_ID_PATTERN } from "./pickup"
 import type { Category, PaymentAccount, Product, SizeChart, Variant } from "./types"
 
 /*
@@ -48,6 +49,8 @@ export interface ProductEdit {
   /** Null or missing: no limit on that side. */
   onSaleFrom?: Date | null
   onSaleUntil?: Date | null
+  /** The pickup points it can be picked up at. Missing or empty: any pickup point. */
+  pickupPointIds?: string[]
   sortOrder: number
   variants: VariantEdit[]
   /** Null or no measures: no measurement table. */
@@ -62,7 +65,7 @@ export type VariantField = "label" | "priceFen" | "stock" | "onlineCap" | "measu
 export interface ProductIssue {
   code: "INVALID_PRODUCT" | "STOCK_BELOW_SOLD" | "VARIANT_IN_USE"
   /** The product field, or a variant's field together with `index`. */
-  field: "name" | "description" | "sortOrder" | "onSale" | "tags" | "allergens" | "variants" | "sizeChart" | VariantField
+  field: "name" | "description" | "sortOrder" | "onSale" | "pickupPointIds" | "tags" | "allergens" | "variants" | "sizeChart" | VariantField
   /** Which of `edit.variants`, for a variant's field. */
   index?: number
   /** A sentence to show next to the field. */
@@ -89,6 +92,10 @@ export function checkProductEdit(stored: Variant[], edit: ProductEdit): ProductI
   }
   if (edit.onSaleFrom && edit.onSaleUntil && edit.onSaleUntil <= edit.onSaleFrom) {
     invalid("onSale", "The sale end date must be after the start date.")
+  }
+  const pointIds = edit.pickupPointIds ?? []
+  if (pointIds.length > MAX_PICKUP_POINTS || pointIds.some((id) => !POINT_ID_PATTERN.test(id))) {
+    invalid("pickupPointIds", "The pickup points aren't right. Reload the page.")
   }
   const tags = cleanList(edit.tags)
   if (tags.length > MAX_TAGS) invalid("tags", `At most ${MAX_TAGS} labels.`)
@@ -236,6 +243,7 @@ export function applyProductEdit(
     allowNickname: edit.allowNickname && edit.category === "merch" ? true : undefined,
     onSaleFrom: edit.onSaleFrom ?? undefined,
     onSaleUntil: edit.onSaleUntil ?? undefined,
+    pickupPointIds: edit.pickupPointIds?.length ? [...new Set(edit.pickupPointIds)] : undefined,
     sortOrder: edit.sortOrder,
     variants,
   }

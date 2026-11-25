@@ -2,6 +2,7 @@ import NextLink from "next/link"
 
 import { StatusBadge } from "@ppitsz/ui/components/status-badge"
 import { formatDate, formatTime, toShenzhenIso } from "@ppitsz/ui/lib/format"
+import { pickupWhere } from "@/lib/campaign-copy"
 import { campaignPhase } from "@/lib/domain/campaign"
 import type { Campaign } from "@/lib/domain/types"
 
@@ -117,10 +118,11 @@ function TimeCell({ campaign, phase }: { campaign: Campaign; phase: Phase }) {
   )
 }
 
-/** Where the order comes in: the pickup place, delivery, or both. */
+/** Where the order comes in: the pickup places, delivery, or both; else the booth. */
 function platform(campaign: Campaign) {
   const { delivery, pickup, booth } = campaign.offers
-  if (pickup && delivery) return `${campaign.pickupInfo || "Pickup"} · or delivered`
-  if (pickup || booth) return campaign.pickupInfo || "Our booth"
+  if (pickup && delivery) return `${pickupWhere(campaign.pickupPoints)} · or delivered`
+  if (pickup) return pickupWhere(campaign.pickupPoints)
+  if (booth) return campaign.boothInfo || "Our booth"
   return "Delivered to you"
 }

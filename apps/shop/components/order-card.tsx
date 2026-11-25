@@ -6,7 +6,7 @@ import { StationCode } from "@ppitsz/ui/components/network/station-code"
 import { StripMap } from "@ppitsz/ui/components/network/strip-map"
 import { StatusBadge } from "@ppitsz/ui/components/status-badge"
 import { formatDate, formatYuan } from "@ppitsz/ui/lib/format"
-import { slotLabel } from "@/lib/campaign-copy"
+import { orderPickupNote, slotLabel } from "@/lib/campaign-copy"
 import { displayStatus } from "@/lib/domain/delivery"
 import { customNamesLabel, DELIVERY_ROUTE, ORDER_ROUTE, routeStage } from "@/lib/domain/order"
 import type { Campaign, Order } from "@/lib/domain/types"
@@ -21,7 +21,7 @@ import { TestBadge } from "./test-badge"
 
 const SHOWN_ITEMS = 3
 
-export function OrderCard({ order, campaign }: { order: Order; campaign: Pick<Campaign, "name" | "pickupInfo"> | undefined }) {
+export function OrderCard({ order, campaign }: { order: Order; campaign: Pick<Campaign, "name" | "pickupPoints" | "boothInfo"> | undefined }) {
   const status = displayStatus(order)
   const more = order.items.length - SHOWN_ITEMS
 
@@ -60,7 +60,7 @@ export function OrderCard({ order, campaign }: { order: Order; campaign: Pick<Ca
           <MapPinIcon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted" />
           {order.delivery
             ? `Delivery ${slotLabel(order.delivery.slot)} to ${order.delivery.address}`
-            : `Pick up at ${campaign?.pickupInfo || "the pickup place"}`}
+            : `Pick up at ${orderPickupNote(order, campaign)}`}
         </p>
       )}
 

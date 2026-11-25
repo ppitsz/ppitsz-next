@@ -41,7 +41,11 @@ export default async function SettingsPage() {
     featuredProductId: campaign.featuredProductId ?? "",
     sortOrder: campaign.sortOrder,
     status: campaign.status,
-    pickupInfo: campaign.pickupInfo,
+    boothInfo: campaign.boothInfo,
+    pickupPoints: campaign.pickupPoints.map((p) => {
+      const starts = toShenzhenInput(p.startsAt)
+      return { id: p.id, place: p.place, date: starts.slice(0, 10), from: starts.slice(11), to: toShenzhenInput(p.endsAt).slice(11) }
+    }),
     onlineOpensAt: campaign.onlineOpensAt ? toShenzhenInput(campaign.onlineOpensAt) : "",
     onlineClosesAt: campaign.onlineClosesAt ? toShenzhenInput(campaign.onlineClosesAt) : "",
     offers: campaign.offers,

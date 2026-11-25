@@ -8,6 +8,7 @@ import type {
   DeliverySlot,
   Order,
   Payment,
+  PickupPoint,
   Product,
   Refund,
   Rejection,
@@ -55,7 +56,9 @@ export function campaignFromDoc(snap: DocumentSnapshot): Campaign {
     onlineOpensAt: toDateOrNull(d.onlineOpensAt),
     onlineClosesAt: toDateOrNull(d.onlineClosesAt),
     offers: { delivery: false, pickup: true, booth: true, ...d.offers },
-    pickupInfo: d.pickupInfo ?? "",
+    // Before pickup points, one text was the pickup place and the booth.
+    boothInfo: d.boothInfo ?? d.pickupInfo ?? "",
+    pickupPoints: ((d.pickupPoints ?? []) as DocumentData[]).map(pointFromDoc),
     deliveryFeeFen: d.deliveryFeeFen ?? 0,
     deliverySlots: ((d.deliverySlots ?? []) as DocumentData[]).map(slotFromDoc),
     paymentAccounts: d.paymentAccounts ?? [],
@@ -69,7 +72,16 @@ export function campaignToDoc({ id: _id, ...c }: Campaign): DocumentData {
     onlineOpensAt: c.onlineOpensAt && Timestamp.fromDate(c.onlineOpensAt),
     onlineClosesAt: c.onlineClosesAt && Timestamp.fromDate(c.onlineClosesAt),
     deliverySlots: c.deliverySlots.map(slotToDoc),
+    pickupPoints: c.pickupPoints.map(pointToDoc),
   })
+}
+
+function pointFromDoc(d: DocumentData): PickupPoint {
+  return { id: d.id, place: d.place, startsAt: toDate(d.startsAt), endsAt: toDate(d.endsAt) }
+}
+
+function pointToDoc(p: PickupPoint): DocumentData {
+  return { ...p, startsAt: Timestamp.fromDate(p.startsAt), endsAt: Timestamp.fromDate(p.endsAt) }
 }
 
 function slotFromDoc(d: DocumentData): DeliverySlot {
@@ -114,6 +126,7 @@ export function productFromDoc(snap: DocumentSnapshot): Product {
     allergens: d.allergens ?? [],
     onSaleFrom: toDateOrUndefined(d.onSaleFrom),
     onSaleUntil: toDateOrUndefined(d.onSaleUntil),
+    pickupPointIds: d.pickupPointIds?.length ? d.pickupPointIds : undefined,
     sortOrder: d.sortOrder ?? 0,
     variants: d.variants,
   }
@@ -189,6 +202,7 @@ export function orderFromDoc(snap: DocumentSnapshot): Order {
     items: d.items,
     totalFen: d.totalFen,
     delivery: deliveryFromDoc(d.delivery),
+    pickupPoint: d.pickupPoint && pointFromDoc(d.pickupPoint),
     status: d.status,
     payment: paymentFromDoc(d.payment),
     rejections: rejectionsFromDoc(d.rejections),
@@ -210,6 +224,7 @@ export function orderToDoc({ id: _id, ...o }: Order): DocumentData {
     ...o,
     payment: paymentToDoc(o.payment),
     delivery: o.delivery && deliveryToDoc(o.delivery),
+    pickupPoint: o.pickupPoint && pointToDoc(o.pickupPoint),
     // Query only, never read back: the slot limit counts orders by slot.
     slotKey: o.delivery ? `${o.campaignId}/${o.delivery.slot.id}` : undefined,
     rejections: o.rejections.map((r) => ({ ...r, at: Timestamp.fromDate(r.at) })),

@@ -1,7 +1,7 @@
 import { fulfillmentOf, type Fulfillment } from "./delivery"
 import { awaitsRefund, customNamesLabel, isBundleItem, refundDue } from "./order"
 import { availability } from "./stock"
-import type { Bundle, Campaign, Channel, Order, OrderItem, PaymentMethod, Product } from "./types"
+import type { Bundle, Campaign, Channel, Order, OrderItem, PaymentMethod, PickupPoint, Product } from "./types"
 
 /*
  * The sales recap: money, what was sold, and the stock behind it, from a
@@ -279,6 +279,8 @@ export interface PickupEntry {
   wechatId: string
   /** "2× Kaos SZ Cup 2027 · M – Names: Budi, Ani" per item still to hand over. */
   items: string[]
+  /** Missing on orders from before pickup points. */
+  pickupPoint?: PickupPoint
 }
 
 /**
@@ -294,6 +296,7 @@ export function pickupList(orders: Order[]): PickupEntry[] {
       code: o.code,
       name: o.buyer!.name,
       wechatId: o.buyer!.wechatId,
+      pickupPoint: o.pickupPoint,
       items: o.items
         .filter((i) => !i.pickedUp)
         .map((i) => {
@@ -302,4 +305,22 @@ export function pickupList(orders: Order[]): PickupEntry[] {
         }),
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "id", { sensitivity: "base" }) || a.code.localeCompare(b.code))
+}
+
+/**
+ * The pickup list split by pickup point, earliest first, each still by buyer
+ * name; orders from before pickup points come last, under null.
+ */
+export function byPickupPoint(entries: PickupEntry[]) {
+  const groups = new Map<string, { point: PickupPoint | null; entries: PickupEntry[] }>()
+  for (const entry of entries) {
+    const point = entry.pickupPoint ?? null
+    const key = point ? `${entry.campaignId}/${point.id}/${point.startsAt.getTime()}` : ""
+    const group = groups.get(key) ?? { point, entries: [] }
+    group.entries.push(entry)
+    groups.set(key, group)
+  }
+  return [...groups.values()].sort(
+    (a, b) => (a.point?.startsAt.getTime() ?? Infinity) - (b.point?.startsAt.getTime() ?? Infinity)
+  )
 }

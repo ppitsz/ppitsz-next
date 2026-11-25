@@ -290,6 +290,13 @@ function ScanResultCard({
         {gate.description && <GateDescription>{gate.description}</GateDescription>}
       </Gate>
 
+      {order.pickupPoint && order.status === "paid" && (
+        <p className="type-body-sm text-text">
+          <span className="text-muted">Pickup point: </span>
+          {order.pickupPoint}
+        </p>
+      )}
+
       {order.delivery && order.status === "paid" && (
         <Alert variant="warning">
           <AlertTitle>Delivery order · {order.delivery.slot}</AlertTitle>

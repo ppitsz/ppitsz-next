@@ -22,7 +22,7 @@ import { StationNameplate } from "@ppitsz/ui/components/network/station-nameplat
 import { StripMap } from "@ppitsz/ui/components/network/strip-map"
 import { formatDate, formatTime, formatYuan } from "@ppitsz/ui/lib/format"
 import { mediaUrl, PAYMENT_METHOD_LABELS } from "@/lib/catalog"
-import { slotLabel } from "@/lib/campaign-copy"
+import { orderPickupNote, slotLabel } from "@/lib/campaign-copy"
 import { displayStatus } from "@/lib/domain/delivery"
 import {
   DELIVERY_ROUTE,
@@ -233,7 +233,7 @@ async function StatusPanel({ order, campaign }: { order: Order; campaign: Campai
                 </TicketField>
                 <TicketField label="Items">{units}</TicketField>
                 <TicketField label="Pick up at" className="col-span-2">
-                  {campaign.pickupInfo}
+                  {orderPickupNote(order, campaign)}
                 </TicketField>
               </TicketFields>
             </TicketBody>

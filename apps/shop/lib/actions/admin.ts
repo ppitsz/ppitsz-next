@@ -7,7 +7,7 @@ import { failure, type ActionState } from "./state"
 import { sendAlert } from "../server/alerts"
 import { requireStaff } from "../server/auth"
 import { checkCampaignEdit, type CampaignEdit } from "../domain/campaign"
-import { CAMPAIGN_STATUSES, CATEGORIES, type DeliverySlot } from "../domain/types"
+import { CAMPAIGN_STATUSES, CATEGORIES, type DeliverySlot, type PickupPoint } from "../domain/types"
 import { fromShenzhenInput } from "../shenzhen-time"
 import {
   deleteBundle,
@@ -41,6 +41,8 @@ const productSchema = z.object({
   /** ISO dates from the form (it converts from Shenzhen time); null for no limit. */
   onSaleFrom: z.iso.datetime().nullable().optional(),
   onSaleUntil: z.iso.datetime().nullable().optional(),
+  /** Empty for any pickup point. */
+  pickupPointIds: z.array(z.string().max(100)).max(50).optional(),
   tags: z.array(z.string().max(100)).max(20).optional(),
   allergens: z.array(z.string().max(200)).max(40).optional(),
   sortOrder: z.number(),
@@ -155,7 +157,17 @@ const campaignSchema = z.object({
   slug: z.string().max(100),
   codePrefix: z.string().max(10),
   tagline: z.string().max(1000),
-  pickupInfo: z.string().max(1000),
+  boothInfo: z.string().max(1000),
+  pickupPoints: z
+    .array(
+      z.object({
+        id: z.string().regex(/^[a-z0-9-]{1,40}$/),
+        place: z.string().max(200),
+        startsAt: z.string(),
+        endsAt: z.string(),
+      })
+    )
+    .max(50),
   /** Shenzhen "YYYY-MM-DDTHH:mm"; empty for no limit. */
   onlineOpensAt: z.string(),
   onlineClosesAt: z.string(),
@@ -202,7 +214,13 @@ export async function saveCampaignAction(
   await requireStaff("admin")
   const parsed = campaignSchema.safeParse(parseJson(formData.get("data")))
   if (!parsed.success) return { error: firstIssue(parsed.error) }
-  const { accounts: accountFields, copyAccountsFrom, deliverySlots: slotFields, ...data } = parsed.data
+  const {
+    accounts: accountFields,
+    copyAccountsFrom,
+    deliverySlots: slotFields,
+    pickupPoints: pointFields,
+    ...data
+  } = parsed.data
 
   // Empty is no limit (null); anything unreadable is undefined.
   const optionalDate = (value: string) => (value ? (fromShenzhenInput(value) ?? undefined) : null)
@@ -216,6 +234,13 @@ export async function saveCampaignAction(
     if (!startsAt || !endsAt) return { error: "Fill in the date and time of every delivery slot." }
     deliverySlots.push({ id: slot.id, startsAt, endsAt, maxOrders: slot.maxOrders })
   }
+  const pickupPoints: PickupPoint[] = []
+  for (const point of pointFields) {
+    const startsAt = fromShenzhenInput(point.startsAt)
+    const endsAt = fromShenzhenInput(point.endsAt)
+    if (!startsAt || !endsAt) return { error: "Fill in the date and time of every pickup point." }
+    pickupPoints.push({ id: point.id, place: point.place, startsAt, endsAt })
+  }
   if (new Set(accountFields.map((a) => a.id)).size !== accountFields.length) {
     return { error: "A payment account appears twice. Reload the page." }
   }
@@ -224,6 +249,7 @@ export async function saveCampaignAction(
     onlineOpensAt: opens,
     onlineClosesAt: closes,
     deliverySlots,
+    pickupPoints,
     featuredProductId: data.featuredProductId || null,
   }
   // The first problem, before any upload; the store checks again against the other campaigns.

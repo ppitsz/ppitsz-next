@@ -25,6 +25,7 @@ import { saveCampaignAction } from "@/lib/actions/admin"
 import { PAYMENT_METHOD_LABELS } from "@/lib/catalog"
 import { STATUSES } from "@ppitsz/ui/lib/network"
 import { MAX_TAGLINE_LENGTH, suggestSlug } from "@/lib/domain/campaign"
+import { MAX_PICKUP_POINTS, MAX_PLACE_LENGTH } from "@/lib/domain/pickup"
 import { CAMPAIGN_STATUSES, type CampaignOffers, type CampaignStatus, type PaymentAccount } from "@/lib/domain/types"
 import { ImageField, imageForUpload, KEEP_IMAGE, setImage, type ImageChoice } from "./image-field"
 
@@ -41,7 +42,8 @@ export interface CampaignFormValues {
   featuredProductId: string
   sortOrder: number
   status: CampaignStatus
-  pickupInfo: string
+  boothInfo: string
+  pickupPoints: PointRow[]
   /** "2027-03-15T23:59", Shenzhen time; empty for no limit. */
   onlineOpensAt: string
   onlineClosesAt: string
@@ -64,9 +66,18 @@ export interface SlotRow {
   maxOrders: string
 }
 
+/** A pickup point as typed: a place, "2027-03-13", "15:00" and "18:00". */
+export interface PointRow {
+  id: string
+  place: string
+  date: string
+  from: string
+  to: string
+}
+
 const OFFER_LABELS: Record<keyof CampaignOffers, { label: string; help: string }> = {
   delivery: { label: "Delivery", help: "Online orders are delivered to the buyer's address, by us or a courier." },
-  pickup: { label: "Pickup", help: "Online orders are picked up at the pickup place, with a QR code." },
+  pickup: { label: "Pickup", help: "Online orders are picked up at a pickup point the buyer chooses, with a QR code." },
   booth: { label: "Booth", help: "Sell in person at the register. Without a booth, all stock can be ordered online." },
 }
 
@@ -94,6 +105,10 @@ function parseYuan(text: string) {
 
 function newSlot(previous: SlotRow | undefined): SlotRow {
   return { id: newAccountId(), date: previous?.date ?? "", from: previous?.from ?? "15:00", to: previous?.to ?? "18:00", maxOrders: "" }
+}
+
+function newPoint(previous: PointRow | undefined): PointRow {
+  return { id: newAccountId(), place: previous?.place ?? "", date: previous?.date ?? "", from: previous?.from ?? "15:00", to: previous?.to ?? "18:00" }
 }
 
 /**
@@ -129,7 +144,8 @@ export function CampaignForm({
   const [featuredId, setFeaturedId] = useState(values.featuredProductId)
   const [sortOrder, setSortOrder] = useState(String(values.sortOrder))
   const [status, setStatus] = useState<CampaignStatus>(values.status)
-  const [pickupInfo, setPickupInfo] = useState(values.pickupInfo)
+  const [boothInfo, setBoothInfo] = useState(values.boothInfo)
+  const [points, setPoints] = useState(values.pickupPoints)
   const [opensAt, setOpensAt] = useState(values.onlineOpensAt)
   const [closesAt, setClosesAt] = useState(values.onlineClosesAt)
   const [offers, setOffers] = useState(values.offers)
@@ -158,6 +174,10 @@ export function CampaignForm({
     setSlots((current) => current.map((s) => (s.id === id ? { ...s, ...patch } : s)))
   }
 
+  function updatePoint(id: string, patch: Partial<PointRow>) {
+    setPoints((current) => current.map((p) => (p.id === id ? { ...p, ...patch } : p)))
+  }
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const formData = new FormData()
@@ -171,7 +191,13 @@ export function CampaignForm({
         featuredProductId: featuredId,
         sortOrder: Number(sortOrder),
         status,
-        pickupInfo,
+        boothInfo,
+        pickupPoints: points.map((p) => ({
+          id: p.id,
+          place: p.place,
+          startsAt: `${p.date}T${p.from}`,
+          endsAt: `${p.date}T${p.to}`,
+        })),
         onlineOpensAt: opensAt,
         onlineClosesAt: closesAt,
         offers,
@@ -324,7 +350,7 @@ export function CampaignForm({
         </Field>
 
         <FieldSet>
-          <FieldLegend>Cara jualan</FieldLegend>
+          <FieldLegend>Ways to sell</FieldLegend>
           <FieldDescription>Choose at least one.</FieldDescription>
           <div className="flex flex-col gap-3">
             {(["delivery", "pickup", "booth"] as const).map((key) => (
@@ -345,26 +371,100 @@ export function CampaignForm({
           </div>
         </FieldSet>
 
-        {(offers.pickup || offers.booth) && (
+        {offers.booth && (
           <Field>
-            <FieldLabel htmlFor="pickup">Pickup place and time</FieldLabel>
+            <FieldLabel htmlFor="booth">Booth place and time</FieldLabel>
             <Input
-              id="pickup"
-              value={pickupInfo}
+              id="booth"
+              value={boothInfo}
               maxLength={120}
               placeholder="PPIT booth at SZ Cup · Wed, Mar 17, 2027, 09:00–17:00"
-              onChange={(e) => setPickupInfo(e.target.value)}
-              aria-describedby="pickup-helper"
+              onChange={(e) => setBoothInfo(e.target.value)}
+              aria-describedby="booth-helper"
             />
-            <FieldDescription id="pickup-helper">
-              Where orders are picked up, or where the booth is. Shown in the catalog and next to the buyer's QR code.
-            </FieldDescription>
+            <FieldDescription id="booth-helper">Where buyers can buy in person. Shown in the catalog.</FieldDescription>
           </Field>
+        )}
+
+        {offers.pickup && (
+          <FieldSet className="gap-4">
+            <FieldLegend>Pickup points</FieldLegend>
+            <FieldDescription>
+              Buyers pick one at checkout, and it shows next to their QR code. A point can't be picked once it has
+              started. To limit a product to some pickup points, edit the product.
+            </FieldDescription>
+            <ul className="flex flex-col gap-4">
+              {points.map((point, i) => (
+                <li key={point.id} className="flex flex-col gap-4 rounded-xl border p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="type-heading-sm text-text">Pickup point {i + 1}</span>
+                    <Button
+                      variant="quiet"
+                      size="sm"
+                      onClick={() => setPoints((current) => current.filter((p) => p.id !== point.id))}
+                    >
+                      <TrashIcon aria-hidden />
+                      Remove pickup point {i + 1}
+                    </Button>
+                  </div>
+                  <Field>
+                    <FieldLabel htmlFor={`place-${point.id}`}>Place</FieldLabel>
+                    <Input
+                      id={`place-${point.id}`}
+                      value={point.place}
+                      maxLength={MAX_PLACE_LENGTH}
+                      placeholder="PPIT booth at SZ Cup"
+                      onChange={(e) => updatePoint(point.id, { place: e.target.value })}
+                    />
+                  </Field>
+                  <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_7rem_7rem]">
+                    <Field>
+                      <FieldLabel htmlFor={`point-date-${point.id}`}>Date</FieldLabel>
+                      <Input
+                        id={`point-date-${point.id}`}
+                        type="date"
+                        value={point.date}
+                        onChange={(e) => updatePoint(point.id, { date: e.target.value })}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor={`point-from-${point.id}`}>From</FieldLabel>
+                      <Input
+                        id={`point-from-${point.id}`}
+                        type="time"
+                        value={point.from}
+                        onChange={(e) => updatePoint(point.id, { from: e.target.value })}
+                      />
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor={`point-until-${point.id}`}>Until</FieldLabel>
+                      <Input
+                        id={`point-until-${point.id}`}
+                        type="time"
+                        value={point.to}
+                        onChange={(e) => updatePoint(point.id, { to: e.target.value })}
+                      />
+                    </Field>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {points.length < MAX_PICKUP_POINTS && (
+              <Button
+                variant="secondary"
+                className="self-start"
+                onClick={() => setPoints((current) => [...current, newPoint(current.at(-1))])}
+              >
+                <PlusIcon aria-hidden />
+                Add a pickup point
+              </Button>
+            )}
+          </FieldSet>
         )}
 
         {offers.delivery && (
           <FieldSet className="gap-4">
-            <FieldLegend>Pengantaran</FieldLegend>
+            <FieldLegend>Delivery</FieldLegend>
             <Field>
               <FieldLabel htmlFor="delivery-fee">Delivery fee (¥)</FieldLabel>
               <Input
@@ -427,7 +527,7 @@ export function CampaignForm({
                     </Field>
                     <Field>
                       <FieldLabel htmlFor={`limit-${slot.id}`} optional>
-                        Batas
+                        Limit
                       </FieldLabel>
                       <Input
                         id={`limit-${slot.id}`}

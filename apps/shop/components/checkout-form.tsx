@@ -23,17 +23,30 @@ import { Textarea } from "@ppitsz/ui/components/textarea"
 import { formatYuan } from "@ppitsz/ui/lib/format"
 import type { ActionState } from "@/lib/actions/state"
 import { createOrderAction, lookupCheckoutAction } from "@/lib/actions/buyer"
-import { slotLabel } from "@/lib/campaign-copy"
-import type { Catalog, CatalogSlot } from "@/lib/catalog"
+import { pickupPlacesNote, pickupPointLabel, slotLabel } from "@/lib/campaign-copy"
+import type { Catalog, CatalogPickupPoint, CatalogSlot } from "@/lib/catalog"
 import { isBundleLine, MAX_NICKNAME_LENGTH } from "@/lib/domain/cart"
 import { MAX_ADDRESS_LENGTH } from "@/lib/domain/delivery"
-import { cartSummary } from "@/lib/client/cart-summary"
+import { cartSummary, type PickupLimit } from "@/lib/client/cart-summary"
 import type { ProfileFields } from "@/lib/domain/account"
 import { getCheckoutId, peekCheckoutId, useAddressDraft, useCart } from "@/lib/client/local-store"
 
 const INITIAL: ActionState = {}
 
 const SLOT_NOTES: Record<CatalogSlot["state"], string> = { open: "", full: "Full", started: "Passed" }
+
+/** A pickup point as checkout offers it: open or passed, and the cart's items that aren't picked up there. */
+function pickupChoices(points: CatalogPickupPoint[], limits: PickupLimit[]) {
+  return points.map((point) => {
+    const unsuited = [...new Set(limits.filter((l) => !l.pointIds.includes(point.id)).map((l) => l.name))]
+    return {
+      point,
+      label: pickupPointLabel({ place: point.place, startsAt: new Date(point.startsAt), endsAt: new Date(point.endsAt) }),
+      unsuited,
+      open: point.state === "open" && unsuited.length === 0,
+    }
+  })
+}
 
 /** `profile` is the signed-in buyer's: the form starts from it, and the order saves it back. */
 export function CheckoutForm({ catalog, profile }: { catalog: Catalog; profile: ProfileFields }) {
@@ -58,6 +71,15 @@ export function CheckoutForm({ catalog, profile }: { catalog: Catalog; profile: 
   const [slotId, setSlotId] = useState(openSlots[0]?.id ?? "")
   const feeFen = delivering ? catalog.deliveryFeeFen : 0
   const noSlot = delivering && !openSlots.some((s) => s.id === slotId)
+  // Some products are only picked up at some points: a point must suit every item in the cart.
+  const pickupLimits = summary.lines.flatMap((l) => l.pickupLimits)
+  const choices = pickupChoices(catalog.pickupPoints, pickupLimits)
+  const openPoints = choices.filter((c) => c.open)
+  const [pickedPointId, setPointId] = useState("")
+  // With one point there is nothing to choose; with several the buyer picks one.
+  const pointId =
+    openPoints.length === 1 ? openPoints[0]!.point.id : openPoints.some((c) => c.point.id === pickedPointId) ? pickedPointId : ""
+  const noPoint = !delivering && !pointId
 
   // A reload during "Placing order…" loses the server's reply. If the last
   // attempt did create an order, go to it instead of letting the buyer order twice.
@@ -202,6 +224,7 @@ export function CheckoutForm({ catalog, profile }: { catalog: Catalog; profile: 
         <input type="hidden" name="campaignId" value={catalog.campaignId} />
         <input type="hidden" name="fulfillment" value={fulfillment} />
         {delivering && <input type="hidden" name="slotId" value={slotId} />}
+        {!delivering && <input type="hidden" name="pointId" value={pointId} />}
         <input
           type="hidden"
           name="cart"
@@ -264,7 +287,9 @@ export function CheckoutForm({ catalog, profile }: { catalog: Catalog; profile: 
                   <RadioGroupItem value="pickup" id="get-pickup" />
                   <FieldContent>
                     <span className="type-ui text-text">Pickup</span>
-                    <FieldDescription>At {catalog.pickupInfo}, with your order's QR code.</FieldDescription>
+                    <FieldDescription>
+                      Pick up {pickupPlacesNote(catalog.pickupPoints)}, with your order's QR code.
+                    </FieldDescription>
                   </FieldContent>
                 </Field>
               </FieldLabel>
@@ -323,9 +348,37 @@ export function CheckoutForm({ catalog, profile }: { catalog: Catalog; profile: 
             </FieldSet>
           </>
         ) : (
-          <p className="type-body text-text">
-            Pick up your order at {catalog.pickupInfo}. Show the QR code that appears once your payment is checked.
-          </p>
+          <FieldSet>
+            <FieldLegend>Pickup point</FieldLegend>
+            <FieldDescription>Show the QR code that appears once your payment is checked.</FieldDescription>
+            {openPoints.length === 0 && (
+              <p className="type-body-sm text-danger-text">
+                {choices.some((c) => c.point.state === "open")
+                  ? `No pickup point has every item in your cart. ${pickupLimits
+                      .map((l) => `${l.name}: only ${choices.filter((c) => l.pointIds.includes(c.point.id)).map((c) => c.label).join(", or ") || "not for pickup"}.`)
+                      .join(" ")} Order them separately${offers.delivery ? ", or choose Delivery" : ""}.`
+                  : `${choices.length > 0 ? "Every pickup point has passed." : "No pickup point is set yet."}${offers.delivery ? " Choose Delivery." : ""}`}
+              </p>
+            )}
+            <RadioGroup value={pointId} onValueChange={(v) => setPointId(String(v))} className="gap-3">
+              {choices.map(({ point, label, unsuited, open }) => (
+                <FieldLabel key={point.id} htmlFor={`point-${point.id}`}>
+                  <Field orientation="horizontal" data-disabled={!open || undefined}>
+                    <RadioGroupItem value={point.id} id={`point-${point.id}`} disabled={!open} />
+                    <FieldContent>
+                      <span className="type-ui text-text">{label}</span>
+                      {point.state === "started" ? (
+                        <FieldDescription>Passed</FieldDescription>
+                      ) : (
+                        unsuited.length > 0 && <FieldDescription>No {unsuited.join(", ")} here</FieldDescription>
+                      )}
+                    </FieldContent>
+                  </Field>
+                </FieldLabel>
+              ))}
+            </RadioGroup>
+            {state.fieldErrors?.pointId && <FieldError>{state.fieldErrors.pointId}</FieldError>}
+          </FieldSet>
         )}
 
         <Alert>
@@ -348,14 +401,19 @@ export function CheckoutForm({ catalog, profile }: { catalog: Catalog; profile: 
           variant="primary"
           size="lg"
           loading={pending}
-          disabled={hasShortage || noSlot || missingNickname}
-          aria-describedby={missingNickname ? "missing-custom-name" : undefined}
+          disabled={hasShortage || noSlot || noPoint || missingNickname}
+          aria-describedby={missingNickname ? "missing-custom-name" : noPoint && openPoints.length > 0 ? "missing-point" : undefined}
         >
           {pending ? "Placing order…" : "Place order"}
         </Button>
         {missingNickname && (
           <p id="missing-custom-name" className="type-body-sm text-muted">
             Write a custom name for every item under Custom names to place your order.
+          </p>
+        )}
+        {!missingNickname && noPoint && openPoints.length > 0 && (
+          <p id="missing-point" className="type-body-sm text-muted">
+            Choose a pickup point to place your order.
           </p>
         )}
       </form>

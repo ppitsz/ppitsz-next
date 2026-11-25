@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, test } from "bun:test"
 
 import { ShopError } from "../domain/errors"
 import type { ProductEdit } from "../domain/product"
-import type { Buyer, Product } from "../domain/types"
+import type { Buyer, CartLine, Product } from "../domain/types"
 import { bucket, db } from "../firebase/admin"
 import {
   approvePayment,
@@ -28,6 +28,7 @@ import {
   countAwaitingVerification,
   ensureBuyerProfile,
   getBuyerProfile,
+  getOrder,
   getOrderByToken,
   listBuyerOrders,
   saveBuyerProfile,
@@ -43,6 +44,7 @@ import {
   saveCampaign,
   saveProduct,
   sendByCourier,
+  setPickupPoint,
   slotPlaces,
   ordersByTransactionDigits,
   submitPaymentProof,
@@ -80,6 +82,8 @@ const buyerAs = (uid: string, patch: Partial<Buyer> = {}): Buyer => ({
   ...patch,
 })
 const NOW = new Date("2027-03-05T12:00:00+08:00")
+/** Collected at the sample campaigns' first pickup point. */
+const PICKUP = { type: "pickup", pointId: "booth" } as const
 const png = { bytes: new Uint8Array([137, 80, 78, 71, 1, 2, 3]), contentType: "image/png" }
 /** The last 6 digits of a WeChat Pay transaction number. */
 const TXN = "567890"
@@ -147,6 +151,7 @@ const order = (
       campaignId: SAMPLE_CAMPAIGN_ID,
       buyer: who,
       lines: lines.map((l) => ({ variantId: "default", ...l })),
+      fulfillment: PICKUP,
     },
     now
   )
@@ -178,7 +183,7 @@ describe("online orders", () => {
     const checkoutId = crypto.randomUUID()
     const submit = () =>
       createOnlineOrder(
-        { campaignId: SAMPLE_CAMPAIGN_ID, buyer, lines: [{ productId: "risoles", variantId: "default", qty: 2 }], checkoutId },
+        { campaignId: SAMPLE_CAMPAIGN_ID, buyer, lines: [{ productId: "risoles", variantId: "default", qty: 2 }], checkoutId, fulfillment: PICKUP },
         NOW
       )
     const [a, b] = await Promise.all([submit(), submit()])
@@ -527,6 +532,7 @@ describe("spam limits", () => {
           campaignId: SAMPLE_CAMPAIGN_ID,
           buyer: buyerAs(uid),
           lines: [{ productId: "risoles", variantId: "default", qty: 1 }],
+          fulfillment: PICKUP,
           deviceKey: "device-a",
         },
         NOW
@@ -624,6 +630,63 @@ describe("product management", () => {
   })
 })
 
+describe("pickup points", () => {
+  // The sample food campaign: "booth" and "gate" on one day, "dorm" the day after.
+  const pickupAt = (pointId: string, lines: CartLine[], now = NOW) =>
+    createOnlineOrder(
+      { campaignId: SAMPLE_CAMPAIGN_ID, buyer: buyerAs(`pickup_${++buyers}`), lines, fulfillment: { type: "pickup", pointId } },
+      now
+    )
+  const risoles = [{ productId: "risoles", variantId: "default", qty: 1 }]
+
+  test("a point can't be picked once it has started; another that day still can", async () => {
+    await expectCode(pickupAt("nope", risoles), "PICKUP_POINT_UNAVAILABLE")
+    const boothOpens = sampleCampaign(OPENED).pickupPoints[0]!.startsAt
+    await expectCode(pickupAt("booth", risoles, boothOpens), "PICKUP_POINT_UNAVAILABLE")
+    expect((await pickupAt("gate", risoles, boothOpens)).pickupPoint!.id).toBe("gate")
+  })
+
+  test("a product limited to some points can only be picked up there, also inside a bundle", async () => {
+    const limited = sampleProducts().map((p) =>
+      p.id === "risoles" ? { ...p, pickupPointIds: ["dorm"] } : p.id === "kaos-szcup" ? { ...p, pickupPointIds: ["booth", "gate"] } : p
+    )
+    await seedOne({ products: limited })
+    await expectCode(pickupAt("booth", risoles), "NOT_AT_PICKUP_POINT")
+    expect((await variantOf("risoles")).onlineOrdered).toBe(0)
+    expect((await pickupAt("dorm", risoles)).pickupPoint!.id).toBe("dorm")
+    const bundle = { bundleId: "paket-merch", picks: ["m", "default"], qty: 1 }
+    await expectCode(pickupAt("dorm", [bundle]), "NOT_AT_PICKUP_POINT")
+    await pickupAt("gate", [bundle])
+    // Delivery ignores it.
+    await createOnlineOrder(
+      {
+        campaignId: SAMPLE_CAMPAIGN_ID,
+        buyer: buyerAs("delivered"),
+        lines: risoles,
+        fulfillment: { type: "delivery", address: "SZU 粤海 斋区 5栋 302", slotId: "sabtu" },
+      },
+      NOW
+    )
+  })
+
+  test("staff move a pickup order to any point, never a delivery order", async () => {
+    const created = await pickupAt("booth", risoles)
+    expect((await setPickupPoint(created.id, "dorm")).pickupPoint!.id).toBe("dorm")
+    expect((await getOrder(created.id))!.pickupPoint!.place).toBe("SZU dorms, Building 5")
+    await expectCode(setPickupPoint(created.id, "nope"), "PICKUP_POINT_UNAVAILABLE")
+    const delivered = await createOnlineOrder(
+      {
+        campaignId: SAMPLE_CAMPAIGN_ID,
+        buyer: buyerAs("delivered"),
+        lines: risoles,
+        fulfillment: { type: "delivery", address: "SZU 粤海 斋区 5栋 302", slotId: "sabtu" },
+      },
+      NOW
+    )
+    await expectCode(setPickupPoint(delivered.id, "dorm"), "NOT_PICKUP")
+  })
+})
+
 describe("campaign settings", () => {
   const settings = (overrides: Partial<CampaignSave> = {}): CampaignSave => ({
     name: "Merch SZ Cup",
@@ -632,7 +695,10 @@ describe("campaign settings", () => {
     tagline: "Kaos dan gantungan kunci.",
     sortOrder: 2,
     status: "draft",
-    pickupInfo: "Booth PPIT, SZ Cup",
+    boothInfo: "PPIT booth at SZ Cup",
+    pickupPoints: [
+      { id: "booth", place: "PPIT booth at SZ Cup", startsAt: new Date("2027-03-13T10:00:00+08:00"), endsAt: new Date("2027-03-13T16:00:00+08:00") },
+    ],
     onlineOpensAt: OPENED,
     onlineClosesAt: new Date("2027-03-15T23:59:00+08:00"),
     offers: { delivery: false, pickup: true, booth: true },
@@ -686,6 +752,7 @@ describe("test orders", () => {
         campaignId: SAMPLE_CAMPAIGN_ID,
         buyer: who,
         lines: lines.map((l) => ({ variantId: "default", ...l })),
+        fulfillment: PICKUP,
         staff: true,
         ...extra,
       },
@@ -762,7 +829,7 @@ describe("several campaigns at once", () => {
   const kaos = [{ productId: "kaos-szcup", variantId: "m", qty: 1 }]
 
   test("codes carry the campaign's prefix and are found however they are typed", async () => {
-    const merch = await createOnlineOrder({ campaignId: SAMPLE_MERCH_ID, buyer, lines: kaos }, NOW)
+    const merch = await createOnlineOrder({ campaignId: SAMPLE_MERCH_ID, buyer, lines: kaos, fulfillment: PICKUP }, NOW)
     const food = await order([{ productId: "nasi-kuning", qty: 1 }])
     expect(merch.code).toMatch(/^MR-/)
     expect(food.code).toMatch(/^GC-/)
@@ -773,7 +840,7 @@ describe("several campaigns at once", () => {
   })
 
   test("the queues cover every campaign", async () => {
-    const merch = await createOnlineOrder({ campaignId: SAMPLE_MERCH_ID, buyer, lines: kaos }, NOW)
+    const merch = await createOnlineOrder({ campaignId: SAMPLE_MERCH_ID, buyer, lines: kaos, fulfillment: PICKUP }, NOW)
     const food = await order([{ productId: "nasi-kuning", qty: 1 }])
     for (const o of [merch, food]) await submitPaymentProof({ token: o.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, NOW)
     expect(await countAwaitingVerification()).toBe(2)
@@ -793,7 +860,7 @@ describe("several campaigns at once", () => {
   })
 
   test("orders fix the slug; a closed campaign stops selling and frees its slug", async () => {
-    const sold = await createOnlineOrder({ campaignId: SAMPLE_MERCH_ID, buyer, lines: kaos }, NOW)
+    const sold = await createOnlineOrder({ campaignId: SAMPLE_MERCH_ID, buyer, lines: kaos, fulfillment: PICKUP }, NOW)
     const merch = (await getCampaign(SAMPLE_MERCH_ID))!
     const save = (patch: Partial<CampaignSave>) => saveCampaign(merch.id, { ...merch, accounts: merch.paymentAccounts, ...patch })
     await expectCode(save({ slug: "merch-baru" }), "INVALID_CAMPAIGN")
@@ -801,7 +868,7 @@ describe("several campaigns at once", () => {
     await save({ status: "closed" })
     await expectCode(createWalkInSale({ campaignId: merch.id, lines: kaos, method: "cash" }, booth("register-1"), NOW), "CAMPAIGN_CLOSED")
     await expectCode(
-      createOnlineOrder({ campaignId: merch.id, buyer: buyerAs("lain"), lines: kaos }, NOW),
+      createOnlineOrder({ campaignId: merch.id, buyer: buyerAs("lain"), lines: kaos, fulfillment: PICKUP }, NOW),
       "ORDERING_CLOSED"
     )
     expect((await getCampaignBySlug("merch"))!.id).toBe(merch.id)
@@ -825,7 +892,7 @@ describe("bundles", () => {
 
   test("a ordered online bundle takes its components' stock, and expiry gives it back", async () => {
     const created = await createOnlineOrder(
-      { campaignId: SAMPLE_CAMPAIGN_ID, buyer, lines: [bundleLine("m", 2), { productId: "kaos-szcup", variantId: "m", qty: 1 }] },
+      { campaignId: SAMPLE_CAMPAIGN_ID, buyer, lines: [bundleLine("m", 2), { productId: "kaos-szcup", variantId: "m", qty: 1 }], fulfillment: PICKUP },
       NOW
     )
     expect(created.totalFen).toBe(2 * 8800 + 8000)
@@ -847,9 +914,9 @@ describe("bundles", () => {
       NOW
     )
     const results = await Promise.allSettled([
-      createOnlineOrder({ campaignId: SAMPLE_CAMPAIGN_ID, buyer, lines: [bundleLine("xl")] }, NOW),
+      createOnlineOrder({ campaignId: SAMPLE_CAMPAIGN_ID, buyer, lines: [bundleLine("xl")], fulfillment: PICKUP }, NOW),
       createOnlineOrder(
-        { campaignId: SAMPLE_CAMPAIGN_ID, buyer: buyerAs("other_buyer"), lines: [bundleLine("xl")] },
+        { campaignId: SAMPLE_CAMPAIGN_ID, buyer: buyerAs("other_buyer"), lines: [bundleLine("xl")], fulfillment: PICKUP },
         NOW
       ),
     ])
@@ -872,12 +939,12 @@ describe("bundles", () => {
   })
 
   test("a hidden bundle can't be bought, and deleting it keeps its orders", async () => {
-    const created = await createOnlineOrder({ campaignId: SAMPLE_CAMPAIGN_ID, buyer, lines: [bundleLine("s")] }, NOW)
+    const created = await createOnlineOrder({ campaignId: SAMPLE_CAMPAIGN_ID, buyer, lines: [bundleLine("s")], fulfillment: PICKUP }, NOW)
     const current = (await getBundle("paket-merch"))!
     await saveBundle({ campaignId: SAMPLE_CAMPAIGN_ID, bundleId: current.id, edit: { ...current, active: false } })
     expect(await listBundles(SAMPLE_CAMPAIGN_ID)).toEqual([])
     await expectCode(
-      createOnlineOrder({ campaignId: SAMPLE_CAMPAIGN_ID, buyer: buyerAs("x"), lines: [bundleLine("s")] }, NOW),
+      createOnlineOrder({ campaignId: SAMPLE_CAMPAIGN_ID, buyer: buyerAs("x"), lines: [bundleLine("s")], fulfillment: PICKUP }, NOW),
       "PRODUCT_UNAVAILABLE"
     )
     await deleteBundle(SAMPLE_CAMPAIGN_ID, "paket-merch")
@@ -933,7 +1000,7 @@ describe("size charts", () => {
 describe("refunds", () => {
   test("a paid order canceled by an admin gets its refund recorded once, for the buyer to see", async () => {
     const created = await createOnlineOrder(
-      { campaignId: SAMPLE_CAMPAIGN_ID, buyer, lines: [{ productId: "kaos-szcup", variantId: "m", qty: 1 }] },
+      { campaignId: SAMPLE_CAMPAIGN_ID, buyer, lines: [{ productId: "kaos-szcup", variantId: "m", qty: 1 }], fulfillment: PICKUP },
       NOW
     )
     await submitPaymentProof({ token: created.token, file: png, accountId: "wechat-1", transactionDigits: TXN }, NOW)
@@ -964,7 +1031,7 @@ describe("size chart tables", () => {
     }
     await saveProduct({ campaignId: SAMPLE_CAMPAIGN_ID, productId: kaos.id, edit })
     // An order writes the variants back: their rows must survive it.
-    await createOnlineOrder({ campaignId: SAMPLE_CAMPAIGN_ID, buyer, lines: [{ productId: "kaos-szcup", variantId: "m", qty: 1 }] }, NOW)
+    await createOnlineOrder({ campaignId: SAMPLE_CAMPAIGN_ID, buyer, lines: [{ productId: "kaos-szcup", variantId: "m", qty: 1 }], fulfillment: PICKUP }, NOW)
     const saved = (await getProduct("kaos-szcup"))!
     expect(saved.sizeChart).toEqual({ measures: ["Lebar dada"], note: "" })
     expect(saved.variants.map((v) => v.measurements)).toEqual([["48"], ["51"], ["54"], ["57"]])
@@ -1025,10 +1092,12 @@ describe("delivery", () => {
     await deliver("sabtu", afterDeadline)
   })
 
-  test("Pickup stays the default and carries no fee", async () => {
+  test("Pickup carries no fee and keeps a copy of its point", async () => {
     const collected = await order([{ productId: "risoles", qty: 1 }])
     expect(collected.delivery).toBeUndefined()
     expect(collected.totalFen).toBe(1000)
+    expect(collected.pickupPoint).toEqual(sampleCampaign(OPENED).pickupPoints[0])
+    expect((await getOrderByToken(collected.token, NOW))!.pickupPoint).toEqual(collected.pickupPoint)
   })
 
   test("sent by courier, then delivered whole; the delivery list follows", async () => {

@@ -58,7 +58,21 @@ export function campaign(overrides: Partial<Campaign> = {}): Campaign {
     onlineOpensAt: new Date(0),
     onlineClosesAt: new Date("2027-03-15T23:59:00+08:00"),
     offers: { delivery: true, pickup: true, booth: true },
-    pickupInfo: "Booth PPIT",
+    boothInfo: "PPIT booth",
+    pickupPoints: [
+      {
+        id: "booth-sat",
+        place: "PPIT booth",
+        startsAt: new Date("2027-03-13T10:00:00+08:00"),
+        endsAt: new Date("2027-03-13T16:00:00+08:00"),
+      },
+      {
+        id: "gate-sun",
+        place: "SZU south gate",
+        startsAt: new Date("2027-03-14T12:00:00+08:00"),
+        endsAt: new Date("2027-03-14T14:00:00+08:00"),
+      },
+    ],
     deliveryFeeFen: 500,
     deliverySlots: [
       {

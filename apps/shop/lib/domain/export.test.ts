@@ -44,8 +44,16 @@ describe("the orders file", () => {
     })
     const rows = rowsOf(ordersCsv(campaign(), [o], PAYMENT_METHOD_LABELS, () => "Nadia"))
     expect(rows[1]).toStartWith(`"GC-AAAA","1970-01-01 08:00","Delivery","Delivered"`)
-    expect(rows[1]).toEndWith(`"5.00","SZU 斋区 5栋 302","2027-03-13 15:00–18:00","SF Express","SF123","2027-03-13 16:10"`)
-    expect(rows[2]).toEndWith(`"","","","","",""`)
+    expect(rows[1]).toEndWith(`"5.00","SZU 斋区 5栋 302","2027-03-13 15:00–18:00","SF Express","SF123","2027-03-13 16:10",""`)
+    expect(rows[2]).toEndWith(`"","","","","","",""`)
+  })
+
+  test("a pickup order names its pickup point once", () => {
+    const o = order({ pickupPoint: campaign().pickupPoints[1] })
+    const rows = rowsOf(ordersCsv(campaign(), [o], PAYMENT_METHOD_LABELS, () => "Nadia"))
+    expect(rows[0]).toEndWith(`"Delivered","Pickup point"`)
+    expect(rows[1]).toEndWith(`"SZU south gate, 2027-03-14 12:00–14:00"`)
+    expect(rows[2]).toEndWith(`"",""`)
   })
 
   test("file names carry the campaign and the Shenzhen date", () => {

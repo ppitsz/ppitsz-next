@@ -14,6 +14,7 @@ import {
   slotPlacesTaken,
 } from "../domain/delivery"
 import { ShopError } from "../domain/errors"
+import { byPointTime, canChangePickupPoint, pickPickupPoint } from "../domain/pickup"
 import {
   applyCommand,
   refusal,
@@ -139,7 +140,10 @@ export async function getCampaignBySlug(slug: string): Promise<Campaign | null> 
 
 /** Roughly when a closed campaign ended, to pick the latest of several with one slug. */
 function lastDate(c: Campaign) {
-  return Math.max(c.onlineClosesAt?.getTime() ?? 0, ...c.deliverySlots.map((s) => s.endsAt.getTime()))
+  return Math.max(
+    c.onlineClosesAt?.getTime() ?? 0,
+    ...[...c.deliverySlots, ...c.pickupPoints].map((s) => s.endsAt.getTime())
+  )
 }
 
 /** True once a campaign has any order: its slug and code prefix are then fixed. */
@@ -328,8 +332,10 @@ export const saveBuyerProfile = saveProfile
 /** Makes an empty profile for an account that has none (a staff account buying), keeping the email current. */
 export const ensureBuyerProfile = ensureProfile
 
-/** How an online order reaches the buyer: delivered to an address in a slot, or collected. */
-export type FulfillmentChoice = { type: "pickup" } | { type: "delivery"; address: string; slotId: string }
+/** How an online order reaches the buyer: delivered to an address in a slot, or collected at a pickup point. */
+export type FulfillmentChoice =
+  | { type: "pickup"; pointId: string }
+  | { type: "delivery"; address: string; slotId: string }
 
 /**
  * Creates an online order. With a `checkoutId`, repeating the call (a double tap,
@@ -340,6 +346,7 @@ export type FulfillmentChoice = { type: "pickup" } | { type: "delivery"; address
  * included. Every unpaid order holds stock for the payment window, so one
  * account (and one device, when `deviceKey` is given) may hold only a few at a time.
  * A delivery order also takes a place in its slot, counted in the transaction.
+ * A pickup order's point must not have started, and every item must allow its date.
  * Overdue holds never make it fail: they are settled in the same transaction.
  */
 export async function createOnlineOrder(
@@ -347,8 +354,7 @@ export async function createOnlineOrder(
     campaignId: string
     buyer: Buyer
     lines: CartLine[]
-    /** Pickup when left out. */
-    fulfillment?: FulfillmentChoice
+    fulfillment: FulfillmentChoice
     checkoutId?: string
     deviceKey?: string
     /** Signed-in staff may order in a draft campaign: a test order. */
@@ -370,7 +376,7 @@ export async function createOnlineOrder(
   if (window === "not_open") throw new ShopError("ORDERING_NOT_OPEN")
   const test = campaign.status === "draft"
   if (window === "closed") throw new ShopError("ORDERING_CLOSED")
-  const fulfillment = input.fulfillment ?? { type: "pickup" }
+  const { fulfillment } = input
   assertFulfillment(campaign, fulfillment.type)
   const address = fulfillment.type === "delivery" ? deliveryDetails(fulfillment.address, input.buyer.phone) : ""
 
@@ -388,7 +394,11 @@ export async function createOnlineOrder(
       const taken = slotPlacesTaken(inSlot.docs.map(orderFromDoc), fulfillment.slotId, now)
       delivery = { address, slot: pickSlot(campaign, fulfillment.slotId, taken, now), feeFen: campaign.deliveryFeeFen }
     }
-    const { priced, write } = await takeStock(tx, campaign.id, lines, "online", now, campaign.offers.booth)
+    const { priced, products, write } = await takeStock(tx, campaign.id, lines, "online", now, campaign.offers.booth)
+    const pickupPoint =
+      fulfillment.type === "pickup"
+        ? pickPickupPoint(campaign, fulfillment.pointId, productsOf(priced.items, products), now)
+        : undefined
     const order = await insertOrder(tx, checkoutRef, campaign.codePrefix, now, {
       campaignId: campaign.id,
       channel: "online",
@@ -396,6 +406,7 @@ export async function createOnlineOrder(
       items: priced.items,
       totalFen: priced.totalFen + (delivery?.feeFen ?? 0),
       delivery,
+      pickupPoint,
       status: "pending_payment",
       payment: {},
       rejections: [],
@@ -483,6 +494,26 @@ export async function redeemOrder(
   now = new Date()
 ): Promise<Pick<Transition, "order" | "handedOver">> {
   return runCommand(orderId, { type: "hand_over", indexes }, staff, now)
+}
+
+/**
+ * Moves a pickup order to another of its campaign's points: a buyer asked to
+ * switch, or an order from before pickup points. Staff may pick any point,
+ * started or not, whatever dates its items allow.
+ */
+export async function setPickupPoint(orderId: string, pointId: string) {
+  return db().runTransaction(async (tx) => {
+    const order = await readOrder(tx, orderId)
+    if (!canChangePickupPoint(order)) throw new ShopError("NOT_PICKUP")
+    const campaignSnap = await tx.get(col.campaigns().doc(order.campaignId))
+    const point = campaignSnap.exists
+      ? campaignFromDoc(campaignSnap).pickupPoints.find((p) => p.id === pointId)
+      : undefined
+    if (!point) throw new ShopError("PICKUP_POINT_UNAVAILABLE")
+    const updated: Order = { ...order, pickupPoint: point }
+    tx.set(col.orders().doc(order.id), orderToDoc(updated))
+    return updated
+  })
 }
 
 /** A delivery order handed to a courier, with its tracking number. Saying it again corrects a typo. */
@@ -761,7 +792,10 @@ export async function saveCampaign(campaignId: string | null, input: CampaignSav
         featuredProductId: input.featuredProductId ?? undefined,
         sortOrder: input.sortOrder,
         status: input.status,
-        pickupInfo: input.pickupInfo.trim(),
+        boothInfo: input.offers.booth ? input.boothInfo.trim() : "",
+        pickupPoints: input.offers.pickup
+          ? byPointTime(input.pickupPoints.map((p) => ({ ...p, place: p.place.trim() })))
+          : [],
         onlineOpensAt: input.onlineOpensAt,
         onlineClosesAt: input.onlineClosesAt,
         offers: input.offers,
@@ -959,6 +993,8 @@ async function takeStock(
 
   return {
     priced,
+    /** Every product the lines and the settled orders touch, as reserved. */
+    products,
     write() {
       for (const order of expired) tx.set(col.orders().doc(order.id), orderToDoc(order))
       writeProducts(tx, [...changed].map((id) => products.get(id)!))
@@ -1051,6 +1087,11 @@ async function readBundlesById(tx: Transaction, ids: string[]) {
 /** The products whose stock `items` hold, including what their bundles hold. */
 function productIdsOf(items: OrderItem[]) {
   return stockUnits(items).map((u) => u.productId)
+}
+
+/** The products an order's items come from, bundles opened up. */
+function productsOf(items: OrderItem[], products: Map<string, Product>) {
+  return [...new Set(productIdsOf(items))].flatMap((id) => products.get(id) ?? [])
 }
 
 function writeProducts(tx: Transaction, products: Product[]) {

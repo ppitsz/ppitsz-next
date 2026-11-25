@@ -242,3 +242,14 @@ describe("labels and allergens", () => {
     expect(applyProductEdit(null, edit({}), base)).toMatchObject({ tags: [], allergens: [] })
   })
 })
+
+describe("pickup points", () => {
+  test("a product can be limited to some points; none ticked is any point", () => {
+    expect(applyProductEdit(null, edit({ pickupPointIds: ["booth-sat", "booth-sat", "gate-sun"] }), base).pickupPointIds).toEqual([
+      "booth-sat",
+      "gate-sun",
+    ])
+    expect(applyProductEdit(null, edit({ pickupPointIds: [] }), base).pickupPointIds).toBeUndefined()
+    expect(checkProductEdit([], edit({ pickupPointIds: ["Not an id!"] })).map((i) => i.field)).toEqual(["pickupPointIds"])
+  })
+})

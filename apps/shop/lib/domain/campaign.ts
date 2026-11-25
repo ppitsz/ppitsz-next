@@ -1,5 +1,6 @@
 import { MAX_DELIVERY_FEE_FEN, MAX_SLOT_ORDERS, MAX_SLOTS, offersOnline } from "./delivery"
-import type { Campaign, CampaignOffers, CampaignStatus, DeliverySlot } from "./types"
+import { MAX_PICKUP_POINTS, MAX_PLACE_LENGTH } from "./pickup"
+import type { Campaign, CampaignOffers, CampaignStatus, DeliverySlot, PickupPoint } from "./types"
 
 /*
  * Campaign settings and where a campaign stands. Several campaigns can be
@@ -23,7 +24,8 @@ export interface CampaignEdit {
   slug: string
   codePrefix: string
   tagline: string
-  pickupInfo: string
+  boothInfo: string
+  pickupPoints: PickupPoint[]
   onlineOpensAt: Date | null
   onlineClosesAt: Date | null
   offers: CampaignOffers
@@ -91,12 +93,13 @@ export function checkCampaignEdit(
 
   const { offers } = edit
   if (!offers.delivery && !offers.pickup && !offers.booth) add("offers", "Choose at least one: Delivery, Pickup or Booth.")
-  // The pickup place is where pickup orders are collected and where the booth is.
-  const pickup = edit.pickupInfo.trim()
-  if (offers.pickup || offers.booth) {
-    if (pickup.length < 5) add("pickupInfo", "Write the place and time of pickup or the booth.")
+  const booth = edit.boothInfo.trim()
+  if (offers.booth && booth.length < 5) add("boothInfo", "Write the place and time of the booth.")
+  if (booth.length > 120) add("boothInfo", "The booth place and time can be at most 120 characters.")
+  if (offers.pickup) {
+    const pointIssue = checkPickupPoints(edit.pickupPoints)
+    if (pointIssue) add("pickupPoints", pointIssue)
   }
-  if (pickup.length > 120) add("pickupInfo", "The pickup info can be at most 120 characters.")
   if (edit.onlineOpensAt && edit.onlineClosesAt && edit.onlineClosesAt <= edit.onlineOpensAt) {
     add("onlineClosesAt", "Online ordering must close after it opens.")
   }
@@ -127,6 +130,19 @@ function checkSlots(slots: DeliverySlot[]) {
     if (max !== null && (!Number.isInteger(max) || max < 1 || max > MAX_SLOT_ORDERS)) {
       return `The order limit per slot is 1 to ${MAX_SLOT_ORDERS}, or empty.`
     }
+  }
+  return null
+}
+
+function checkPickupPoints(points: PickupPoint[]) {
+  if (points.length === 0) return "Add at least one pickup point."
+  if (points.length > MAX_PICKUP_POINTS) return `At most ${MAX_PICKUP_POINTS} pickup points.`
+  if (new Set(points.map((p) => p.id)).size !== points.length) return "A pickup point appears twice. Reload the page."
+  for (const point of points) {
+    const place = point.place.trim()
+    if (place.length < 2) return "Write the place of every pickup point."
+    if (place.length > MAX_PLACE_LENGTH) return `A pickup place can be at most ${MAX_PLACE_LENGTH} characters.`
+    if (point.endsAt <= point.startsAt) return "Every pickup point must end after it starts."
   }
   return null
 }

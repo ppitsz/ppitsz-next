@@ -42,7 +42,10 @@ export const ERROR_MESSAGES = {
   FULFILLMENT_UNAVAILABLE: "That way of receiving the order isn't available. Choose Delivery or Pickup.",
   INVALID_DELIVERY: "Fill in the address and phone number for delivery.",
   SLOT_UNAVAILABLE: "This delivery slot is full or has passed. Choose another one.",
+  PICKUP_POINT_UNAVAILABLE: "This pickup point has passed or is no longer offered. Choose another one.",
+  NOT_AT_PICKUP_POINT: "Some items in your order can't be picked up at that pickup point. Choose another one.",
   NOT_DELIVERY: "This order is for pickup, not delivery.",
+  NOT_PICKUP: "Only a pickup order that isn't picked up, canceled or expired can change its pickup point.",
   DELIVERY_WHOLE: "A delivery order is handed over all at once.",
   INVALID_COURIER: "Write the courier's name and the tracking number.",
 } as const

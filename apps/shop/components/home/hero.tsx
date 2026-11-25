@@ -7,6 +7,7 @@ import { LineBadge } from "@ppitsz/ui/components/network/line-badge"
 import { StatusBadge } from "@ppitsz/ui/components/status-badge"
 import { formatDate, formatTime, formatYuan, toShenzhenIso } from "@ppitsz/ui/lib/format"
 import { mediaUrl } from "@/lib/catalog"
+import { pickupWhere } from "@/lib/campaign-copy"
 import { campaignPhase } from "@/lib/domain/campaign"
 import type { Campaign } from "@/lib/domain/types"
 import { daysUntil, type Featured } from "@/lib/home"
@@ -99,7 +100,7 @@ function Facts({ campaign, phase }: { campaign: Campaign; phase: ReturnType<type
     },
     delivery
       ? { label: "Delivery fee", value: campaign.deliveryFeeFen === 0 ? "Free" : formatYuan(campaign.deliveryFeeFen) }
-      : { label: "Where", value: campaign.pickupInfo },
+      : { label: "Where", value: pickup ? pickupWhere(campaign.pickupPoints) : campaign.boothInfo },
   ]
 
   return (

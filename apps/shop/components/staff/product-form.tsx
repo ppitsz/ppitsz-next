@@ -131,10 +131,12 @@ function toEdit(fields: Omit<ProductEdit, "variants">, rows: VariantRow[], store
   let formError: string | undefined
   let chartError: string | undefined
   let saleError: string | undefined
+  let pickupError: string | undefined
   let tagsError: string | undefined
   let allergensError: string | undefined
   for (const issue of checkProductEdit(stored, edit)) {
     if (issue.field === "onSale") saleError ??= issue.message
+    else if (issue.field === "pickupPointIds") pickupError ??= issue.message
     else if (issue.field === "tags") tagsError ??= issue.message
     else if (issue.field === "allergens") allergensError ??= issue.message
     else if (issue.field === "sizeChart" || issue.field === "measurements") {
@@ -150,10 +152,11 @@ function toEdit(fields: Omit<ProductEdit, "variants">, rows: VariantRow[], store
     !formError &&
     !chartError &&
     !saleError &&
+    !pickupError &&
     !tagsError &&
     !allergensError &&
     rowErrors.every((e) => Object.keys(e).length === 0)
-  return { ok, edit, rowErrors, nameError, formError, chartError, saleError, tagsError, allergensError }
+  return { ok, edit, rowErrors, nameError, formError, chartError, saleError, pickupError, tagsError, allergensError }
 }
 
 export function ProductForm({
@@ -161,12 +164,15 @@ export function ProductForm({
   product,
   defaultSortOrder,
   hasBooth = true,
+  pickupPoints = [],
 }: {
   campaignId: string
   product: (Product & { imageUrl?: string; sizeChartUrl?: string }) | null
   defaultSortOrder: number
   /** Without a booth there is nothing to keep stock for, so the online cap is hidden (and ignored). */
   hasBooth?: boolean
+  /** The campaign's pickup points, labeled, which the product can be limited to. */
+  pickupPoints?: { id: string; label: string }[]
 }) {
   const router = useRouter()
   const [name, setName] = useState(product?.name ?? "")
@@ -179,6 +185,16 @@ export function ProductForm({
   const [saleFrom, setSaleFrom] = useState(product?.onSaleFrom ? toShenzhenInput(product.onSaleFrom) : "")
   const [saleUntil, setSaleUntil] = useState(product?.onSaleUntil ? toShenzhenInput(product.onSaleUntil) : "")
   const [saleError, setSaleError] = useState<string>()
+  /** None ticked: any pickup point. */
+  const [pointIds, setPointIds] = useState(product?.pickupPointIds ?? [])
+  const [pickupError, setPickupError] = useState<string>()
+  // A point since removed from the campaign stays listed until it's unticked.
+  const pointChoices = [
+    ...pickupPoints,
+    ...(product?.pickupPointIds ?? [])
+      .filter((id) => !pickupPoints.some((p) => p.id === id))
+      .map((id) => ({ id, label: "A removed pickup point" })),
+  ]
   /** As typed: "New, Spicy". */
   const [tags, setTags] = useState(product?.tags.join(", ") ?? "")
   const [allergens, setAllergens] = useState(product?.allergens.join(", ") ?? "")
@@ -238,6 +254,7 @@ export function ProductForm({
         allowNickname: category === "merch" && allowNickname,
         onSaleFrom: from,
         onSaleUntil: until,
+        pickupPointIds: pointIds,
         tags: splitList(tags),
         allergens: splitList(allergens),
         sortOrder: Math.min(order, MAX_SORT_ORDER),
@@ -251,6 +268,7 @@ export function ProductForm({
     setFormError(checked.formError)
     setChartError(checked.chartError)
     setSaleError(checked.saleError)
+    setPickupError(checked.pickupError)
     setTagsError(checked.tagsError)
     setAllergensError(checked.allergensError)
     if (!checked.ok) return
@@ -401,6 +419,34 @@ export function ProductForm({
           </FieldDescription>
           {saleError && <FieldError>{saleError}</FieldError>}
         </FieldSet>
+
+        {pointChoices.length > 0 && (
+          <FieldSet data-invalid={!!pickupError || undefined}>
+            <FieldLegend variant="label">Pickup points</FieldLegend>
+            <FieldDescription>
+              Tick the points it can be picked up at, like food made fresh for one day. At checkout, buyers only see
+              the points that have every item in their cart. Leave all unticked for any pickup point, including ones
+              added later. Delivery and the booth aren't affected.
+            </FieldDescription>
+            <div className="flex flex-col gap-3">
+              {pointChoices.map((point) => (
+                <Field key={point.id} orientation="horizontal">
+                  <Checkbox
+                    id={`pickup-point-${point.id}`}
+                    checked={pointIds.includes(point.id)}
+                    onCheckedChange={(checked) =>
+                      setPointIds((current) =>
+                        checked === true ? [...current, point.id] : current.filter((id) => id !== point.id)
+                      )
+                    }
+                  />
+                  <FieldLabel htmlFor={`pickup-point-${point.id}`}>{point.label}</FieldLabel>
+                </Field>
+              ))}
+            </div>
+            {pickupError && <FieldError>{pickupError}</FieldError>}
+          </FieldSet>
+        )}
 
         <Field data-invalid={!!tagsError || undefined}>
           <FieldLabel htmlFor="product-labels" optional>

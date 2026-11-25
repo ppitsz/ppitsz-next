@@ -12,7 +12,8 @@ const edit = (overrides: Partial<CampaignEdit> = {}): CampaignEdit => ({
   slug: "merch",
   codePrefix: "MR",
   tagline: "",
-  pickupInfo: "Booth PPIT",
+  boothInfo: "PPIT booth",
+  pickupPoints: [{ id: "p1", place: "PPIT booth", startsAt: new Date(100), endsAt: new Date(200) }],
   onlineOpensAt: new Date(0),
   onlineClosesAt: new Date(1000),
   offers: { delivery: false, pickup: true, booth: true },
@@ -97,7 +98,7 @@ describe("the other settings", () => {
     expect(fields(edit({ onlineClosesAt: new Date(0) }))).toEqual(["onlineClosesAt"])
     expect(fields(edit({ paymentWindowMinutes: 10 }))).toEqual(["paymentWindowMinutes"])
     expect(fields(edit({ sortOrder: -1 }))).toEqual(["sortOrder"])
-    expect(fields(edit({ name: "M", pickupInfo: "" }))).toEqual(["name", "pickupInfo"])
+    expect(fields(edit({ name: "M", boothInfo: "" }))).toEqual(["name", "boothInfo"])
   })
 })
 
@@ -116,9 +117,21 @@ describe("what a campaign offers", () => {
     expect(fields(edit({ onlineOpensAt: null, onlineClosesAt: new Date(0) }))).toEqual([])
   })
 
-  test("a pickup place only when something is collected", () => {
-    expect(fields(delivery({ pickupInfo: "" }))).toEqual([])
-    expect(fields(edit({ offers: { delivery: false, pickup: false, booth: true }, pickupInfo: "" }))).toEqual(["pickupInfo"])
+  test("a booth place only with a booth", () => {
+    expect(fields(delivery({ boothInfo: "" }))).toEqual([])
+    expect(fields(edit({ offers: { delivery: false, pickup: true, booth: false }, boothInfo: "" }))).toEqual([])
+    expect(fields(edit({ offers: { delivery: false, pickup: false, booth: true }, boothInfo: "" }))).toEqual(["boothInfo"])
+  })
+
+  test("pickup needs points with a place, that end after they start", () => {
+    const point = { id: "p1", place: "PPIT booth", startsAt: new Date(100), endsAt: new Date(200) }
+    expect(fields(edit({ pickupPoints: [] }))).toEqual(["pickupPoints"])
+    expect(fields(edit({ pickupPoints: [{ ...point, place: " " }] }))).toEqual(["pickupPoints"])
+    expect(fields(edit({ pickupPoints: [{ ...point, endsAt: new Date(100) }] }))).toEqual(["pickupPoints"])
+    expect(fields(edit({ pickupPoints: [point, point] }))).toEqual(["pickupPoints"])
+    expect(fields(edit({ pickupPoints: [point, { ...point, id: "p2", place: "SZU south gate" }] }))).toEqual([])
+    // Points don't matter while pickup is off.
+    expect(fields(delivery({ pickupPoints: [] }))).toEqual([])
   })
 
   test("delivery needs slots that end after they start, a fee and sensible limits", () => {

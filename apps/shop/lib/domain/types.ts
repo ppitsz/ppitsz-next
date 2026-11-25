@@ -53,8 +53,10 @@ export interface Campaign {
   onlineClosesAt: Date | null
   /** How this campaign sells. At least one is on. */
   offers: CampaignOffers
-  /** Where and when pickup orders are collected: "Booth PPIT, SZ Cup · Wed, Mar 17". */
-  pickupInfo: string
+  /** Where and when the booth sells: "PPIT booth at SZ Cup · Wed, Mar 17, 09:00–17:00". Shown while the booth is on. */
+  boothInfo: string
+  /** Where and when pickup orders can be collected, in time order. At least one while pickup is offered. */
+  pickupPoints: PickupPoint[]
   /** Added once to every delivery order; 0 is free delivery. */
   deliveryFeeFen: number
   /** When delivery orders arrive, in time order. At least one while delivery is offered. */
@@ -64,7 +66,7 @@ export interface Campaign {
   paymentWindowMinutes: number
 }
 
-/** delivery: online orders delivered. pickup: online orders collected at the pickup place. booth: walk-in sales at the register. */
+/** delivery: online orders delivered. pickup: online orders collected at a pickup point. booth: walk-in sales at the register. */
 export interface CampaignOffers {
   delivery: boolean
   pickup: boolean
@@ -78,6 +80,16 @@ export interface DeliverySlot {
   endsAt: Date
   /** Null: no limit. */
   maxOrders: number | null
+}
+
+/** A place and a time range on one day where pickup orders are collected. */
+export interface PickupPoint {
+  id: string
+  /** "PPIT booth at SZ Cup", "SZU 粤海 south gate". */
+  place: string
+  /** Same day as startsAt, in Shenzhen. */
+  startsAt: Date
+  endsAt: Date
 }
 
 /* -------------------------------------------------------------------------
@@ -127,6 +139,11 @@ export interface Product {
   sizeChartPath?: string
   /** Merch only: each unit bought online carries a custom nickname the buyer types at checkout. */
   allowNickname?: boolean
+  /**
+   * The campaign's pickup points this product can be picked up at, when only
+   * some have it. Missing: any pickup point. Delivery and the booth ignore it.
+   */
+  pickupPointIds?: string[]
   /** Short labels buyers see on the product: "New", "Spicy", "Weekly". */
   tags: string[]
   /** What it contains or may contain, one per entry: "Coconut", "May contain shrimp paste". */
@@ -325,6 +342,11 @@ export interface Order {
   totalFen: number
   /** delivery orders only. */
   delivery?: Delivery
+  /**
+   * Pickup orders: a copy of the pickup point the buyer picked, or staff set
+   * since. Missing on pickup orders from before pickup points.
+   */
+  pickupPoint?: PickupPoint
   status: OrderStatus
   payment: Payment
   /** Every rejected proof, oldest first. */

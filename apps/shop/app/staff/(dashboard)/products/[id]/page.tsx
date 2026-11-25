@@ -6,6 +6,7 @@ import { Container } from "@ppitsz/ui/components/container"
 import { Link } from "@ppitsz/ui/components/link"
 import { requireStaff } from "@/lib/server/auth"
 import { mediaUrl } from "@/lib/catalog"
+import { pickupPointLabel } from "@/lib/campaign-copy"
 import { isUnsold } from "@/lib/domain/product"
 import { getCampaign, getProduct, listBundles } from "@/lib/store"
 import { DeleteProductButton, ProductForm } from "@/components/staff/product-form"
@@ -34,6 +35,7 @@ export default async function EditProductPage({ params }: PageProps<"/staff/prod
       <ProductForm
         campaignId={campaign.id}
         hasBooth={campaign.offers.booth}
+        pickupPoints={campaign.offers.pickup ? campaign.pickupPoints.map((p) => ({ id: p.id, label: pickupPointLabel(p) })) : []}
         product={{
           ...product,
           imageUrl: product.imagePath ? mediaUrl(product.imagePath) : undefined,

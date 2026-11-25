@@ -7,11 +7,12 @@ import { Container } from "@ppitsz/ui/components/container"
 import { Link } from "@ppitsz/ui/components/link"
 import { formatYuan } from "@ppitsz/ui/lib/format"
 import { courierMessage, rejectionMessage } from "@/lib/buyer-message"
-import { slotLabel } from "@/lib/campaign-copy"
+import { orderPickupNote, pickupPointLabel, slotLabel } from "@/lib/campaign-copy"
 import { PAYMENT_METHOD_LABELS } from "@/lib/catalog"
 import { displayStatus } from "@/lib/domain/delivery"
 import { can } from "@/lib/domain/lifecycle"
 import { awaitsRefund, refundDue } from "@/lib/domain/order"
+import { canChangePickupPoint } from "@/lib/domain/pickup"
 import { orderPath } from "@/lib/order-path"
 import { requireStaff } from "@/lib/server/auth"
 import { siteOrigin } from "@/lib/server/site-url"
@@ -21,6 +22,7 @@ import { BuyerMessagePanel } from "@/components/staff/buyer-message"
 import { ItemList, OrderStatusBadge, paymentDestination, ProofImage, when } from "@/components/staff/order-bits"
 import { TestBadge } from "@/components/test-badge"
 import { DeliveryActions } from "@/components/staff/delivery-actions"
+import { PickupPointPicker } from "@/components/staff/pickup-point-picker"
 import { CancelOrderButton, CopyBuyerLink, RefundButton, ReviewActions } from "@/components/staff/order-actions"
 
 export const metadata: Metadata = { title: "Order details" }
@@ -50,6 +52,14 @@ export default async function OrderDetailPage({ params }: PageProps<"/staff/orde
   const buyerMessage = rejectionMessage(order, orderUrl) ?? courierMessage(order, orderUrl)
   const deliverable = !!order.delivery && can(order, "hand_over", staff, now)
   const delivery = order.delivery
+  const isPickup = !isWalkIn && !delivery
+  // A point since removed from the campaign stays choosable, so the picker can show it.
+  const pointChoices = [
+    ...(order.pickupPoint && !campaign?.pickupPoints.some((p) => p.id === order.pickupPoint!.id)
+      ? [{ id: order.pickupPoint.id, label: `${pickupPointLabel(order.pickupPoint)} (removed)` }]
+      : []),
+    ...(campaign?.pickupPoints ?? []).map((p) => ({ id: p.id, label: pickupPointLabel(p) })),
+  ]
 
   return (
     <Container narrow className="flex flex-col gap-10 py-10">
@@ -85,10 +95,31 @@ export default async function OrderDetailPage({ params }: PageProps<"/staff/orde
         </Alert>
       )}
 
+      {isPickup && (
+        <section aria-labelledby="pickup" className="flex flex-col gap-3">
+          <h2 id="pickup" className="type-heading-lg text-text">
+            Pickup
+          </h2>
+          <p className="type-body-sm text-text">
+            {order.pickupPoint
+              ? orderPickupNote(order, campaign ?? undefined)
+              : "No pickup point yet: this order is from before pickup points, so the buyer sees every point."}
+          </p>
+          {canChangePickupPoint(order) && pointChoices.length > 0 && (
+            <PickupPointPicker
+              orderId={order.id}
+              code={order.code}
+              currentId={order.pickupPoint?.id}
+              points={pointChoices}
+            />
+          )}
+        </section>
+      )}
+
       {delivery && (
         <section aria-labelledby="delivery" className="flex flex-col gap-3">
           <h2 id="delivery" className="type-heading-lg text-text">
-            Pengantaran
+            Delivery
           </h2>
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 type-body-sm">
             <Row term="Slot" value={slotLabel(delivery.slot)} />
