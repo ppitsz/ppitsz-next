@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test"
 import { pickupOnlyNote, orderPickupNote } from "../campaign-copy"
 import { ShopError } from "./errors"
 import { campaign, order } from "./fixtures"
-import { canChangePickupPoint, pickPickupPoint, pickupPointState, sharedPickupPoints } from "./pickup"
+import { bundlePickupIssue, canChangePickupPoint, pickPickupPoint, pickupPointState, sharedPickupPoints } from "./pickup"
 import { byPickupPoint, pickupList } from "./recap"
 
 /* Pickup points: several places and times, products limited to some of them. */
@@ -38,6 +38,26 @@ describe("choosing a pickup point", () => {
     expect(sharedPickupPoints([{}, { pickupPointIds: [] }])).toBeNull()
     expect(sharedPickupPoints([{ pickupPointIds: ["a", "b"] }, {}, { pickupPointIds: ["b", "c"] }])).toEqual(["b"])
     expect(sharedPickupPoints([{ pickupPointIds: ["a"] }, { pickupPointIds: ["c"] }])).toEqual([])
+  })
+})
+
+describe("bundles", () => {
+  const nasi = { name: "Nasi", pickupPointIds: ["booth-sat"] }
+  const teh = { name: "Teh", pickupPointIds: ["gate-sun"] }
+
+  test("products sharing no pickup point block the bundle, unless it can be delivered", () => {
+    const pickupOnly = { ...c, offers: { delivery: false, pickup: true, booth: true } }
+    expect(bundlePickupIssue([nasi, teh], pickupOnly)).toMatchObject({ blocks: true })
+    expect(bundlePickupIssue([nasi, teh], pickupOnly)!.message).toStartWith("No pickup point has every product in this bundle (Nasi, Teh).")
+    expect(bundlePickupIssue([nasi, teh], c)).toMatchObject({ blocks: false })
+  })
+
+  test("a shared point, unlimited products, or no pickup is fine", () => {
+    expect(bundlePickupIssue([nasi, { name: "Kaos" }], c)).toBeNull()
+    expect(bundlePickupIssue([nasi, { ...teh, pickupPointIds: ["gate-sun", "booth-sat"] }], c)).toBeNull()
+    expect(bundlePickupIssue([nasi, teh], { ...c, offers: { delivery: true, pickup: false } })).toBeNull()
+    // Only a point the campaign no longer has in common.
+    expect(bundlePickupIssue([{ name: "Old", pickupPointIds: ["gone"] }, nasi], c)).toMatchObject({ blocks: false })
   })
 })
 

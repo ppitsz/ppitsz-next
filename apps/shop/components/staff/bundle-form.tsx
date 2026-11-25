@@ -37,6 +37,7 @@ import type { ActionState } from "@/lib/actions/state"
 import { deleteBundleAction, saveBundleAction } from "@/lib/actions/admin"
 import { checkBundleEdit, MAX_COMPONENT_QTY, type BundleEdit } from "@/lib/domain/bundle"
 import { MAX_BUNDLE_COMPONENTS } from "@/lib/domain/cart"
+import { bundlePickupIssue } from "@/lib/domain/pickup"
 import { MAX_SORT_ORDER } from "@/lib/domain/product"
 import type { Bundle } from "@/lib/domain/types"
 import { ImageField, KEEP_IMAGE, setImage, type ImageChoice } from "./image-field"
@@ -48,6 +49,8 @@ export interface BundleFormProduct {
   active: boolean
   /** The cheapest of its variants. */
   fromFen: number
+  /** The pickup points it is limited to; missing: any. */
+  pickupPointIds?: string[]
 }
 
 interface ComponentRow {
@@ -74,11 +77,14 @@ export function BundleForm({
   bundle,
   products,
   defaultSortOrder,
+  pickup,
 }: {
   campaignId: string
   bundle: (Bundle & { imageUrl?: string }) | null
   products: BundleFormProduct[]
   defaultSortOrder: number
+  /** What the campaign offers and its pickup point ids, to check the products share a point. */
+  pickup: Parameters<typeof bundlePickupIssue>[1]
 }) {
   const router = useRouter()
   const [name, setName] = useState(bundle?.name ?? "")
@@ -115,6 +121,10 @@ export function BundleForm({
     return product && qty ? sum + product.fromFen * qty : sum
   }, 0)
   const priceFen = parsePrice(price)
+  const pickupIssue = bundlePickupIssue(
+    rows.flatMap((r) => byId.get(r.productId) ?? []),
+    pickup
+  )
 
   function update(key: string, patch: Partial<ComponentRow>) {
     setRows((current) => current.map((r) => (r.key === key ? { ...r, ...patch } : r)))
@@ -140,7 +150,7 @@ export function BundleForm({
       else next.form ??= issue.message
     }
     setErrors(next)
-    if (next.name || next.price || next.form || next.rows.some(Boolean)) return
+    if (next.name || next.price || next.form || next.rows.some(Boolean) || pickupIssue?.blocks) return
 
     const formData = new FormData()
     formData.set("data", JSON.stringify(edit))
@@ -244,7 +254,7 @@ export function BundleForm({
                       onClick={() => setRows((current) => current.filter((r) => r.key !== row.key))}
                     >
                       <TrashIcon aria-hidden />
-                      Keluarkan{byId.get(row.productId) ? ` ${byId.get(row.productId)!.name}` : ""}
+                      Remove{byId.get(row.productId) ? ` ${byId.get(row.productId)!.name}` : ""}
                     </Button>
                   )}
                 </div>
@@ -307,6 +317,12 @@ export function BundleForm({
         </Field>
       </FieldGroup>
 
+      {pickupIssue && (
+        <Alert variant={pickupIssue.blocks ? "danger" : "warning"}>
+          <AlertTitle>{pickupIssue.blocks ? "Can't be saved: no pickup point" : "Not for pickup"}</AlertTitle>
+          <AlertDescription>{pickupIssue.message}</AlertDescription>
+        </Alert>
+      )}
       {state.error && (
         <Alert variant="danger" live>
           <AlertTitle>Not saved</AlertTitle>

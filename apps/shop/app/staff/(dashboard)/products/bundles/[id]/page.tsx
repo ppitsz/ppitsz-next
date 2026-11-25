@@ -33,6 +33,7 @@ export default async function EditBundlePage({ params }: PageProps<"/staff/produ
         campaignId={campaign.id}
         bundle={{ ...bundle, imageUrl: bundle.imagePath ? mediaUrl(bundle.imagePath) : undefined }}
         products={bundleFormProducts(products)}
+        pickup={{ offers: campaign.offers, pickupPoints: campaign.pickupPoints.map((p) => ({ id: p.id })) }}
         defaultSortOrder={bundle.sortOrder}
       />
       <div className="flex flex-col items-start gap-2 border-t pt-6">

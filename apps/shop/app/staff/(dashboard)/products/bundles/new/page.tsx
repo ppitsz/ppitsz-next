@@ -35,6 +35,7 @@ export default async function NewBundlePage() {
         campaignId={campaign.id}
         bundle={null}
         products={bundleFormProducts(products)}
+        pickup={{ offers: campaign.offers, pickupPoints: campaign.pickupPoints.map((p) => ({ id: p.id })) }}
         defaultSortOrder={nextSort}
       />
     </Container>

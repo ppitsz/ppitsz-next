@@ -69,3 +69,24 @@ export function byPointTime<T extends Pick<PickupPoint, "startsAt" | "endsAt">>(
     (a, b) => a.startsAt.getTime() - b.startsAt.getTime() || a.endsAt.getTime() - b.endsAt.getTime()
   )
 }
+
+/**
+ * When a bundle's products share none of the campaign's pickup points, so
+ * the bundle can't be picked up: the sentence for the bundle form, and
+ * whether it blocks saving. It blocks unless the campaign also delivers.
+ * Null when they share one, or the campaign has no pickup points.
+ */
+export function bundlePickupIssue(
+  products: Pick<Product, "name" | "pickupPointIds">[],
+  campaign: { offers: Pick<Campaign["offers"], "pickup" | "delivery">; pickupPoints: Pick<PickupPoint, "id">[] }
+): { message: string; blocks: boolean } | null {
+  if (!campaign.offers.pickup || campaign.pickupPoints.length === 0) return null
+  const shared = sharedPickupPoints(products)
+  if (shared === null || campaign.pickupPoints.some((p) => shared.includes(p.id))) return null
+  const limited = [...new Set(products.filter((p) => p.pickupPointIds?.length).map((p) => p.name))]
+  const outcome = campaign.offers.delivery ? "It can only be delivered" : "Buyers couldn't get it"
+  return {
+    message: `No pickup point has every product in this bundle (${limited.join(", ")}). ${outcome}. Change the products' pickup points, or what the bundle holds.`,
+    blocks: !campaign.offers.delivery,
+  }
+}

@@ -8,5 +8,6 @@ export function bundleFormProducts(products: Product[]): BundleFormProduct[] {
     name: p.name,
     active: p.active,
     fromFen: Math.min(...p.variants.map((v) => v.priceFen)),
+    pickupPointIds: p.pickupPointIds,
   }))
 }

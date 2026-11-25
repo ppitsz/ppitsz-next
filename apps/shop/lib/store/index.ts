@@ -14,7 +14,7 @@ import {
   slotPlacesTaken,
 } from "../domain/delivery"
 import { ShopError } from "../domain/errors"
-import { byPointTime, canChangePickupPoint, pickPickupPoint } from "../domain/pickup"
+import { bundlePickupIssue, byPointTime, canChangePickupPoint, pickPickupPoint } from "../domain/pickup"
 import {
   applyCommand,
   refusal,
@@ -693,12 +693,20 @@ export async function saveBundle(input: {
         if (current.campaignId !== input.campaignId) throw new ShopError("PRODUCT_UNAVAILABLE")
       }
       previous = current?.imagePath
+      const campaignSnap = await tx.get(col.campaigns().doc(input.campaignId))
       const products = await tx.get(col.products().where("campaignId", "==", input.campaignId))
       const bundle = applyBundleEdit(
         input.edit,
         { id: ref.id, campaignId: input.campaignId, imagePath: chosenPath(input.image, photo, current?.imagePath) },
         new Set(products.docs.map((d) => d.id))
       )
+      // A bundle nobody could get: its products share no pickup point, and the campaign doesn't deliver.
+      if (campaignSnap.exists) {
+        const byId = new Map(products.docs.map((d) => [d.id, productFromDoc(d)]))
+        const contents = bundle.components.flatMap((c) => byId.get(c.productId) ?? [])
+        const issue = bundlePickupIssue(contents, campaignFromDoc(campaignSnap))
+        if (issue?.blocks) throw new ShopError("INVALID_BUNDLE", issue.message)
+      }
       tx.set(ref, bundleToDoc(bundle))
       return bundle
     })
